@@ -1372,43 +1372,157 @@ function renderProfileView(data, isAdmin) {
         </div>
       </div>
 
-      <!-- Special Duties -->
-      <div class="glass-card p-6 rounded-2xl border border-slate-200 space-y-4">
-        <div class="flex items-center justify-between border-b pb-3">
-          <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base">
-            <i data-lucide="check-square" class="w-5 h-5 text-amber-600"></i> งานพิเศษและหน้าที่ที่ได้รับมอบหมาย
-          </h3>
+      <!-- Special Duties & Assigned Roles (งานพิเศษและหน้าที่ที่ได้รับมอบหมาย - ดีไซน์การ์ดพรีเมียมใหม่) -->
+      <div class="glass-card p-6 md:p-7 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold">
+                <i data-lucide="award" class="w-4 h-4 text-amber-600"></i>
+              </div>
+              <h3 class="font-bold text-slate-800 text-base md:text-lg font-prompt">
+                งานพิเศษและหน้าที่ที่ได้รับมอบหมาย (Special Duties & Roles)
+              </h3>
+              <span class="text-xs font-bold px-2.5 py-0.5 bg-amber-100/80 text-amber-900 rounded-lg font-prompt border border-amber-200/60">
+                ${p.specialAssignments?.length || 0} หน้าที่
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-sarabun mt-1">ภาระงานที่ได้รับมอบหมายตามคำสั่งโรงเรียน การบริหารงานฝ่าย และการปฏิบัติหน้าที่พิเศษ</p>
+          </div>
           ${isAdmin ? `
-            <button onclick="openAddSpecialDutyModal()" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มงานพิเศษ
+            <button onclick="openAddSpecialDutyModal()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold font-prompt flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0 self-start sm:self-auto">
+              <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มงานพิเศษ
             </button>
           ` : ""}
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          ${p.specialAssignments && p.specialAssignments.length > 0 ? p.specialAssignments.map((task, idx) => `
-            <div class="flex items-center justify-between gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/80 font-sarabun text-xs md:text-sm text-slate-700">
-              <div class="flex items-start gap-2.5 flex-1 min-w-0">
-                <i data-lucide="check-circle-2" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-                <span class="truncate">${task}</span>
-              </div>
-              ${isAdmin ? `
-                <div class="flex items-center gap-1 shrink-0">
-                  <button onclick="openEditSpecialDutyModal(${idx})" class="p-1 rounded-md text-slate-400 hover:text-amber-700 hover:bg-amber-100 cursor-pointer" title="แก้ไข">
-                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                  </button>
-                  <button onclick="confirmDeleteSpecialDuty(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="ลบ">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                  </button>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${p.specialAssignments && p.specialAssignments.length > 0 ? p.specialAssignments.map((task, idx) => {
+            const theme = getSpecialDutyTheme(task, idx);
+            return `
+              <div class="bg-white rounded-2xl border border-slate-200/90 hover:border-amber-300 p-4 md:p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between relative overflow-hidden group">
+                <!-- Left Colored Accent Bar -->
+                <div class="absolute left-0 top-0 bottom-0 w-1.5 ${theme.accentBar}"></div>
+                
+                <div class="pl-1">
+                  <!-- Header Row: Category Badge & Index/Actions -->
+                  <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <div class="w-7 h-7 rounded-lg ${theme.iconBg} flex items-center justify-center shrink-0 shadow-2xs">
+                        <i data-lucide="${theme.icon}" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="text-[11px] font-bold px-2 py-0.5 rounded-md border font-prompt truncate ${theme.badgeClass}">
+                        ${theme.tag}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-1 shrink-0">
+                      <span class="text-[10px] font-bold text-slate-400 font-prompt px-1.5 py-0.5 bg-slate-50 border border-slate-100 rounded">
+                        #${idx + 1}
+                      </span>
+                      ${isAdmin ? `
+                        <button onclick="openEditSpecialDutyModal(${idx})" class="p-1 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer" title="แก้ไข">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="confirmDeleteSpecialDuty(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" title="ลบ">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                      ` : ""}
+                    </div>
+                  </div>
+
+                  <!-- Duty Title (Full Multiline Typography - No Truncate) -->
+                  <div class="pt-3 pb-1">
+                    <h4 class="font-bold text-slate-800 text-sm leading-snug font-prompt group-hover:text-amber-900 transition-colors">
+                      ${task}
+                    </h4>
+                  </div>
                 </div>
-              ` : ""}
+
+                <!-- Footer Status -->
+                <div class="pt-3 mt-3 border-t border-slate-100/90 pl-1 flex items-center justify-between text-[11px] text-slate-400 font-sarabun">
+                  <span class="flex items-center gap-1.5 text-emerald-700 font-medium text-[11px] font-prompt">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ปฏิบัติหน้าที่ต่อเนื่อง
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-prompt">คำสั่งโรงเรียน</span>
+                </div>
+              </div>
+            `;
+          }).join("") : `
+            <div class="col-span-full py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              <i data-lucide="briefcase" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+              <p class="text-xs text-slate-400 font-prompt">ยังไม่มีข้อมูลงานพิเศษและหน้าที่ที่ได้รับมอบหมาย</p>
             </div>
-          `).join("") : `
-            <p class="col-span-2 text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลงานพิเศษ</p>
           `}
         </div>
       </div>
     </div>
   `;
+}
+
+// Helper: Smart Theme and Icon Generator for Special Duties
+function getSpecialDutyTheme(taskText, idx) {
+  const t = (taskText || "").toLowerCase();
+  if (t.includes("ict") || t.includes("คอมพิวเตอร์") || t.includes("เทคโนโลยี") || t.includes("เว็บ")) {
+    return {
+      icon: "laptop",
+      tag: "ฝ่ายเทคโนโลยี & ICT",
+      color: "blue",
+      badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+      accentBar: "bg-blue-500",
+      iconBg: "bg-blue-50 text-blue-600 border border-blue-100",
+      cardBorder: "hover:border-blue-300"
+    };
+  }
+  if (t.includes("dmc") || t.includes("emis") || t.includes("cct") || t.includes("สารสนเทศ")) {
+    return {
+      icon: "database",
+      tag: "งานระบบสารสนเทศ",
+      color: "indigo",
+      badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
+      accentBar: "bg-indigo-500",
+      iconBg: "bg-indigo-50 text-indigo-600 border border-indigo-100",
+      cardBorder: "hover:border-indigo-300"
+    };
+  }
+  if (t.includes("ที่ปรึกษา") || t.includes("ประจำชั้น") || t.includes("นักเรียน") || t.includes("ลูกเสือ") || t.includes("แนะแนว")) {
+    return {
+      icon: "users",
+      tag: "งานกิจการนักเรียน / ประจำชั้น",
+      color: "emerald",
+      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      accentBar: "bg-emerald-500",
+      iconBg: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+      cardBorder: "hover:border-emerald-300"
+    };
+  }
+  if (t.includes("วิชาการ") || t.includes("หลักสูตร") || t.includes("การสอน") || t.includes("วัดผล")) {
+    return {
+      icon: "book-open-check",
+      tag: "งานบริหารวิชาการ & หลักสูตร",
+      color: "purple",
+      badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
+      accentBar: "bg-purple-500",
+      iconBg: "bg-purple-50 text-purple-600 border border-purple-100",
+      cardBorder: "hover:border-purple-300"
+    };
+  }
+  if (t.includes("ประชาสัมพันธ์") || t.includes("เพจ") || t.includes("สื่อ") || t.includes("ข่าว")) {
+    return {
+      icon: "megaphone",
+      tag: "งานประชาสัมพันธ์ & สื่อสาร",
+      color: "rose",
+      badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+      accentBar: "bg-rose-500",
+      iconBg: "bg-rose-50 text-rose-600 border border-rose-100",
+      cardBorder: "hover:border-rose-300"
+    };
+  }
+  const defaultPalettes = [
+    { icon: "award", tag: "หน้าที่พิเศษตามคำสั่ง", badgeClass: "bg-amber-50 text-amber-800 border-amber-200", accentBar: "bg-amber-500", iconBg: "bg-amber-50 text-amber-700 border border-amber-100", cardBorder: "hover:border-amber-300" },
+    { icon: "briefcase", tag: "หน้าที่พิเศษตามคำสั่ง", badgeClass: "bg-teal-50 text-teal-800 border-teal-200", accentBar: "bg-teal-500", iconBg: "bg-teal-50 text-teal-600 border border-teal-100", cardBorder: "hover:border-teal-300" }
+  ];
+  return defaultPalettes[idx % defaultPalettes.length];
 }
 
 // ==========================================
