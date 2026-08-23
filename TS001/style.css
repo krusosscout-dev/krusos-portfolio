@@ -211,3 +211,30 @@ body {
     break-inside: avoid;
   }
 }
+
+/* ==========================================
+   LINE-Style Profile Avatar Cropper Styling
+   ========================================== */
+.cropper-view-box,
+.cropper-face {
+  border-radius: 50% !important;
+}
+.cropper-view-box {
+  outline: 0 !important;
+  box-shadow: 0 0 0 2px #38bdf8, 0 0 0 4000px rgba(15, 23, 42, 0.75) !important;
+}
+.cropper-face {
+  background-color: transparent !important;
+}
+.cropper-dashed, .cropper-center {
+  display: none !important;
+}
+.cropper-line,
+.cropper-point {
+  background-color: #38bdf8 !important;
+}
+.cropper-bg {
+  background-image: none !important;
+  background-color: #0b1120 !important;
+}
+

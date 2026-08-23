@@ -1160,11 +1160,11 @@ function renderProfileView(data, isAdmin) {
           <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <i data-lucide="user" class="w-7 h-7 text-blue-600"></i> ประวัติส่วนตัวและภาระงานสอน
           </h2>
-          <p class="text-xs md:text-sm text-slate-500 mt-0.5">ข้อมูลประวัติการศึกษา การรับราชการ และงานที่ได้รับมอบหมาย</p>
+          <p class="text-xs md:text-sm text-slate-500 mt-0.5">ข้อมูลประวัติการศึกษา การรับราชการ และงานที่ได้รับมอบหมาย (แอดมินสามารถเพิ่ม/แก้ไข/ลบได้ทุกส่วน)</p>
         </div>
         ${isAdmin ? `
-          <button onclick="openProfileEditModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md transition-colors">
-            <i data-lucide="edit-3" class="w-4 h-4"></i> แก้ไขข้อมูลประวัติ
+          <button onclick="openProfileEditModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md transition-colors cursor-pointer">
+            <i data-lucide="edit-3" class="w-4 h-4"></i> แก้ไขข้อมูลประวัติทั่วไป
           </button>
         ` : ""}
       </div>
@@ -1173,7 +1173,14 @@ function renderProfileView(data, isAdmin) {
       <div class="glass-card p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <img src="${p.avatarUrl}" alt="${p.fullName}" class="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md">
+            <div class="relative group">
+              <img src="${p.avatarUrl}" alt="${p.fullName}" class="w-28 h-28 rounded-full object-cover border-4 border-amber-400 shadow-md">
+              ${isAdmin ? `
+                <button onclick="openQuickAvatarModal()" class="absolute bottom-0 right-0 p-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg cursor-pointer" title="เปลี่ยนรูปโปรไฟล์ / ครอปรูป LINE">
+                  <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ""}
+            </div>
             <h3 class="font-bold text-slate-800 mt-3 text-base">${p.fullName}</h3>
             <span class="text-xs text-blue-600 font-semibold mt-0.5">${p.position}</span>
             <span class="text-xs text-slate-500 mt-1">${p.school}</span>
@@ -1182,23 +1189,23 @@ function renderProfileView(data, isAdmin) {
           <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 font-sarabun text-sm">
             <div class="p-3 bg-white rounded-xl border border-slate-100">
               <span class="text-xs text-slate-400 block font-prompt">กลุ่มสาระการเรียนรู้</span>
-              <span class="font-semibold text-slate-800">${p.subjectGroup}</span>
+              <span class="font-semibold text-slate-800">${p.subjectGroup || '-'}</span>
             </div>
             <div class="p-3 bg-white rounded-xl border border-slate-100">
               <span class="text-xs text-slate-400 block font-prompt">เลขที่ตำแหน่ง</span>
-              <span class="font-semibold text-slate-800">${p.positionNumber}</span>
+              <span class="font-semibold text-slate-800">${p.positionNumber || '-'}</span>
             </div>
             <div class="p-3 bg-white rounded-xl border border-slate-100">
               <span class="text-xs text-slate-400 block font-prompt">วันบรรจุรับราชการ</span>
-              <span class="font-semibold text-slate-800">${p.appointmentDate}</span>
+              <span class="font-semibold text-slate-800">${p.appointmentDate || '-'}</span>
             </div>
             <div class="p-3 bg-white rounded-xl border border-slate-100">
               <span class="text-xs text-slate-400 block font-prompt">อายุราชการ</span>
-              <span class="font-semibold text-slate-800">${p.yearsOfService}</span>
+              <span class="font-semibold text-slate-800">${p.yearsOfService || '-'}</span>
             </div>
             <div class="sm:col-span-2 p-3 bg-white rounded-xl border border-slate-100">
               <span class="text-xs text-slate-400 block font-prompt">สังกัดหน่วยงาน</span>
-              <span class="font-semibold text-slate-800">${p.affiliation}</span>
+              <span class="font-semibold text-slate-800">${p.affiliation || '-'}</span>
             </div>
           </div>
         </div>
@@ -1208,48 +1215,101 @@ function renderProfileView(data, isAdmin) {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Education -->
         <div class="glass-card p-6 rounded-2xl border border-slate-200 space-y-4">
-          <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base border-b pb-3">
-            <i data-lucide="graduation-cap" class="w-5 h-5 text-indigo-600"></i> ประวัติการศึกษา
-          </h3>
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base">
+              <i data-lucide="graduation-cap" class="w-5 h-5 text-indigo-600"></i> ประวัติการศึกษา
+            </h3>
+            ${isAdmin ? `
+              <button onclick="openAddEducationModal()" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มการศึกษา
+              </button>
+            ` : ""}
+          </div>
           <div class="space-y-4">
-            ${p.education?.map(edu => `
-              <div class="relative pl-6 pb-2 border-l-2 border-indigo-200 last:border-l-0">
+            ${p.education && p.education.length > 0 ? p.education.map((edu, idx) => `
+              <div class="relative pl-6 pb-2 border-l-2 border-indigo-200 last:border-l-0 group">
                 <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-indigo-600 border-2 border-white"></div>
-                <div class="font-bold text-slate-800 text-sm">${edu.degree}</div>
-                <div class="text-xs text-indigo-700 font-medium font-sarabun">${edu.major}</div>
-                <div class="text-xs text-slate-500 font-sarabun mt-1">${edu.institution} (ปีสำเร็จการศึกษา ${edu.year})</div>
-                <div class="text-xs text-emerald-600 font-semibold mt-0.5">ผลการเรียนเฉลี่ย: ${edu.gpa}</div>
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="font-bold text-slate-800 text-sm">${edu.degree}</div>
+                    <div class="text-xs text-indigo-700 font-medium font-sarabun">${edu.major}</div>
+                    <div class="text-xs text-slate-500 font-sarabun mt-0.5">${edu.institution} (ปีสำเร็จการศึกษา ${edu.year})</div>
+                    <div class="text-xs text-emerald-600 font-semibold mt-0.5">ผลการเรียนเฉลี่ย: ${edu.gpa}</div>
+                  </div>
+                  ${isAdmin ? `
+                    <div class="flex items-center gap-1 shrink-0">
+                      <button onclick="openEditEducationModal(${idx})" class="p-1 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer" title="แก้ไข">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button onclick="confirmDeleteEducation(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="ลบ">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  ` : ""}
+                </div>
               </div>
-            `).join("")}
+            `).join("") : `
+              <p class="text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลประวัติการศึกษา</p>
+            `}
           </div>
         </div>
 
         <!-- Work Experience -->
         <div class="glass-card p-6 rounded-2xl border border-slate-200 space-y-4">
-          <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base border-b pb-3">
-            <i data-lucide="briefcase" class="w-5 h-5 text-blue-600"></i> ประวัติการรับราชการ
-          </h3>
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base">
+              <i data-lucide="briefcase" class="w-5 h-5 text-blue-600"></i> ประวัติการรับราชการ
+            </h3>
+            ${isAdmin ? `
+              <button onclick="openAddWorkExpModal()" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มประวัติ
+              </button>
+            ` : ""}
+          </div>
           <div class="space-y-4">
-            ${p.workExperience?.map(work => `
-              <div class="relative pl-6 pb-2 border-l-2 border-blue-200 last:border-l-0">
+            ${p.workExperience && p.workExperience.length > 0 ? p.workExperience.map((work, idx) => `
+              <div class="relative pl-6 pb-2 border-l-2 border-blue-200 last:border-l-0 group">
                 <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-blue-600 border-2 border-white"></div>
-                <div class="flex items-center justify-between">
-                  <span class="font-bold text-slate-800 text-sm">${work.position}</span>
-                  <span class="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">${work.period}</span>
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-800 text-sm">${work.position}</span>
+                      <span class="text-[11px] font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">${work.period}</span>
+                    </div>
+                    <div class="text-xs text-slate-600 font-medium font-sarabun mt-0.5">${work.workplace}</div>
+                    <p class="text-xs text-slate-500 font-sarabun mt-1 leading-relaxed">${work.description}</p>
+                  </div>
+                  ${isAdmin ? `
+                    <div class="flex items-center gap-1 shrink-0">
+                      <button onclick="openEditWorkExpModal(${idx})" class="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer" title="แก้ไข">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button onclick="confirmDeleteWorkExp(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="ลบ">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  ` : ""}
                 </div>
-                <div class="text-xs text-slate-600 font-medium font-sarabun mt-0.5">${work.workplace}</div>
-                <p class="text-xs text-slate-500 font-sarabun mt-1">${work.description}</p>
               </div>
-            `).join("")}
+            `).join("") : `
+              <p class="text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลประวัติการรับราชการ</p>
+            `}
           </div>
         </div>
       </div>
 
       <!-- Teaching Duties Table -->
       <div class="glass-card p-6 rounded-2xl border border-slate-200 space-y-4">
-        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base border-b pb-3">
-          <i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i> ภาระงานสอนตามตารางสอน
-        </h3>
+        <div class="flex items-center justify-between border-b pb-3">
+          <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base">
+            <i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i> ภาระงานสอนตามตารางสอน
+          </h3>
+          ${isAdmin ? `
+            <button onclick="openAddTeachingDutyModal()" class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มรายวิชาสอน
+            </button>
+          ` : ""}
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left font-sarabun text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-prompt uppercase">
@@ -1258,19 +1318,36 @@ function renderProfileView(data, isAdmin) {
                 <th class="px-4 py-3">ชื่อรายวิชา</th>
                 <th class="px-4 py-3">ระดับชั้น</th>
                 <th class="px-4 py-3 text-center">จำนวนชั่วโมง/สัปดาห์</th>
-                <th class="px-4 py-3 text-center rounded-r-lg">จำนวนนักเรียน</th>
+                <th class="px-4 py-3 text-center">จำนวนนักเรียน</th>
+                ${isAdmin ? `<th class="px-4 py-3 text-center rounded-r-lg">จัดการ</th>` : ""}
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              ${p.teachingDuties?.map(duty => `
+              ${p.teachingDuties && p.teachingDuties.length > 0 ? p.teachingDuties.map((duty, idx) => `
                 <tr class="hover:bg-slate-50/80 transition-colors">
                   <td class="px-4 py-3 font-semibold text-blue-700">${duty.subjectCode}</td>
                   <td class="px-4 py-3 font-medium text-slate-800">${duty.subjectName}</td>
                   <td class="px-4 py-3 text-slate-600">${duty.grade}</td>
                   <td class="px-4 py-3 text-center font-bold text-slate-700">${duty.hoursPerWeek} คาบ</td>
                   <td class="px-4 py-3 text-center text-slate-600">${duty.studentsCount} คน</td>
+                  ${isAdmin ? `
+                    <td class="px-4 py-3 text-center">
+                      <div class="flex items-center justify-center gap-1">
+                        <button onclick="openEditTeachingDutyModal(${idx})" class="p-1 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 cursor-pointer" title="แก้ไข">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="confirmDeleteTeachingDuty(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="ลบ">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                      </div>
+                    </td>
+                  ` : ""}
                 </tr>
-              `).join("")}
+              `).join("") : `
+                <tr>
+                  <td colspan="${isAdmin ? 6 : 5}" class="text-center py-6 text-slate-400 text-xs">ยังไม่มีรายการภาระงานสอน</td>
+                </tr>
+              `}
             </tbody>
           </table>
         </div>
@@ -1278,16 +1355,37 @@ function renderProfileView(data, isAdmin) {
 
       <!-- Special Duties -->
       <div class="glass-card p-6 rounded-2xl border border-slate-200 space-y-4">
-        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base border-b pb-3">
-          <i data-lucide="check-square" class="w-5 h-5 text-amber-600"></i> งานพิเศษและหน้าที่ที่ได้รับมอบหมาย
-        </h3>
+        <div class="flex items-center justify-between border-b pb-3">
+          <h3 class="font-bold text-slate-800 flex items-center gap-2 text-base">
+            <i data-lucide="check-square" class="w-5 h-5 text-amber-600"></i> งานพิเศษและหน้าที่ที่ได้รับมอบหมาย
+          </h3>
+          ${isAdmin ? `
+            <button onclick="openAddSpecialDutyModal()" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มงานพิเศษ
+            </button>
+          ` : ""}
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          ${p.specialAssignments?.map(task => `
-            <div class="flex items-start gap-3 p-3 bg-amber-50/40 rounded-xl border border-amber-100/60 font-sarabun text-xs md:text-sm text-slate-700">
-              <i data-lucide="check-circle-2" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-              <span>${task}</span>
+          ${p.specialAssignments && p.specialAssignments.length > 0 ? p.specialAssignments.map((task, idx) => `
+            <div class="flex items-center justify-between gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/80 font-sarabun text-xs md:text-sm text-slate-700">
+              <div class="flex items-start gap-2.5 flex-1 min-w-0">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                <span class="truncate">${task}</span>
+              </div>
+              ${isAdmin ? `
+                <div class="flex items-center gap-1 shrink-0">
+                  <button onclick="openEditSpecialDutyModal(${idx})" class="p-1 rounded-md text-slate-400 hover:text-amber-700 hover:bg-amber-100 cursor-pointer" title="แก้ไข">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button onclick="confirmDeleteSpecialDuty(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="ลบ">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              ` : ""}
             </div>
-          `).join("")}
+          `).join("") : `
+            <p class="col-span-2 text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลงานพิเศษ</p>
+          `}
         </div>
       </div>
     </div>
@@ -2459,7 +2557,7 @@ function openProfileEditModal() {
   Swal.fire({
     title: "แก้ไขข้อมูลประวัติส่วนตัวและโรงเรียน",
     html: `
-      <div class="space-y-3 text-left font-sarabun text-xs max-h-[65vh] overflow-y-auto p-1">
+      <div class="space-y-3 text-left font-sarabun text-xs max-h-[70vh] overflow-y-auto p-1">
         <div>
           <label class="block font-bold text-slate-700 mb-1">ชื่อ-นามสกุล ครูผู้สอน: *</label>
           <input id="prof-name" class="w-full p-2.5 rounded-lg border border-slate-300" value="${p.fullName || ''}">
@@ -2476,6 +2574,26 @@ function openProfileEditModal() {
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
+            <label class="block font-bold text-slate-700 mb-1">กลุ่มสาระการเรียนรู้:</label>
+            <input id="prof-subject-group" class="w-full p-2.5 rounded-lg border border-slate-300" value="${p.subjectGroup || ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">เลขที่ตำแหน่ง:</label>
+            <input id="prof-pos-num" class="w-full p-2.5 rounded-lg border border-slate-300" value="${p.positionNumber || ''}">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">วันบรรจุรับราชการ:</label>
+            <input id="prof-app-date" class="w-full p-2.5 rounded-lg border border-slate-300" value="${p.appointmentDate || ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">อายุราชการ:</label>
+            <input id="prof-years-service" class="w-full p-2.5 rounded-lg border border-slate-300" value="${p.yearsOfService || ''}">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
             <label class="block font-bold text-slate-700 mb-1">โรงเรียน:</label>
             <input id="prof-school" class="w-full p-2.5 rounded-lg border border-slate-300" value="${p.school || ''}">
           </div>
@@ -2485,10 +2603,10 @@ function openProfileEditModal() {
           </div>
         </div>
 
-        <!-- Avatar Upload from Device or URL -->
+        <!-- Avatar Upload with LINE Cropper -->
         <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
           <label class="block font-bold text-slate-700">รูปภาพโปรไฟล์ (เลือกไฟล์จากเครื่อง หรือใส่ URL):</label>
-          <input type="file" id="prof-avatar-file" accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          <input type="file" id="prof-avatar-file" accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
           <input id="prof-avatar" class="w-full p-2 text-[11px] rounded-lg border border-slate-300" value="${p.avatarUrl || ''}">
           <div class="flex items-center gap-3 pt-1">
             <span class="text-[11px] text-slate-400">พรีวิว:</span>
@@ -2536,8 +2654,10 @@ function openProfileEditModal() {
           if (!file) return;
           const reader = new FileReader();
           reader.onload = (ev) => {
-            urlInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
+            openAvatarCropperModal(ev.target.result, (croppedDataUrl) => {
+              urlInput.value = croppedDataUrl;
+              previewImg.src = croppedDataUrl;
+            });
           };
           reader.readAsDataURL(file);
         });
@@ -2553,6 +2673,10 @@ function openProfileEditModal() {
         fullName: document.getElementById("prof-name").value.trim(),
         position: document.getElementById("prof-pos").value.trim(),
         academicStanding: document.getElementById("prof-acad").value.trim(),
+        subjectGroup: document.getElementById("prof-subject-group").value.trim(),
+        positionNumber: document.getElementById("prof-pos-num").value.trim(),
+        appointmentDate: document.getElementById("prof-app-date").value.trim(),
+        yearsOfService: document.getElementById("prof-years-service").value.trim(),
         school: document.getElementById("prof-school").value.trim(),
         affiliation: document.getElementById("prof-affil").value.trim(),
         avatarUrl: document.getElementById("prof-avatar").value.trim(),
@@ -2573,6 +2697,513 @@ function openProfileEditModal() {
         showConfirmButton: false
       });
       updateGlobalStats();
+      renderCurrentView();
+    }
+  });
+}
+
+// 1. Education CRUD Modals
+function openAddEducationModal() {
+  Swal.fire({
+    title: "เพิ่มประวัติการศึกษา",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ระดับการศึกษา / วุฒิ: *</label>
+          <input id="edu-degree" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น ปริญญาตรี ครุศาสตรบัณฑิต (ค.บ.)">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">สาขาวิชา / วิชาเอก: *</label>
+          <input id="edu-major" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น สาขาวิชาสังคมศึกษา">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">สถาบันการศึกษา / มหาวิทยาลัย: *</label>
+            <input id="edu-inst" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น มหาวิทยาลัยราชภัฏ...">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ปี พ.ศ. ที่สำเร็จการศึกษา:</label>
+            <input id="edu-year" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น 2565">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ผลการเรียนเฉลี่ย / เกียรตินิยม:</label>
+          <input id="edu-gpa" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น 3.85 (เกียรตินิยมอันดับหนึ่ง)">
+        </div>
+      </div>
+    `,
+    width: "550px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#4f46e5",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const degree = document.getElementById("edu-degree").value.trim();
+      const major = document.getElementById("edu-major").value.trim();
+      const institution = document.getElementById("edu-inst").value.trim();
+      const year = document.getElementById("edu-year").value.trim();
+      const gpa = document.getElementById("edu-gpa").value.trim();
+
+      if (!degree || !major || !institution) {
+        Swal.showValidationMessage("กรุณากรอกข้อมูลระดับการศึกษา สาขาวิชา และสถาบัน");
+        return false;
+      }
+      return { degree, major, institution, year, gpa };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      if (!data.profile.education) data.profile.education = [];
+      data.profile.education.push(result.value);
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function openEditEducationModal(idx) {
+  const data = window.portfolioStorage.getData();
+  const item = data.profile?.education?.[idx];
+  if (!item) return;
+
+  Swal.fire({
+    title: "แก้ไขประวัติการศึกษา",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ระดับการศึกษา / วุฒิ: *</label>
+          <input id="edu-degree" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.degree || ''}">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">สาขาวิชา / วิชาเอก: *</label>
+          <input id="edu-major" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.major || ''}">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">สถาบันการศึกษา / มหาวิทยาลัย: *</label>
+            <input id="edu-inst" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.institution || ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ปี พ.ศ. ที่สำเร็จการศึกษา:</label>
+            <input id="edu-year" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.year || ''}">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ผลการเรียนเฉลี่ย / เกียรตินิยม:</label>
+          <input id="edu-gpa" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.gpa || ''}">
+        </div>
+      </div>
+    `,
+    width: "550px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#4f46e5",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const degree = document.getElementById("edu-degree").value.trim();
+      const major = document.getElementById("edu-major").value.trim();
+      const institution = document.getElementById("edu-inst").value.trim();
+      const year = document.getElementById("edu-year").value.trim();
+      const gpa = document.getElementById("edu-gpa").value.trim();
+
+      if (!degree || !major || !institution) {
+        Swal.showValidationMessage("กรุณากรอกข้อมูลระดับการศึกษา สาขาวิชา และสถาบัน");
+        return false;
+      }
+      return { degree, major, institution, year, gpa };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      data.profile.education[idx] = result.value;
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function confirmDeleteEducation(idx) {
+  Swal.fire({
+    title: "ยืนยันการลบประวัติการศึกษานี้?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      data.profile.education.splice(idx, 1);
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+// 2. Work Experience CRUD Modals
+function openAddWorkExpModal() {
+  Swal.fire({
+    title: "เพิ่มประวัติการรับราชการ",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ตำแหน่ง / วิทยฐานะ: *</label>
+            <input id="work-pos" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น ครู อันดับ คศ.1">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ช่วงระยะเวลา / ปี พ.ศ.: *</label>
+            <input id="work-period" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น 2566 - ปัจจุบัน">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">สถานที่ปฏิบัติงาน / โรงเรียน: *</label>
+          <input id="work-place" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น โรงเรียนวัดบางปูน สพป.สิงห์บุรี">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">รายละเอียดหน้าที่และผลงานเด่น:</label>
+          <textarea id="work-desc" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="ระบุภาระหน้าที่สำคัญ"></textarea>
+        </div>
+      </div>
+    `,
+    width: "550px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const position = document.getElementById("work-pos").value.trim();
+      const period = document.getElementById("work-period").value.trim();
+      const workplace = document.getElementById("work-place").value.trim();
+      const description = document.getElementById("work-desc").value.trim();
+
+      if (!position || !period || !workplace) {
+        Swal.showValidationMessage("กรุณากรอกตำแหน่ง ช่วงเวลา และสถานที่ปฏิบัติงาน");
+        return false;
+      }
+      return { position, period, workplace, description };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      if (!data.profile.workExperience) data.profile.workExperience = [];
+      data.profile.workExperience.push(result.value);
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function openEditWorkExpModal(idx) {
+  const data = window.portfolioStorage.getData();
+  const item = data.profile?.workExperience?.[idx];
+  if (!item) return;
+
+  Swal.fire({
+    title: "แก้ไขประวัติการรับราชการ",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ตำแหน่ง / วิทยฐานะ: *</label>
+            <input id="work-pos" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.position || ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ช่วงระยะเวลา / ปี พ.ศ.: *</label>
+            <input id="work-period" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.period || ''}">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">สถานที่ปฏิบัติงาน / โรงเรียน: *</label>
+          <input id="work-place" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.workplace || ''}">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">รายละเอียดหน้าที่และผลงานเด่น:</label>
+          <textarea id="work-desc" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300">${item.description || ''}</textarea>
+        </div>
+      </div>
+    `,
+    width: "550px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const position = document.getElementById("work-pos").value.trim();
+      const period = document.getElementById("work-period").value.trim();
+      const workplace = document.getElementById("work-place").value.trim();
+      const description = document.getElementById("work-desc").value.trim();
+
+      if (!position || !period || !workplace) {
+        Swal.showValidationMessage("กรุณากรอกตำแหน่ง ช่วงเวลา และสถานที่ปฏิบัติงาน");
+        return false;
+      }
+      return { position, period, workplace, description };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      data.profile.workExperience[idx] = result.value;
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function confirmDeleteWorkExp(idx) {
+  Swal.fire({
+    title: "ยืนยันการลบประวัติการรับราชการนี้?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      data.profile.workExperience.splice(idx, 1);
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+// 3. Teaching Duties CRUD Modals
+function openAddTeachingDutyModal() {
+  Swal.fire({
+    title: "เพิ่มรายวิชาสอนตามตารางสอน",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">รหัสวิชา: *</label>
+            <input id="duty-code" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น ส15101">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ระดับชั้น: *</label>
+            <input id="duty-grade" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น ชั้นประถมศึกษาปีที่ 5">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ชื่อรายวิชา: *</label>
+          <input id="duty-name" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น สังคมศึกษา ศาสนา และวัฒนธรรม">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">จำนวนชั่วโมง/สัปดาห์ (คาบ): *</label>
+            <input id="duty-hours" type="number" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น 2" value="2">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">จำนวนนักเรียน (คน):</label>
+            <input id="duty-students" type="number" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น 30" value="30">
+          </div>
+        </div>
+      </div>
+    `,
+    width: "550px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึกรายวิชา",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#059669",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const subjectCode = document.getElementById("duty-code").value.trim();
+      const subjectName = document.getElementById("duty-name").value.trim();
+      const grade = document.getElementById("duty-grade").value.trim();
+      const hoursPerWeek = parseInt(document.getElementById("duty-hours").value) || 1;
+      const studentsCount = parseInt(document.getElementById("duty-students").value) || 0;
+
+      if (!subjectCode || !subjectName || !grade) {
+        Swal.showValidationMessage("กรุณากรอกรหัสวิชา ชื่อวิชา และระดับชั้น");
+        return false;
+      }
+      return { subjectCode, subjectName, grade, hoursPerWeek, studentsCount };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      if (!data.profile.teachingDuties) data.profile.teachingDuties = [];
+      data.profile.teachingDuties.push(result.value);
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function openEditTeachingDutyModal(idx) {
+  const data = window.portfolioStorage.getData();
+  const item = data.profile?.teachingDuties?.[idx];
+  if (!item) return;
+
+  Swal.fire({
+    title: "แก้ไขรายวิชาสอนตามตารางสอน",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">รหัสวิชา: *</label>
+            <input id="duty-code" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.subjectCode || ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ระดับชั้น: *</label>
+            <input id="duty-grade" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.grade || ''}">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ชื่อรายวิชา: *</label>
+          <input id="duty-name" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.subjectName || ''}">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">จำนวนชั่วโมง/สัปดาห์ (คาบ): *</label>
+            <input id="duty-hours" type="number" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.hoursPerWeek || 1}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">จำนวนนักเรียน (คน):</label>
+            <input id="duty-students" type="number" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.studentsCount || 0}">
+          </div>
+        </div>
+      </div>
+    `,
+    width: "550px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#059669",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const subjectCode = document.getElementById("duty-code").value.trim();
+      const subjectName = document.getElementById("duty-name").value.trim();
+      const grade = document.getElementById("duty-grade").value.trim();
+      const hoursPerWeek = parseInt(document.getElementById("duty-hours").value) || 1;
+      const studentsCount = parseInt(document.getElementById("duty-students").value) || 0;
+
+      if (!subjectCode || !subjectName || !grade) {
+        Swal.showValidationMessage("กรุณากรอกรหัสวิชา ชื่อวิชา และระดับชั้น");
+        return false;
+      }
+      return { subjectCode, subjectName, grade, hoursPerWeek, studentsCount };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      data.profile.teachingDuties[idx] = result.value;
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function confirmDeleteTeachingDuty(idx) {
+  Swal.fire({
+    title: "ยืนยันการลบรายวิชานี้?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      data.profile.teachingDuties.splice(idx, 1);
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+// 4. Special Duties CRUD Modals
+function openAddSpecialDutyModal() {
+  Swal.fire({
+    title: "เพิ่มงานพิเศษ / หน้าที่ที่ได้รับมอบหมาย",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ชื่องานพิเศษ / คำสั่งมอบหมาย: *</label>
+          <textarea id="special-duty-text" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น หัวหน้ากลุ่มสาระการเรียนรู้สังคมศึกษาฯ"></textarea>
+        </div>
+      </div>
+    `,
+    width: "500px",
+    showCancelButton: true,
+    confirmButtonText: "เพิ่มงานพิเศษ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#d97706",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const text = document.getElementById("special-duty-text").value.trim();
+      if (!text) {
+        Swal.showValidationMessage("กรุณากรอกรายละเอียดงานพิเศษ");
+        return false;
+      }
+      return text;
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      if (!data.profile.specialAssignments) data.profile.specialAssignments = [];
+      data.profile.specialAssignments.push(result.value);
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function openEditSpecialDutyModal(idx) {
+  const data = window.portfolioStorage.getData();
+  const currentText = data.profile?.specialAssignments?.[idx] || "";
+
+  Swal.fire({
+    title: "แก้ไขงานพิเศษ / หน้าที่ที่ได้รับมอบหมาย",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ชื่องานพิเศษ / คำสั่งมอบหมาย: *</label>
+          <textarea id="special-duty-text" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300">${currentText}</textarea>
+        </div>
+      </div>
+    `,
+    width: "500px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#d97706",
+    cancelButtonColor: "#64748b",
+    preConfirm: () => {
+      const text = document.getElementById("special-duty-text").value.trim();
+      if (!text) {
+        Swal.showValidationMessage("กรุณากรอกรายละเอียดงานพิเศษ");
+        return false;
+      }
+      return text;
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      data.profile.specialAssignments[idx] = result.value;
+      window.portfolioStorage.saveData(data);
+      renderCurrentView();
+    }
+  });
+}
+
+function confirmDeleteSpecialDuty(idx) {
+  Swal.fire({
+    title: "ยืนยันการลบงานพิเศษนี้?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      data.profile.specialAssignments.splice(idx, 1);
+      window.portfolioStorage.saveData(data);
       renderCurrentView();
     }
   });
@@ -4360,7 +4991,141 @@ function openYearConfigModal() {
   });
 }
 
-// 4. Quick Avatar Upload Modal (เปลี่ยนรูปโปรไฟล์แบบด่วน)
+// ==========================================
+// 4. LINE-Style Avatar Cropper & Quick Avatar Upload
+// ==========================================
+let currentCropperInstance = null;
+
+function openAvatarCropperModal(imageSrc, onCropDone) {
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="crop" class="w-5 h-5 text-blue-600"></i> ปรับขนาดและครอบตัดรูปโปรไฟล์ (LINE Style)
+    </span>`,
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs">
+        <p class="text-slate-500 text-center text-[11px]">
+          ลากเพื่อเลื่อนตำแหน่งภาพ และใช้สไลเดอร์เพื่อซูมเข้า-ออก (แสดงผลเป็นวงกลมเหมือนในแอป LINE)
+        </p>
+
+        <!-- Cropper Canvas Container -->
+        <div class="relative w-full h-[320px] bg-slate-950 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center border border-slate-700">
+          <img id="cropper-target-image" src="${imageSrc}" class="max-w-full max-h-full block" alt="Crop Target">
+        </div>
+
+        <!-- Controls Toolbar -->
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+          <!-- Zoom Slider -->
+          <div class="flex items-center justify-between gap-3 text-slate-700 font-semibold text-xs">
+            <span class="flex items-center gap-1 shrink-0"><i data-lucide="zoom-out" class="w-4 h-4 text-slate-400"></i> ซูม:</span>
+            <input type="range" id="crop-slider-zoom" min="0.1" max="3" step="0.05" value="1" class="w-full accent-blue-600 cursor-pointer">
+            <span class="flex items-center gap-1 shrink-0"><i data-lucide="zoom-in" class="w-4 h-4 text-slate-400"></i></span>
+          </div>
+
+          <!-- Action Buttons (Rotate, Reset, Flip) -->
+          <div class="flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-slate-200">
+            <button type="button" id="crop-btn-rotate-left" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-prompt text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-blue-600"></i> หมุนซ้าย 90°
+            </button>
+            <button type="button" id="crop-btn-rotate-right" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-prompt text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-blue-600"></i> หมุนขวา 90°
+            </button>
+            <button type="button" id="crop-btn-flip" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-prompt text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <i data-lucide="flip-horizontal" class="w-3.5 h-3.5 text-indigo-600"></i> พลิกภาพ
+            </button>
+            <button type="button" id="crop-btn-reset" class="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-prompt text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-rose-600"></i> รีเซ็ต
+            </button>
+          </div>
+        </div>
+      </div>
+    `,
+    width: "540px",
+    showCancelButton: true,
+    confirmButtonText: "✅ ตัดรูปและใช้ภาพนี้",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    allowOutsideClick: false,
+    didOpen: () => {
+      initIcons();
+      const imageElement = document.getElementById("cropper-target-image");
+      if (!imageElement) return;
+
+      let scaleX = 1;
+
+      // Check if Cropper is loaded
+      if (typeof Cropper !== "undefined") {
+        currentCropperInstance = new Cropper(imageElement, {
+          aspectRatio: 1,
+          viewMode: 1,
+          dragMode: "move",
+          autoCropArea: 0.85,
+          restore: false,
+          guides: false,
+          center: false,
+          highlight: false,
+          cropBoxMovable: false,
+          cropBoxResizable: false,
+          toggleDragModeOnDblclick: false,
+          ready() {
+            const slider = document.getElementById("crop-slider-zoom");
+            if (slider) {
+              slider.addEventListener("input", (e) => {
+                const val = parseFloat(e.target.value);
+                currentCropperInstance.zoomTo(val);
+              });
+            }
+          },
+          zoom(e) {
+            const slider = document.getElementById("crop-slider-zoom");
+            if (slider && e.detail && e.detail.ratio) {
+              slider.value = Math.min(3, Math.max(0.1, e.detail.ratio));
+            }
+          }
+        });
+      }
+
+      document.getElementById("crop-btn-rotate-left")?.addEventListener("click", () => {
+        currentCropperInstance?.rotate(-90);
+      });
+      document.getElementById("crop-btn-rotate-right")?.addEventListener("click", () => {
+        currentCropperInstance?.rotate(90);
+      });
+      document.getElementById("crop-btn-flip")?.addEventListener("click", () => {
+        scaleX = scaleX === 1 ? -1 : 1;
+        currentCropperInstance?.scaleX(scaleX);
+      });
+      document.getElementById("crop-btn-reset")?.addEventListener("click", () => {
+        scaleX = 1;
+        currentCropperInstance?.reset();
+      });
+    },
+    preConfirm: () => {
+      if (currentCropperInstance) {
+        const canvas = currentCropperInstance.getCroppedCanvas({
+          width: 500,
+          height: 500,
+          fillColor: "#ffffff",
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: "high"
+        });
+        return canvas.toDataURL("image/jpeg", 0.92);
+      }
+      return imageSrc;
+    }
+  }).then((result) => {
+    if (currentCropperInstance) {
+      currentCropperInstance.destroy();
+      currentCropperInstance = null;
+    }
+    if (result.isConfirmed && result.value) {
+      if (typeof onCropDone === "function") {
+        onCropDone(result.value);
+      }
+    }
+  });
+}
+
 function openQuickAvatarModal() {
   const data = window.portfolioStorage.getData();
   const currentAvatar = data.profile?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2";
@@ -4369,18 +5134,31 @@ function openQuickAvatarModal() {
     title: "📸 เปลี่ยนรูปภาพโปรไฟล์ครูซอส",
     html: `
       <div class="space-y-4 text-center font-sarabun text-xs">
-        <div class="flex justify-center">
-          <img id="avatar-live-preview" src="${currentAvatar}" class="w-32 h-32 rounded-full object-cover border-4 border-amber-400 shadow-xl">
+        <div class="flex flex-col items-center gap-2">
+          <div class="relative group">
+            <img id="avatar-live-preview" src="${currentAvatar}" class="w-36 h-36 rounded-full object-cover border-4 border-amber-400 shadow-xl">
+          </div>
+          <button type="button" id="btn-crop-current-avatar" class="px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-prompt text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer">
+            <i data-lucide="crop" class="w-3.5 h-3.5 text-amber-700"></i>
+            <span>ครอป / ปรับแต่งรูปภาพนี้ (LINE Style)</span>
+          </button>
         </div>
 
-        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-left space-y-2">
-          <label class="block font-bold text-slate-700">1. เลือกรูปภาพจากเครื่องคอมพิวเตอร์ หรือ มือถือ:</label>
-          <input type="file" id="avatar-file-upload" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-white hover:file:bg-amber-600">
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2">
+          <label class="block font-bold text-slate-800 text-xs font-prompt flex items-center gap-1.5">
+            <i data-lucide="image-plus" class="w-4 h-4 text-blue-600"></i> 1. อัปโหลดรูปภาพใหม่ (จะเปิดหน้าต่างครอปรูปทันที):
+          </label>
+          <input type="file" id="avatar-file-upload" accept="image/*" class="w-full text-xs file:mr-2 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
         </div>
 
         <div class="text-left space-y-1">
           <label class="block font-bold text-slate-700">2. หรือ วางลิงก์รูปภาพ (Image URL):</label>
-          <input id="avatar-url-input" class="w-full p-2.5 rounded-lg border border-slate-300" value="${currentAvatar}" placeholder="https://...">
+          <div class="flex gap-2">
+            <input id="avatar-url-input" class="w-full p-2.5 rounded-lg border border-slate-300 text-xs" value="${currentAvatar}" placeholder="https://...">
+            <button type="button" id="btn-crop-url-avatar" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold shrink-0">
+              ครอป
+            </button>
+          </div>
         </div>
       </div>
     `,
@@ -4390,22 +5168,46 @@ function openQuickAvatarModal() {
     confirmButtonColor: "#2563eb",
     cancelButtonColor: "#64748b",
     didOpen: () => {
+      initIcons();
       const fileInput = document.getElementById("avatar-file-upload");
       const urlInput = document.getElementById("avatar-url-input");
       const previewImg = document.getElementById("avatar-live-preview");
 
+      // Handle File Upload ➔ Open LINE-style Cropper
       if (fileInput) {
         fileInput.addEventListener("change", (e) => {
           const file = e.target.files[0];
           if (!file) return;
           const reader = new FileReader();
           reader.onload = (ev) => {
-            urlInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
+            openAvatarCropperModal(ev.target.result, (croppedDataUrl) => {
+              urlInput.value = croppedDataUrl;
+              previewImg.src = croppedDataUrl;
+            });
           };
           reader.readAsDataURL(file);
         });
       }
+
+      // Crop Current Avatar
+      document.getElementById("btn-crop-current-avatar")?.addEventListener("click", () => {
+        const currentSrc = urlInput.value || currentAvatar;
+        openAvatarCropperModal(currentSrc, (croppedDataUrl) => {
+          urlInput.value = croppedDataUrl;
+          previewImg.src = croppedDataUrl;
+        });
+      });
+
+      document.getElementById("btn-crop-url-avatar")?.addEventListener("click", () => {
+        const currentSrc = urlInput.value;
+        if (currentSrc) {
+          openAvatarCropperModal(currentSrc, (croppedDataUrl) => {
+            urlInput.value = croppedDataUrl;
+            previewImg.src = croppedDataUrl;
+          });
+        }
+      });
+
       if (urlInput) {
         urlInput.addEventListener("input", (e) => {
           if (previewImg) previewImg.src = e.target.value;
