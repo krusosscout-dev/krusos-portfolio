@@ -2420,8 +2420,8 @@ function renderMediaSystemsView(data, isAdmin) {
             return `
               <div class="glass-card rounded-2xl overflow-hidden border border-slate-200 hover:border-cyan-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
                 <div>
-                  <!-- Cover & Action Preview -->
-                  <div class="relative overflow-hidden aspect-video bg-slate-900 cursor-pointer" onclick="window.open('${item.url}', '_blank')">
+                  <!-- Cover & In-App Action Preview -->
+                  <div class="relative overflow-hidden aspect-video bg-slate-900 cursor-pointer" onclick="openInAppWebViewer('${item.id}')">
                     <img src="${item.coverUrl || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71'}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100">
                     
                     <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
@@ -2437,8 +2437,8 @@ function renderMediaSystemsView(data, isAdmin) {
                     ` : ""}
 
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white">
-                      <span class="text-xs font-bold font-prompt flex items-center gap-1 bg-cyan-500/90 text-navy-950 px-3 py-1.5 rounded-lg shadow-lg">
-                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> เปิดเข้าสู่ระบบ / หน้าเว็บ
+                      <span class="text-xs font-bold font-prompt flex items-center gap-1.5 bg-cyan-500/95 text-navy-950 px-3 py-1.5 rounded-xl shadow-lg">
+                        <i data-lucide="laptop" class="w-3.5 h-3.5"></i> เปิดใช้งานในระบบ (In-App)
                       </span>
                     </div>
 
@@ -2451,7 +2451,7 @@ function renderMediaSystemsView(data, isAdmin) {
 
                   <!-- Details -->
                   <div class="p-5 space-y-2">
-                    <h3 class="font-bold text-slate-800 text-base font-prompt leading-snug group-hover:text-cyan-600 transition-colors line-clamp-2" title="${item.title}">
+                    <h3 class="font-bold text-slate-800 text-base font-prompt leading-snug group-hover:text-cyan-600 transition-colors line-clamp-2 cursor-pointer" onclick="openInAppWebViewer('${item.id}')" title="${item.title}">
                       ${item.title}
                     </h3>
                     <p class="text-xs text-slate-500 font-sarabun line-clamp-3 leading-relaxed">
@@ -2460,12 +2460,18 @@ function renderMediaSystemsView(data, isAdmin) {
                   </div>
                 </div>
 
-                <!-- Footer Launch Action -->
+                <!-- Footer Launch Actions (In-App + External Tab) -->
                 <div class="p-5 pt-0 border-t border-slate-100 mt-2 flex items-center justify-between">
-                  <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-prompt text-xs font-bold transition-all shadow-2xs">
-                    <span>เข้าสู่หน้าเว็บ</span>
-                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                  </a>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="openInAppWebViewer('${item.id}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-prompt text-xs font-bold transition-all shadow-sm cursor-pointer">
+                      <i data-lucide="laptop" class="w-3.5 h-3.5"></i>
+                      <span>เปิดในระบบ</span>
+                    </button>
+                    <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="p-1.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-cyan-700 font-prompt text-xs flex items-center gap-1 transition-colors" title="เปิดในแท็บเบราว์เซอร์ใหม่">
+                      <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                      <span class="text-[11px] hidden sm:inline">แท็บใหม่</span>
+                    </a>
+                  </div>
 
                   ${isAdmin ? `
                     <div class="flex items-center gap-1">
@@ -6087,5 +6093,90 @@ function openEditOnlineSystemModal(itemId) {
       renderCurrentView();
     }
   });
+}
+
+// ==========================================
+// In-App Web Viewer Modal (เปิดใช้งานระบบในหน้าต่างแอป ไม่ต้องสลับเบราว์เซอร์)
+// ==========================================
+function openInAppWebViewer(itemId) {
+  const data = window.portfolioStorage.getData();
+  const item = (data.onlineSystems || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+
+  const title = item.title || "ระบบออนไลน์";
+  const url = item.url || "#";
+  const category = item.category || "ระบบออนไลน์";
+  const platform = item.platform || "Web Platform";
+
+  Swal.fire({
+    title: null,
+    html: `
+      <div class="space-y-3 text-left font-prompt -m-2">
+        <!-- Top Toolbar Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-gradient-to-r from-navy-950 via-slate-900 to-navy-950 text-white rounded-t-2xl border-b border-cyan-500/30">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-cyan-600/90 text-white flex items-center justify-center shrink-0 shadow-md">
+              <i data-lucide="globe" class="w-4 h-4 text-cyan-200"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <h4 class="font-bold text-sm text-white truncate max-w-xs md:max-w-md">${title}</h4>
+                <span class="text-[10px] font-semibold px-2 py-0.2 bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded-md shrink-0">${platform}</span>
+              </div>
+              <p class="text-[11px] text-slate-300 truncate max-w-xs md:max-w-md font-sarabun">${url}</p>
+            </div>
+          </div>
+
+          <!-- Actions Toolbar -->
+          <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+            <button onclick="reloadInAppIframe()" class="p-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs flex items-center gap-1 border border-slate-700 transition-colors cursor-pointer" title="รีเฟรชหน้าเว็บ">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+              <span class="hidden md:inline text-[11px]">รีโหลด</span>
+            </button>
+            <a href="${url}" target="_blank" rel="noopener noreferrer" class="p-1.5 px-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center gap-1 shadow-md transition-colors cursor-pointer" title="เปิดในแท็บภายนอก">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span class="text-[11px]">เปิดแท็บแยก ↗️</span>
+            </a>
+            <button type="button" onclick="Swal.close()" class="p-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1 shadow-md transition-colors cursor-pointer" title="ปิดหน้าต่างและกลับสู่ระบบ">
+              <i data-lucide="x" class="w-4 h-4"></i>
+              <span class="text-xs">ปิดกลับสู่ระบบ</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- In-App Interactive Frame Container -->
+        <div class="relative bg-slate-900 rounded-b-2xl overflow-hidden border border-slate-200" style="height: 72vh;">
+          <iframe id="inapp-web-frame" src="${url}" class="w-full h-full border-0 rounded-b-2xl bg-white" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-presentation"></iframe>
+        </div>
+
+        <!-- Footer Help Hint -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-[11px] text-slate-500 font-sarabun">
+          <span class="flex items-center gap-1">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-600 shrink-0"></i>
+            <span>ท่านสามารถทดลองใช้งานระบบผ่านหน้าต่างนี้ได้ทันที เมื่อเสร็จแล้วกดปุ่ม <b>[ ปิดกลับสู่ระบบ ]</b> สีแดงด้านบน</span>
+          </span>
+          <span class="text-[10px] text-slate-400">หากหน้าเว็บปิดกั้นการฝังกรอบ (เช่น Facebook) ให้กดปุ่ม <b>เปิดแท็บแยก ↗️</b></span>
+        </div>
+      </div>
+    `,
+    width: "95vw",
+    maxWidth: "1200px",
+    padding: "0.5rem",
+    showConfirmButton: false,
+    showCloseButton: false,
+    customClass: {
+      popup: "rounded-2xl shadow-2xl p-2 md:p-3 overflow-hidden bg-slate-950 border border-slate-800"
+    },
+    didOpen: () => {
+      initIcons();
+    }
+  });
+}
+
+function reloadInAppIframe() {
+  const iframe = document.getElementById("inapp-web-frame");
+  if (iframe) {
+    iframe.src = iframe.src;
+  }
 }
 
