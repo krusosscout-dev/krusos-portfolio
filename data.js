@@ -769,5 +769,75 @@ const DEFAULT_PORTFOLIO_DATA = {
       badgeText: "กิจกรรม",
       isVisible: true
     }
+  ],
+
+  // 9. ศูนย์รวมสื่อและระบบออนไลน์ (Digital Media & Online Systems)
+  onlineSystems: [
+    {
+      id: "sys-1",
+      title: "ระบบเช็คชื่อและบันทึกเวลาเรียนออนไลน์",
+      category: "ระบบออนไลน์ / Web App",
+      platform: "Web Application",
+      url: "https://lookerstudio.google.com",
+      coverUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80",
+      description: "ระบบบันทึกเวลาเรียน การมาเรียน-ขาด-ลา-มาสายของนักเรียนแบบเรียลไทม์ พร้อมสรุปรายงานสถิติอัตโนมัติ",
+      academicYear: "2568",
+      isVisible: true
+    },
+    {
+      id: "sys-2",
+      title: "คลังข้อสอบและเกมทดสอบความรู้สังคมศึกษา (Wordwall & Quizizz)",
+      category: "สื่อการสอน / นวัตกรรม",
+      platform: "Wordwall / Quizizz",
+      url: "https://wordwall.net",
+      coverUrl: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&w=600&q=80",
+      description: "เกมการเรียนรู้และแบบทดสอบ Interactive สำหรับนักเรียนชั้น ป.4 - ป.6 ในกลุ่มสาระการเรียนรู้สังคมศึกษาฯ",
+      academicYear: "2568",
+      isVisible: true
+    },
+    {
+      id: "sys-3",
+      title: "เพจ Facebook: ครูซอสสอนสังคม โรงเรียนวัดบางปูน",
+      category: "เพจ & โซเชียลมีเดีย",
+      platform: "Facebook Page",
+      url: "https://facebook.com",
+      coverUrl: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=600&q=80",
+      description: "เพจประชาสัมพันธ์ผลงาน กิจกรรมการเรียนการสอน สื่อการสอนสร้างสรรค์ และเกร็ดความรู้สังคมศึกษาน่ารู้",
+      academicYear: "2568",
+      isVisible: true
+    },
+    {
+      id: "sys-4",
+      title: "เว็บไซต์และเพจประชาสัมพันธ์โรงเรียนวัดบางปูน",
+      category: "เพจ & โซเชียลมีเดีย",
+      platform: "Website / Facebook",
+      url: "https://facebook.com",
+      coverUrl: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&q=80",
+      description: "ช่องทางเผยแพร่ข่าวสาร ประชาสัมพันธ์กิจกรรมโรงเรียน และผลงานครู-นักเรียนโรงเรียนวัดบางปูน สพป.สิงห์บุรี",
+      academicYear: "2568",
+      isVisible: true
+    },
+    {
+      id: "sys-5",
+      title: "ชุดสื่อสไลด์การสอนดิจิทัล Canva Presentation",
+      category: "สื่อการสอน / นวัตกรรม",
+      platform: "Canva for Education",
+      url: "https://canva.com",
+      coverUrl: "https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=600&q=80",
+      description: "คลังสไลด์การจัดการเรียนรู้ Active Learning พร้อมภาพประกอบและอินโฟกราฟิกความละเอียดสูงทุกหน่วยการเรียนรู้",
+      academicYear: "2568",
+      isVisible: true
+    },
+    {
+      id: "sys-6",
+      title: "ระบบสารสนเทศเพื่อการบริหารการศึกษา (DMC / CCT)",
+      category: "ระบบออนไลน์ / Web App",
+      platform: "DMC / CCT OBEC",
+      url: "https://cct.thaigov.go.th",
+      coverUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80",
+      description: "ระบบจัดเก็บข้อมูลนักเรียนรายบุคคล และระบบคัดกรองนักเรียนทุนเสมอภาค กสศ. โรงเรียนวัดบางปูน",
+      academicYear: "2568",
+      isVisible: true
+    }
   ]
 };

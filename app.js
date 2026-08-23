@@ -753,6 +753,9 @@ function renderCurrentView() {
         case "gallery":
           html = renderGalleryView(data, isAdmin);
           break;
+        case "media-systems":
+          html = renderMediaSystemsView(data, isAdmin);
+          break;
         default:
           html = renderDashboardView(data, isAdmin);
       }
@@ -898,6 +901,7 @@ function renderDashboardView(data, isAdmin) {
   const docCount = data.officialDocs?.filter(i => effectiveIsAdmin || i.isVisible).length || 0;
   const achCount = data.achievements?.filter(i => effectiveIsAdmin || i.isVisible).length || 0;
   const actCount = data.gallery?.filter(i => effectiveIsAdmin || i.isVisible).length || 0;
+  const sysCount = data.onlineSystems?.filter(i => effectiveIsAdmin || i.isVisible).length || 0;
 
   // Recent Updates filter
   const allUpdates = data.recentUpdates || [];
@@ -1009,42 +1013,51 @@ function renderDashboardView(data, isAdmin) {
         </div>
       </div>
 
-      <!-- Quick Stats Cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div onclick="navigateTo('lesson-plans')" class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200/80 hover:border-blue-400 hover:shadow-md transition-all flex items-center gap-3.5 cursor-pointer group">
-          <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <i data-lucide="book-open" class="w-6 h-6"></i>
+      <!-- Quick Stats Cards (5 Grid) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div onclick="navigateTo('lesson-plans')" class="glass-card p-3.5 rounded-2xl shadow-sm border border-slate-200/80 hover:border-blue-400 hover:shadow-md transition-all flex items-center gap-3 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <i data-lucide="book-open" class="w-5 h-5"></i>
           </div>
           <div>
-            <div class="text-2xl font-bold text-slate-800">${lpCount}</div>
-            <div class="text-xs text-slate-500 font-medium">แผนการจัดการเรียนรู้</div>
+            <div class="text-xl font-bold text-slate-800">${lpCount}</div>
+            <div class="text-[11px] text-slate-500 font-medium">แผนการสอน</div>
           </div>
         </div>
-        <div onclick="navigateTo('official-docs')" class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200/80 hover:border-amber-400 hover:shadow-md transition-all flex items-center gap-3.5 cursor-pointer group">
-          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <i data-lucide="file-text" class="w-6 h-6"></i>
+        <div onclick="navigateTo('official-docs')" class="glass-card p-3.5 rounded-2xl shadow-sm border border-slate-200/80 hover:border-amber-400 hover:shadow-md transition-all flex items-center gap-3 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
           </div>
           <div>
-            <div class="text-2xl font-bold text-slate-800">${docCount}</div>
-            <div class="text-xs text-slate-500 font-medium">เอกสารทางราชการ</div>
+            <div class="text-xl font-bold text-slate-800">${docCount}</div>
+            <div class="text-[11px] text-slate-500 font-medium">เอกสารราชการ</div>
           </div>
         </div>
-        <div onclick="navigateTo('achievements')" class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200/80 hover:border-emerald-400 hover:shadow-md transition-all flex items-center gap-3.5 cursor-pointer group">
-          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <i data-lucide="trophy" class="w-6 h-6"></i>
+        <div onclick="navigateTo('achievements')" class="glass-card p-3.5 rounded-2xl shadow-sm border border-slate-200/80 hover:border-emerald-400 hover:shadow-md transition-all flex items-center gap-3 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <i data-lucide="trophy" class="w-5 h-5"></i>
           </div>
           <div>
-            <div class="text-2xl font-bold text-slate-800">${achCount}</div>
-            <div class="text-xs text-slate-500 font-medium">ผลงานและรางวัล</div>
+            <div class="text-xl font-bold text-slate-800">${achCount}</div>
+            <div class="text-[11px] text-slate-500 font-medium">ผลงาน/รางวัล</div>
           </div>
         </div>
-        <div onclick="navigateTo('gallery')" class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200/80 hover:border-purple-400 hover:shadow-md transition-all flex items-center gap-3.5 cursor-pointer group">
-          <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <i data-lucide="image" class="w-6 h-6"></i>
+        <div onclick="navigateTo('gallery')" class="glass-card p-3.5 rounded-2xl shadow-sm border border-slate-200/80 hover:border-purple-400 hover:shadow-md transition-all flex items-center gap-3 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <i data-lucide="image" class="w-5 h-5"></i>
           </div>
           <div>
-            <div class="text-2xl font-bold text-slate-800">${actCount}</div>
-            <div class="text-xs text-slate-500 font-medium">อัลบั้มภาพกิจกรรม</div>
+            <div class="text-xl font-bold text-slate-800">${actCount}</div>
+            <div class="text-[11px] text-slate-500 font-medium">ภาพกิจกรรม</div>
+          </div>
+        </div>
+        <div onclick="navigateTo('media-systems')" class="glass-card p-3.5 rounded-2xl shadow-sm border border-slate-200/80 hover:border-cyan-400 hover:shadow-md transition-all flex items-center gap-3 cursor-pointer group col-span-2 sm:col-span-1">
+          <div class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <i data-lucide="globe" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xl font-bold text-slate-800">${sysCount}</div>
+            <div class="text-[11px] text-slate-500 font-medium">สื่อ & ระบบออนไลน์</div>
           </div>
         </div>
       </div>
@@ -1372,13 +1385,14 @@ function renderProfileView(data, isAdmin) {
         </div>
       </div>
 
-      <!-- Special Duties & Assigned Roles (งานพิเศษและหน้าที่ที่ได้รับมอบหมาย - ดีไซน์การ์ดพรีเมียมใหม่) -->
-      <div class="glass-card p-6 md:p-7 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+      <!-- Special Duties & Assigned Roles (งานพิเศษและหน้าที่ที่ได้รับมอบหมาย - จำแนกตามกลุ่มงานแบบแถวเดี่ยว) -->
+      <div class="glass-card p-6 md:p-7 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+        <!-- Section Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <div class="flex items-center gap-2">
               <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold">
-                <i data-lucide="award" class="w-4 h-4 text-amber-600"></i>
+                <i data-lucide="briefcase" class="w-4 h-4 text-amber-600"></i>
               </div>
               <h3 class="font-bold text-slate-800 text-base md:text-lg font-prompt">
                 งานพิเศษและหน้าที่ที่ได้รับมอบหมาย (Special Duties & Roles)
@@ -1387,7 +1401,7 @@ function renderProfileView(data, isAdmin) {
                 ${p.specialAssignments?.length || 0} หน้าที่
               </span>
             </div>
-            <p class="text-xs text-slate-500 font-sarabun mt-1">ภาระงานที่ได้รับมอบหมายตามคำสั่งโรงเรียน การบริหารงานฝ่าย และการปฏิบัติหน้าที่พิเศษ</p>
+            <p class="text-xs text-slate-500 font-sarabun mt-1">จำแนกตามโครงสร้างกลุ่มงานบริหารสถานศึกษาและการปฏิบัติหน้าที่พิเศษ</p>
           </div>
           ${isAdmin ? `
             <button onclick="openAddSpecialDutyModal()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold font-prompt flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0 self-start sm:self-auto">
@@ -1396,133 +1410,176 @@ function renderProfileView(data, isAdmin) {
           ` : ""}
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${p.specialAssignments && p.specialAssignments.length > 0 ? p.specialAssignments.map((task, idx) => {
-            const theme = getSpecialDutyTheme(task, idx);
-            return `
-              <div class="bg-white rounded-2xl border border-slate-200/90 hover:border-amber-300 p-4 md:p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between relative overflow-hidden group">
-                <!-- Left Colored Accent Bar -->
-                <div class="absolute left-0 top-0 bottom-0 w-1.5 ${theme.accentBar}"></div>
-                
-                <div class="pl-1">
-                  <!-- Header Row: Category Badge & Index/Actions -->
-                  <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <div class="w-7 h-7 rounded-lg ${theme.iconBg} flex items-center justify-center shrink-0 shadow-2xs">
-                        <i data-lucide="${theme.icon}" class="w-3.5 h-3.5"></i>
-                      </div>
-                      <span class="text-[11px] font-bold px-2 py-0.5 rounded-md border font-prompt truncate ${theme.badgeClass}">
-                        ${theme.tag}
-                      </span>
-                    </div>
+        <!-- Grouped List View (เรียงแถวเดี่ยวแยกตามกลุ่มงาน) -->
+        <div class="space-y-6 font-prompt">
+          ${(() => {
+            const groups = getGroupedSpecialAssignments(p.specialAssignments || []);
+            if (groups.length === 0) {
+              return `
+                <div class="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <i data-lucide="briefcase" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                  <p class="text-xs text-slate-400 font-prompt">ยังไม่มีข้อมูลงานพิเศษและหน้าที่ที่ได้รับมอบหมาย</p>
+                </div>
+              `;
+            }
 
-                    <div class="flex items-center gap-1 shrink-0">
-                      <span class="text-[10px] font-bold text-slate-400 font-prompt px-1.5 py-0.5 bg-slate-50 border border-slate-100 rounded">
-                        #${idx + 1}
-                      </span>
-                      ${isAdmin ? `
-                        <button onclick="openEditSpecialDutyModal(${idx})" class="p-1 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer" title="แก้ไข">
-                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="confirmDeleteSpecialDuty(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" title="ลบ">
-                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        </button>
-                      ` : ""}
+            return groups.map(group => `
+              <div class="space-y-2.5">
+                <!-- Group Banner Header -->
+                <div class="flex items-center justify-between p-3 rounded-xl ${group.headerBg} border ${group.headerBorder}">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-7 h-7 rounded-lg ${group.iconBg} flex items-center justify-center shrink-0 shadow-2xs">
+                      <i data-lucide="${group.icon}" class="w-4 h-4"></i>
                     </div>
-                  </div>
-
-                  <!-- Duty Title (Full Multiline Typography - No Truncate) -->
-                  <div class="pt-3 pb-1">
-                    <h4 class="font-bold text-slate-800 text-sm leading-snug font-prompt group-hover:text-amber-900 transition-colors">
-                      ${task}
+                    <h4 class="font-bold text-slate-800 text-sm md:text-base truncate">
+                      ${group.name}
                     </h4>
                   </div>
+                  <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-md font-prompt ${group.countBadge} shrink-0">
+                    ${group.items.length} ภารกิจ
+                  </span>
                 </div>
 
-                <!-- Footer Status -->
-                <div class="pt-3 mt-3 border-t border-slate-100/90 pl-1 flex items-center justify-between text-[11px] text-slate-400 font-sarabun">
-                  <span class="flex items-center gap-1.5 text-emerald-700 font-medium text-[11px] font-prompt">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ปฏิบัติหน้าที่ต่อเนื่อง
-                  </span>
-                  <span class="text-[10px] text-slate-400 font-prompt">คำสั่งโรงเรียน</span>
+                <!-- Single Column List Rows under this Group -->
+                <div class="space-y-2 pl-0 sm:pl-1">
+                  ${group.items.map((item, itemIdx) => `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-white hover:bg-slate-50/90 rounded-xl border border-slate-200 hover:border-slate-300 shadow-2xs transition-all duration-150 group">
+                      <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <div class="w-6 h-6 rounded-full bg-slate-100 group-hover:bg-amber-100 text-slate-600 group-hover:text-amber-900 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                          ${itemIdx + 1}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <h5 class="font-bold text-slate-800 text-xs md:text-sm leading-snug group-hover:text-amber-900 transition-colors">
+                            ${item.title}
+                          </h5>
+                          ${item.note ? `<p class="text-[11px] text-slate-500 font-sarabun mt-0.5">${item.note}</p>` : ""}
+                        </div>
+                      </div>
+
+                      <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2.5 py-1 rounded-lg">
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ปฏิบัติหน้าที่ต่อเนื่อง
+                        </span>
+                        ${isAdmin ? `
+                          <div class="flex items-center gap-1">
+                            <button onclick="openEditSpecialDutyModal(${item.originalIndex})" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer" title="แก้ไข">
+                              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="confirmDeleteSpecialDuty(${item.originalIndex})" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" title="ลบ">
+                              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                          </div>
+                        ` : ""}
+                      </div>
+                    </div>
+                  `).join("")}
                 </div>
               </div>
-            `;
-          }).join("") : `
-            <div class="col-span-full py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <i data-lucide="briefcase" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-              <p class="text-xs text-slate-400 font-prompt">ยังไม่มีข้อมูลงานพิเศษและหน้าที่ที่ได้รับมอบหมาย</p>
-            </div>
-          `}
+            `).join("");
+          })()}
         </div>
       </div>
     </div>
   `;
 }
 
-// Helper: Smart Theme and Icon Generator for Special Duties
-function getSpecialDutyTheme(taskText, idx) {
-  const t = (taskText || "").toLowerCase();
-  if (t.includes("ict") || t.includes("คอมพิวเตอร์") || t.includes("เทคโนโลยี") || t.includes("เว็บ")) {
-    return {
-      icon: "laptop",
-      tag: "ฝ่ายเทคโนโลยี & ICT",
-      color: "blue",
-      badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
-      accentBar: "bg-blue-500",
-      iconBg: "bg-blue-50 text-blue-600 border border-blue-100",
-      cardBorder: "hover:border-blue-300"
-    };
-  }
-  if (t.includes("dmc") || t.includes("emis") || t.includes("cct") || t.includes("สารสนเทศ")) {
-    return {
-      icon: "database",
-      tag: "งานระบบสารสนเทศ",
-      color: "indigo",
-      badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
-      accentBar: "bg-indigo-500",
-      iconBg: "bg-indigo-50 text-indigo-600 border border-indigo-100",
-      cardBorder: "hover:border-indigo-300"
-    };
-  }
-  if (t.includes("ที่ปรึกษา") || t.includes("ประจำชั้น") || t.includes("นักเรียน") || t.includes("ลูกเสือ") || t.includes("แนะแนว")) {
-    return {
-      icon: "users",
-      tag: "งานกิจการนักเรียน / ประจำชั้น",
-      color: "emerald",
-      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      accentBar: "bg-emerald-500",
-      iconBg: "bg-emerald-50 text-emerald-600 border border-emerald-100",
-      cardBorder: "hover:border-emerald-300"
-    };
-  }
-  if (t.includes("วิชาการ") || t.includes("หลักสูตร") || t.includes("การสอน") || t.includes("วัดผล")) {
-    return {
+// Helper: Group Special Assignments by Standard 6 School Department Groups
+function getGroupedSpecialAssignments(assignments) {
+  const groupsDef = [
+    {
+      id: "academic",
+      name: "กลุ่มบริหารงานวิชาการ",
       icon: "book-open-check",
-      tag: "งานบริหารวิชาการ & หลักสูตร",
-      color: "purple",
-      badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
-      accentBar: "bg-purple-500",
-      iconBg: "bg-purple-50 text-purple-600 border border-purple-100",
-      cardBorder: "hover:border-purple-300"
-    };
-  }
-  if (t.includes("ประชาสัมพันธ์") || t.includes("เพจ") || t.includes("สื่อ") || t.includes("ข่าว")) {
-    return {
-      icon: "megaphone",
-      tag: "งานประชาสัมพันธ์ & สื่อสาร",
-      color: "rose",
-      badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
-      accentBar: "bg-rose-500",
-      iconBg: "bg-rose-50 text-rose-600 border border-rose-100",
-      cardBorder: "hover:border-rose-300"
-    };
-  }
-  const defaultPalettes = [
-    { icon: "award", tag: "หน้าที่พิเศษตามคำสั่ง", badgeClass: "bg-amber-50 text-amber-800 border-amber-200", accentBar: "bg-amber-500", iconBg: "bg-amber-50 text-amber-700 border border-amber-100", cardBorder: "hover:border-amber-300" },
-    { icon: "briefcase", tag: "หน้าที่พิเศษตามคำสั่ง", badgeClass: "bg-teal-50 text-teal-800 border-teal-200", accentBar: "bg-teal-500", iconBg: "bg-teal-50 text-teal-600 border border-teal-100", cardBorder: "hover:border-teal-300" }
+      headerBg: "bg-purple-50/80",
+      headerBorder: "border-purple-200/80",
+      iconBg: "bg-purple-600 text-white",
+      countBadge: "bg-purple-100 text-purple-800",
+      match: (t) => t.includes("วิชาการ") || t.includes("หลักสูตร") || t.includes("การสอน") || t.includes("วัดผล") || t.includes("ทะเบียน") || t.includes("วิจัย") || t.includes("ict") || t.includes("คอมพิวเตอร์") || t.includes("เทคโนโลยี") || t.includes("สื่อ"),
+      items: []
+    },
+    {
+      id: "budget",
+      name: "กลุ่มบริหารงานงบประมาณ",
+      icon: "wallet",
+      headerBg: "bg-emerald-50/80",
+      headerBorder: "border-emerald-200/80",
+      iconBg: "bg-emerald-600 text-white",
+      countBadge: "bg-emerald-100 text-emerald-800",
+      match: (t) => t.includes("งบประมาณ") || t.includes("การเงิน") || t.includes("พัสดุ") || t.includes("สินทรัพย์") || t.includes("แผนงาน") || t.includes("จัดซื้อ") || t.includes("ระดมทุน"),
+      items: []
+    },
+    {
+      id: "personnel",
+      name: "กลุ่มบริหารงานบุคคล",
+      icon: "user-check",
+      headerBg: "bg-blue-50/80",
+      headerBorder: "border-blue-200/80",
+      iconBg: "bg-blue-600 text-white",
+      countBadge: "bg-blue-100 text-blue-800",
+      match: (t) => t.includes("บุคคล") || t.includes("วินัย") || t.includes("สรรหา") || t.includes("บรรจุ") || t.includes("แต่งตั้ง") || t.includes("วิทยฐานะ") || t.includes("อบรม") || t.includes("เวรยาม"),
+      items: []
+    },
+    {
+      id: "general",
+      name: "กลุ่มบริหารงานทั่วไป",
+      icon: "building-2",
+      headerBg: "bg-indigo-50/80",
+      headerBorder: "border-indigo-200/80",
+      iconBg: "bg-indigo-600 text-white",
+      countBadge: "bg-indigo-100 text-indigo-800",
+      match: (t) => t.includes("ทั่วไป") || t.includes("สารสนเทศ") || t.includes("dmc") || t.includes("emis") || t.includes("cct") || t.includes("ประชาสัมพันธ์") || t.includes("เพจ") || t.includes("เว็บ") || t.includes("อาคาร") || t.includes("สถานที่") || t.includes("ชุมชน"),
+      items: []
+    },
+    {
+      id: "student-dev",
+      name: "กิจกรรมพัฒนาผู้เรียน",
+      icon: "users",
+      headerBg: "bg-teal-50/80",
+      headerBorder: "border-teal-200/80",
+      iconBg: "bg-teal-600 text-white",
+      countBadge: "bg-teal-100 text-teal-800",
+      match: (t) => t.includes("พัฒนาผู้เรียน") || t.includes("ลูกเสือ") || t.includes("เนตรนารี") || t.includes("ยุวกาชาด") || t.includes("ชุมนุม") || t.includes("แนะแนว") || t.includes("คุณธรรม") || t.includes("จิตอาสา") || t.includes("ที่ปรึกษา") || t.includes("ประจำชั้น"),
+      items: []
+    },
+    {
+      id: "other",
+      name: "กิจกรรมอื่น ๆ",
+      icon: "award",
+      headerBg: "bg-amber-50/80",
+      headerBorder: "border-amber-200/80",
+      iconBg: "bg-amber-600 text-white",
+      countBadge: "bg-amber-100 text-amber-800",
+      match: () => true,
+      items: []
+    }
   ];
-  return defaultPalettes[idx % defaultPalettes.length];
+
+  (assignments || []).forEach((task, idx) => {
+    let title = typeof task === "object" ? task.title : task;
+    let explicitGroup = typeof task === "object" ? task.group : null;
+    let note = typeof task === "object" ? task.note : "";
+    const lowerTitle = (title || "").toLowerCase();
+
+    let matchedGroup = null;
+    if (explicitGroup) {
+      matchedGroup = groupsDef.find(g => g.name === explicitGroup || g.id === explicitGroup);
+    }
+    if (!matchedGroup) {
+      matchedGroup = groupsDef.find(g => g.match(lowerTitle));
+    }
+    if (!matchedGroup) {
+      matchedGroup = groupsDef[groupsDef.length - 1];
+    }
+
+    matchedGroup.items.push({
+      title,
+      group: matchedGroup.name,
+      note,
+      originalIndex: idx
+    });
+  });
+
+  return groupsDef.filter(g => g.items.length > 0);
 }
 
 // ==========================================
@@ -2279,6 +2336,161 @@ function renderGalleryView(data, isAdmin) {
 }
 
 // ==========================================
+// 8. Media & Online Systems View (สื่อและระบบออนไลน์ & เพจ)
+// ==========================================
+function renderMediaSystemsView(data, isAdmin) {
+  const allItems = data.onlineSystems || [];
+  let items = allItems;
+
+  if (!isAdmin) {
+    items = items.filter(item => item.isVisible);
+  }
+
+  if (AppState.activeFilterCategory && AppState.activeFilterCategory !== "all") {
+    items = items.filter(item => item.category === AppState.activeFilterCategory);
+  }
+
+  if (AppState.searchQuery) {
+    items = items.filter(item =>
+      item.title.toLowerCase().includes(AppState.searchQuery) ||
+      item.description?.toLowerCase().includes(AppState.searchQuery) ||
+      item.platform?.toLowerCase().includes(AppState.searchQuery) ||
+      item.category?.toLowerCase().includes(AppState.searchQuery)
+    );
+  }
+
+  const categories = [
+    "ระบบออนไลน์ / Web App",
+    "สื่อการสอน / นวัตกรรม",
+    "เพจ & โซเชียลมีเดีย"
+  ];
+
+  return `
+    <div class="page-view space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2 font-prompt">
+              <i data-lucide="globe" class="w-7 h-7 text-cyan-600"></i> สื่อและระบบออนไลน์ (Digital Media & Online Systems)
+            </h2>
+            <span class="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 text-xs font-bold font-prompt">
+              ${items.length} รายการ
+            </span>
+          </div>
+          <p class="text-xs md:text-sm text-slate-500 mt-0.5">คลังระบบเว็บแอปพลิเคชัน สื่อนวัตกรรมการเรียนรู้ดิจิทัล และช่องทางเพจประชาสัมพันธ์</p>
+        </div>
+        ${isAdmin ? `
+          <button onclick="openAddOnlineSystemModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-xl text-xs font-bold font-prompt shadow-md transition-all cursor-pointer">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มสื่อ / ระบบ / ลิงก์เพจ
+          </button>
+        ` : ""}
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="setCategoryFilter('all')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold font-prompt whitespace-nowrap transition-all cursor-pointer ${(!AppState.activeFilterCategory || AppState.activeFilterCategory === 'all') ? 'bg-cyan-600 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'}">
+            ทั้งหมด
+          </button>
+          ${categories.map(cat => `
+            <button onclick="setCategoryFilter('${cat}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold font-prompt whitespace-nowrap transition-all cursor-pointer ${AppState.activeFilterCategory === cat ? 'bg-cyan-600 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'}">
+              ${cat}
+            </button>
+          `).join("")}
+        </div>
+        <div class="text-xs text-slate-500 font-prompt">
+          แสดง ${items.length} รายการ
+        </div>
+      </div>
+
+      <!-- Online Media & Systems Grid -->
+      ${items.length === 0 ? `
+        <div class="text-center py-12 glass-card rounded-2xl border border-dashed border-slate-300">
+          <i data-lucide="globe-2" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+          <p class="text-slate-500 text-sm font-prompt">ไม่พบรายการสื่อหรือระบบออนไลน์ในหมวดนี้</p>
+        </div>
+      ` : `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          ${items.map(item => {
+            const isPage = item.category?.includes("เพจ") || item.platform?.includes("Facebook");
+            const isApp = item.category?.includes("ระบบ") || item.platform?.includes("App");
+            const iconName = isPage ? "share-2" : isApp ? "laptop" : "sparkles";
+            const badgeBg = isPage ? "bg-blue-600 text-white" : isApp ? "bg-cyan-600 text-white" : "bg-purple-600 text-white";
+
+            return `
+              <div class="glass-card rounded-2xl overflow-hidden border border-slate-200 hover:border-cyan-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                <div>
+                  <!-- Cover & Action Preview -->
+                  <div class="relative overflow-hidden aspect-video bg-slate-900 cursor-pointer" onclick="window.open('${item.url}', '_blank')">
+                    <img src="${item.coverUrl || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71'}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100">
+                    
+                    <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                      <span class="px-2.5 py-1 ${badgeBg} text-[11px] rounded-lg font-bold font-prompt shadow-md flex items-center gap-1">
+                        <i data-lucide="${iconName}" class="w-3 h-3"></i> ${item.category}
+                      </span>
+                    </div>
+
+                    ${item.platform ? `
+                      <div class="absolute top-3 right-3 px-2 py-0.5 bg-black/70 backdrop-blur-xs text-amber-300 text-[10px] font-bold font-prompt rounded-md border border-white/20">
+                        ${item.platform}
+                      </div>
+                    ` : ""}
+
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white">
+                      <span class="text-xs font-bold font-prompt flex items-center gap-1 bg-cyan-500/90 text-navy-950 px-3 py-1.5 rounded-lg shadow-lg">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> เปิดเข้าสู่ระบบ / หน้าเว็บ
+                      </span>
+                    </div>
+
+                    ${!item.isVisible ? `
+                      <div class="absolute inset-0 bg-slate-900/70 flex items-center justify-center text-white text-xs font-bold z-20">
+                        <i data-lucide="eye-off" class="w-4 h-4 mr-1"></i> ซ่อนจากคณะกรรมการ
+                      </div>
+                    ` : ""}
+                  </div>
+
+                  <!-- Details -->
+                  <div class="p-5 space-y-2">
+                    <h3 class="font-bold text-slate-800 text-base font-prompt leading-snug group-hover:text-cyan-600 transition-colors line-clamp-2" title="${item.title}">
+                      ${item.title}
+                    </h3>
+                    <p class="text-xs text-slate-500 font-sarabun line-clamp-3 leading-relaxed">
+                      ${item.description || "ไม่มีคำอธิบายเพิ่มเติม"}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Footer Launch Action -->
+                <div class="p-5 pt-0 border-t border-slate-100 mt-2 flex items-center justify-between">
+                  <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-prompt text-xs font-bold transition-all shadow-2xs">
+                    <span>เข้าสู่หน้าเว็บ</span>
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                  </a>
+
+                  ${isAdmin ? `
+                    <div class="flex items-center gap-1">
+                      <button onclick="toggleVisibility('onlineSystems', '${item.id}')" class="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer" title="เปิด/ปิด การมองเห็น">
+                        <i data-lucide="${item.isVisible ? 'eye' : 'eye-off'}" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button onclick="openEditOnlineSystemModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer" title="แก้ไข">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button onclick="confirmDeleteItem('onlineSystems', '${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer" title="ลบ">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  ` : ""}
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+// ==========================================
 // Reusable Component: 3D Book Cover / Document / Award Photo Card
 // ==========================================
 function renderBookCard(collectionName, item, isAdmin) {
@@ -2503,6 +2715,11 @@ function openMobileMoreMenu() {
           <button onclick="Swal.close(); navigateTo('gallery')" class="p-3 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
             <i data-lucide="images" class="w-4 h-4 text-rose-600 shrink-0"></i>
             <span class="font-semibold">ภาพกิจกรรม</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('media-systems')" class="p-3 rounded-xl bg-slate-50 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer col-span-2">
+            <i data-lucide="globe" class="w-4 h-4 text-cyan-600 shrink-0"></i>
+            <span class="font-semibold">สื่อและระบบออนไลน์</span>
           </button>
         </div>
 
@@ -3487,24 +3704,41 @@ function openAddSpecialDutyModal() {
     html: `
       <div class="space-y-3 text-left font-sarabun text-xs">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ชื่องานพิเศษ / คำสั่งมอบหมาย: *</label>
-          <textarea id="special-duty-text" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น หัวหน้ากลุ่มสาระการเรียนรู้สังคมศึกษาฯ"></textarea>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">กลุ่มงานบริหาร: *</label>
+          <select id="special-duty-group" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-amber-500">
+            <option value="กลุ่มบริหารงานวิชาการ">กลุ่มบริหารงานวิชาการ</option>
+            <option value="กลุ่มบริหารงานงบประมาณ">กลุ่มบริหารงานงบประมาณ</option>
+            <option value="กลุ่มบริหารงานบุคคล">กลุ่มบริหารงานบุคคล</option>
+            <option value="กลุ่มบริหารงานทั่วไป">กลุ่มบริหารงานทั่วไป</option>
+            <option value="กิจกรรมพัฒนาผู้เรียน">กิจกรรมพัฒนาผู้เรียน</option>
+            <option value="กิจกรรมอื่น ๆ">กิจกรรมอื่น ๆ</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่องานพิเศษ / คำสั่งมอบหมาย: *</label>
+          <textarea id="special-duty-text" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs focus:ring-2 focus:ring-amber-500" placeholder="เช่น หัวหน้ากลุ่มสาระการเรียนรู้สังคมศึกษาฯ"></textarea>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">หมายเหตุ / คำสั่งโรงเรียน (ถ้ามี):</label>
+          <input id="special-duty-note" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs" placeholder="เช่น คำสั่งโรงเรียนวัดบางปูน ที่ 15/2568">
         </div>
       </div>
     `,
-    width: "500px",
+    width: "550px",
     showCancelButton: true,
     confirmButtonText: "เพิ่มงานพิเศษ",
     cancelButtonText: "ยกเลิก",
     confirmButtonColor: "#d97706",
     cancelButtonColor: "#64748b",
     preConfirm: () => {
-      const text = document.getElementById("special-duty-text").value.trim();
-      if (!text) {
+      const group = document.getElementById("special-duty-group").value.trim();
+      const title = document.getElementById("special-duty-text").value.trim();
+      const note = document.getElementById("special-duty-note").value.trim();
+      if (!title) {
         Swal.showValidationMessage("กรุณากรอกรายละเอียดงานพิเศษ");
         return false;
       }
-      return text;
+      return { title, group, note };
     }
   }).then((result) => {
     if (result.isConfirmed) {
@@ -3519,31 +3753,53 @@ function openAddSpecialDutyModal() {
 
 function openEditSpecialDutyModal(idx) {
   const data = window.portfolioStorage.getData();
-  const currentText = data.profile?.specialAssignments?.[idx] || "";
+  const rawItem = data.profile?.specialAssignments?.[idx];
+  if (rawItem === undefined || rawItem === null) return;
+
+  const currentTitle = typeof rawItem === "object" ? rawItem.title : rawItem;
+  const currentGroup = typeof rawItem === "object" ? rawItem.group : "";
+  const currentNote = typeof rawItem === "object" ? rawItem.note : "";
 
   Swal.fire({
     title: "แก้ไขงานพิเศษ / หน้าที่ที่ได้รับมอบหมาย",
     html: `
       <div class="space-y-3 text-left font-sarabun text-xs">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ชื่องานพิเศษ / คำสั่งมอบหมาย: *</label>
-          <textarea id="special-duty-text" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300">${currentText}</textarea>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">กลุ่มงานบริหาร: *</label>
+          <select id="special-duty-group" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-amber-500">
+            <option value="กลุ่มบริหารงานวิชาการ" ${currentGroup === "กลุ่มบริหารงานวิชาการ" ? "selected" : ""}>กลุ่มบริหารงานวิชาการ</option>
+            <option value="กลุ่มบริหารงานงบประมาณ" ${currentGroup === "กลุ่มบริหารงานงบประมาณ" ? "selected" : ""}>กลุ่มบริหารงานงบประมาณ</option>
+            <option value="กลุ่มบริหารงานบุคคล" ${currentGroup === "กลุ่มบริหารงานบุคคล" ? "selected" : ""}>กลุ่มบริหารงานบุคคล</option>
+            <option value="กลุ่มบริหารงานทั่วไป" ${currentGroup === "กลุ่มบริหารงานทั่วไป" ? "selected" : ""}>กลุ่มบริหารงานทั่วไป</option>
+            <option value="กิจกรรมพัฒนาผู้เรียน" ${currentGroup === "กิจกรรมพัฒนาผู้เรียน" ? "selected" : ""}>กิจกรรมพัฒนาผู้เรียน</option>
+            <option value="กิจกรรมอื่น ๆ" ${currentGroup === "กิจกรรมอื่น ๆ" ? "selected" : ""}>กิจกรรมอื่น ๆ</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่องานพิเศษ / คำสั่งมอบหมาย: *</label>
+          <textarea id="special-duty-text" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs focus:ring-2 focus:ring-amber-500">${currentTitle}</textarea>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">หมายเหตุ / คำสั่งโรงเรียน (ถ้ามี):</label>
+          <input id="special-duty-note" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs" value="${currentNote}" placeholder="เช่น คำสั่งโรงเรียนวัดบางปูน ที่ 15/2568">
         </div>
       </div>
     `,
-    width: "500px",
+    width: "550px",
     showCancelButton: true,
     confirmButtonText: "บันทึกการแก้ไข",
     cancelButtonText: "ยกเลิก",
     confirmButtonColor: "#d97706",
     cancelButtonColor: "#64748b",
     preConfirm: () => {
-      const text = document.getElementById("special-duty-text").value.trim();
-      if (!text) {
+      const group = document.getElementById("special-duty-group").value.trim();
+      const title = document.getElementById("special-duty-text").value.trim();
+      const note = document.getElementById("special-duty-note").value.trim();
+      if (!title) {
         Swal.showValidationMessage("กรุณากรอกรายละเอียดงานพิเศษ");
         return false;
       }
-      return text;
+      return { title, group, note };
     }
   }).then((result) => {
     if (result.isConfirmed) {
@@ -5611,3 +5867,225 @@ function openQuickAvatarModal() {
     }
   });
 }
+
+// ==========================================
+// Online Systems & Media Modals
+// ==========================================
+function openAddOnlineSystemModal() {
+  Swal.fire({
+    title: "🌐 เพิ่มสื่อ / ระบบออนไลน์ / ลิงก์เพจใหม่",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs max-h-[70vh] overflow-y-auto p-1">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อสื่อ / ระบบออนไลน์ / ชื่อเพจ: *</label>
+          <input id="sys-title" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs focus:ring-2 focus:ring-cyan-500" placeholder="เช่น ระบบเช็คชื่อออนไลน์ หรือ เพจครูซอสสอนสังคม">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">หมวดหมู่: *</label>
+            <select id="sys-category" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs bg-slate-50">
+              <option value="ระบบออนไลน์ / Web App">ระบบออนไลน์ / Web App</option>
+              <option value="สื่อการสอน / นวัตกรรม">สื่อการสอน / นวัตกรรม</option>
+              <option value="เพจ & โซเชียลมีเดีย">เพจ & โซเชียลมีเดีย</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">แพลตฟอร์ม / เทคโนโลยี:</label>
+            <input id="sys-platform" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs" placeholder="เช่น Web App, Canva, Facebook">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ลิงก์ URL เข้าใช้งาน (https://...): *</label>
+          <input id="sys-url" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs focus:ring-2 focus:ring-cyan-500" placeholder="https://...">
+        </div>
+
+        <!-- Cover / Screenshot Upload -->
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <label class="block font-bold text-slate-800 font-prompt flex items-center gap-1.5">
+            <i data-lucide="image" class="w-4 h-4 text-cyan-600"></i> รูปภาพหน้าปก / ภาพตัวอย่างระบบ:
+          </label>
+          <input type="file" id="sys-file" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-700 cursor-pointer">
+          <input id="sys-cover" class="w-full p-2 text-[11px] rounded-lg border border-slate-300" placeholder="หรือใส่ลิงก์รูปภาพ URL https://..." value="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80">
+          <div class="flex items-center gap-3 pt-1">
+            <span class="text-[11px] text-slate-400 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="sys-preview" src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">คำอธิบายรายละเอียด / ประโยชน์ที่ได้รับ:</label>
+          <textarea id="sys-desc" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 font-sarabun text-xs" placeholder="ระบุฟังก์ชันการทำงาน กลุ่มเป้าหมาย หรือการนำไปใช้"></textarea>
+        </div>
+      </div>
+    `,
+    width: "600px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึกรายการ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#0891b2",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("sys-file");
+      const coverInput = document.getElementById("sys-cover");
+      const previewImg = document.getElementById("sys-preview");
+      if (fileInput) {
+        fileInput.addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            coverInput.value = ev.target.result;
+            previewImg.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+      if (coverInput) {
+        coverInput.addEventListener("input", (e) => {
+          if (previewImg) previewImg.src = e.target.value;
+        });
+      }
+    },
+    preConfirm: () => {
+      const title = document.getElementById("sys-title").value.trim();
+      const category = document.getElementById("sys-category").value.trim();
+      const platform = document.getElementById("sys-platform").value.trim();
+      const url = document.getElementById("sys-url").value.trim();
+      const coverUrl = document.getElementById("sys-cover").value.trim();
+      const description = document.getElementById("sys-desc").value.trim();
+
+      if (!title || !url) {
+        Swal.showValidationMessage("กรุณากรอกชื่อและลิงก์ URL");
+        return false;
+      }
+      return { title, category, platform, url, coverUrl, description, academicYear: "2568" };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.portfolioStorage.addItem("onlineSystems", result.value);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "เพิ่มรายการเรียบร้อยแล้ว",
+        showConfirmButton: false,
+        timer: 1500
+      });
+      renderCurrentView();
+    }
+  });
+}
+
+function openEditOnlineSystemModal(itemId) {
+  const data = window.portfolioStorage.getData();
+  const item = (data.onlineSystems || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+
+  Swal.fire({
+    title: "🌐 แก้ไขสื่อ / ระบบออนไลน์ / ลิงก์เพจ",
+    html: `
+      <div class="space-y-3 text-left font-sarabun text-xs max-h-[70vh] overflow-y-auto p-1">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อสื่อ / ระบบออนไลน์ / ชื่อเพจ: *</label>
+          <input id="sys-title" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs focus:ring-2 focus:ring-cyan-500" value="${item.title || ''}">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">หมวดหมู่: *</label>
+            <select id="sys-category" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs bg-slate-50">
+              <option value="ระบบออนไลน์ / Web App" ${item.category === "ระบบออนไลน์ / Web App" ? "selected" : ""}>ระบบออนไลน์ / Web App</option>
+              <option value="สื่อการสอน / นวัตกรรม" ${item.category === "สื่อการสอน / นวัตกรรม" ? "selected" : ""}>สื่อการสอน / นวัตกรรม</option>
+              <option value="เพจ & โซเชียลมีเดีย" ${item.category === "เพจ & โซเชียลมีเดีย" ? "selected" : ""}>เพจ & โซเชียลมีเดีย</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">แพลตฟอร์ม / เทคโนโลยี:</label>
+            <input id="sys-platform" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs" value="${item.platform || ''}">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ลิงก์ URL เข้าใช้งาน (https://...): *</label>
+          <input id="sys-url" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt text-xs focus:ring-2 focus:ring-cyan-500" value="${item.url || ''}">
+        </div>
+
+        <!-- Cover / Screenshot Upload -->
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <label class="block font-bold text-slate-800 font-prompt flex items-center gap-1.5">
+            <i data-lucide="image" class="w-4 h-4 text-cyan-600"></i> รูปภาพหน้าปก / ภาพตัวอย่างระบบ:
+          </label>
+          <input type="file" id="sys-file" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-700 cursor-pointer">
+          <input id="sys-cover" class="w-full p-2 text-[11px] rounded-lg border border-slate-300" value="${item.coverUrl || ''}">
+          <div class="flex items-center gap-3 pt-1">
+            <span class="text-[11px] text-slate-400 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="sys-preview" src="${item.coverUrl || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71'}" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">คำอธิบายรายละเอียด / ประโยชน์ที่ได้รับ:</label>
+          <textarea id="sys-desc" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 font-sarabun text-xs">${item.description || ''}</textarea>
+        </div>
+      </div>
+    `,
+    width: "600px",
+    showCancelButton: true,
+    confirmButtonText: "บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#0891b2",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("sys-file");
+      const coverInput = document.getElementById("sys-cover");
+      const previewImg = document.getElementById("sys-preview");
+      if (fileInput) {
+        fileInput.addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            coverInput.value = ev.target.result;
+            previewImg.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+      if (coverInput) {
+        coverInput.addEventListener("input", (e) => {
+          if (previewImg) previewImg.src = e.target.value;
+        });
+      }
+    },
+    preConfirm: () => {
+      const title = document.getElementById("sys-title").value.trim();
+      const category = document.getElementById("sys-category").value.trim();
+      const platform = document.getElementById("sys-platform").value.trim();
+      const url = document.getElementById("sys-url").value.trim();
+      const coverUrl = document.getElementById("sys-cover").value.trim();
+      const description = document.getElementById("sys-desc").value.trim();
+
+      if (!title || !url) {
+        Swal.showValidationMessage("กรุณากรอกชื่อและลิงก์ URL");
+        return false;
+      }
+      return { title, category, platform, url, coverUrl, description };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.portfolioStorage.updateItem("onlineSystems", itemId, result.value);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "อัปเดตข้อมูลเรียบร้อยแล้ว",
+        showConfirmButton: false,
+        timer: 1500
+      });
+      renderCurrentView();
+    }
+  });
+}
+

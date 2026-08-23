@@ -31,6 +31,9 @@ class PortfolioStorage {
         if (!parsed.recentUpdates) {
           parsed.recentUpdates = DEFAULT_PORTFOLIO_DATA.recentUpdates || [];
         }
+        if (!parsed.onlineSystems) {
+          parsed.onlineSystems = DEFAULT_PORTFOLIO_DATA.onlineSystems || [];
+        }
         if (!parsed.settings) {
           parsed.settings = { ...DEFAULT_PORTFOLIO_DATA.settings };
         }
