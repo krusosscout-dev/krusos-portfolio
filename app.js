@@ -38,13 +38,32 @@ function navigateTo(viewId) {
   AppState.activeFilterYear = "all";
   AppState.activeFilterCategory = "all";
 
-  // Update Nav Links UI
+  // Update Sidebar Nav Links UI
   document.querySelectorAll(".nav-link").forEach(link => {
     const target = link.getAttribute("data-view");
     if (target === viewId) {
       link.classList.add("active");
     } else {
       link.classList.remove("active");
+    }
+  });
+
+  // Update Mobile Floating Bottom Nav Bar UI
+  document.querySelectorAll(".mobile-nav-btn").forEach(btn => {
+    const target = btn.getAttribute("data-mobile-nav");
+    const iconWrapper = btn.querySelector("div");
+    if (target === viewId) {
+      btn.classList.add("text-blue-600", "font-bold");
+      btn.classList.remove("text-slate-500");
+      if (iconWrapper) {
+        iconWrapper.classList.add("bg-blue-50", "text-blue-600");
+      }
+    } else {
+      btn.classList.remove("text-blue-600", "font-bold");
+      btn.classList.add("text-slate-500");
+      if (iconWrapper) {
+        iconWrapper.classList.remove("bg-blue-50", "text-blue-600");
+      }
     }
   });
 
@@ -2146,24 +2165,25 @@ function renderGalleryView(data, isAdmin) {
 }
 
 // ==========================================
-// Reusable Component: 3D Book Cover / Document Card
+// Reusable Component: 3D Book Cover / Document / Award Photo Card
 // ==========================================
 function renderBookCard(collectionName, item, isAdmin) {
   const badgeText = item.score || item.grade || item.level || item.category || item.academicYear || "";
-  const docUrl = item.pdfUrl || item.certificateUrl || item.driveUrl || "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+  const hasPdf = item.pdfUrl && String(item.pdfUrl).trim().length > 5 && !item.pdfUrl.includes("dummy.pdf");
+  const isImageStory = collectionName === "achievements" || !hasPdf;
 
   return `
-    <div class="book-card flex flex-col justify-between glass-card p-4 rounded-2xl border border-slate-200 group">
+    <div class="book-card flex flex-col justify-between glass-card p-4 rounded-2xl border border-slate-200 group hover:border-blue-400 transition-all">
       <div>
-        <!-- 3D Book Cover Frame -->
-        <div class="book-cover cursor-pointer relative" onclick="openDocumentPreview('${item.title}', '${docUrl}')">
+        <!-- 3D Book Cover / Award Photo Frame -->
+        <div class="book-cover cursor-pointer relative" onclick="openUniversalItemViewer('${collectionName}', '${item.id}')">
           <img src="${item.coverUrl || 'https://images.unsplash.com/photo-1544717305-2782549b5136'}" alt="${item.title}" class="w-full h-full object-cover">
           ${badgeText ? `<div class="ribbon-badge">${badgeText}</div>` : ""}
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4 text-white">
-            <span class="text-xs font-bold flex items-center gap-1.5 bg-blue-600/90 px-3 py-1.5 rounded-lg w-fit mb-1">
-              <i data-lucide="file-search" class="w-4 h-4"></i> เปิดอ่านเอกสาร PDF
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4 text-white">
+            <span class="text-xs font-bold flex items-center gap-1.5 ${isImageStory ? 'bg-amber-500/95 text-navy-950' : 'bg-blue-600/95 text-white'} px-3 py-1.5 rounded-xl w-fit mb-1 shadow-lg font-prompt">
+              <i data-lucide="${isImageStory ? 'image' : 'file-search'}" class="w-4 h-4"></i> ${isImageStory ? 'ดูภาพผลงาน & คำบรรยาย' : 'เปิดอ่านเอกสาร PDF'}
             </span>
-            <span class="text-[10px] text-blue-200">คลิกเพื่อดูตัวอย่างทันที</span>
+            <span class="text-[10px] text-slate-200">คลิกเพื่อดูรายละเอียดและขยายภาพ</span>
           </div>
           ${!item.isVisible ? `
             <div class="absolute inset-0 bg-slate-900/70 flex items-center justify-center text-white text-xs font-bold z-20">
@@ -2172,7 +2192,7 @@ function renderBookCard(collectionName, item, isAdmin) {
           ` : ""}
         </div>
 
-        <!-- Document Details -->
+        <!-- Document / Award Details -->
         <div class="mt-4 space-y-1.5">
           ${item.code ? `<div class="text-xs font-bold text-blue-600 font-prompt">${item.code}</div>` : ""}
           <h3 class="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2" title="${item.title}">
@@ -2184,19 +2204,19 @@ function renderBookCard(collectionName, item, isAdmin) {
 
       <!-- Action Footer -->
       <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-        <button onclick="openDocumentPreview('${item.title}', '${docUrl}')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-          <i data-lucide="book-open" class="w-3.5 h-3.5"></i> พรีวิวเอกสาร
+        <button onclick="openUniversalItemViewer('${collectionName}', '${item.id}')" class="text-xs font-bold ${isImageStory ? 'text-amber-600 hover:text-amber-700' : 'text-blue-600 hover:text-blue-800'} flex items-center gap-1 cursor-pointer font-prompt">
+          <i data-lucide="${isImageStory ? 'image' : 'book-open'}" class="w-3.5 h-3.5"></i> ${isImageStory ? 'ดูภาพ / คำบรรยาย' : 'พรีวิวเอกสาร'}
         </button>
 
         ${isAdmin ? `
           <div class="flex items-center gap-1">
-            <button onclick="toggleVisibility('${collectionName}', '${item.id}')" class="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-md" title="เปิด/ปิด การมองเห็น">
+            <button onclick="toggleVisibility('${collectionName}', '${item.id}')" class="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-md cursor-pointer" title="เปิด/ปิด การมองเห็น">
               <i data-lucide="${item.isVisible ? 'eye' : 'eye-off'}" class="w-3.5 h-3.5"></i>
             </button>
-            <button onclick="openEditItemModal('${collectionName}', '${item.id}')" class="p-1 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-md" title="แก้ไข">
+            <button onclick="openEditItemModal('${collectionName}', '${item.id}')" class="p-1 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-md cursor-pointer" title="แก้ไข">
               <i data-lucide="edit" class="w-3.5 h-3.5"></i>
             </button>
-            <button onclick="confirmDeleteItem('${collectionName}', '${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-md" title="ลบ">
+            <button onclick="confirmDeleteItem('${collectionName}', '${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-md cursor-pointer" title="ลบ">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -2204,6 +2224,191 @@ function renderBookCard(collectionName, item, isAdmin) {
       </div>
     </div>
   `;
+}
+
+// ==========================================
+// Universal Rich Item Viewer (Image & Story & PDF)
+// ==========================================
+function openUniversalItemViewer(collectionName, itemId) {
+  const data = window.portfolioStorage.getData();
+  const list = data[collectionName] || [];
+  const item = list.find(i => String(i.id) === String(itemId));
+  if (!item) return;
+
+  const isAdmin = window.portfolioStorage.isAdmin();
+  const imgSrc = item.coverUrl || item.certificateUrl || item.imageUrl || "https://images.unsplash.com/photo-1544717305-2782549b5136";
+  const hasPdf = item.pdfUrl && String(item.pdfUrl).trim().length > 5 && !item.pdfUrl.includes("dummy.pdf");
+  const badgeText = item.score || item.grade || item.level || item.category || item.academicYear || "";
+
+  Swal.fire({
+    title: null,
+    html: `
+      <div class="space-y-4 text-left font-sarabun -m-1">
+        <!-- Top Image Card Header with Category Badge & Close -->
+        <div class="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 shadow-md group">
+          <img id="viewer-main-image" src="${imgSrc}" class="w-full max-h-[380px] object-contain mx-auto bg-black/40 cursor-zoom-in" alt="${item.title}" onclick="window.open('${imgSrc}', '_blank')">
+          
+          <div class="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
+            ${badgeText ? `
+              <span class="px-3 py-1 rounded-xl text-xs font-bold font-prompt bg-amber-500 text-white shadow-lg">
+                ${badgeText}
+              </span>
+            ` : ""}
+            ${item.academicYear ? `
+              <span class="px-2.5 py-1 rounded-xl text-xs font-bold font-prompt bg-black/60 text-amber-300 backdrop-blur-xs border border-white/20">
+                ปีการศึกษา ${item.academicYear}
+              </span>
+            ` : ""}
+          </div>
+
+          <div class="absolute bottom-2 right-3">
+            <a href="${imgSrc}" target="_blank" class="px-2.5 py-1 rounded-lg bg-black/60 hover:bg-black/80 text-white text-[11px] font-prompt flex items-center gap-1 backdrop-blur-xs border border-white/20 transition-all">
+              <i data-lucide="external-link" class="w-3.5 h-3.5 text-amber-400"></i> ดูภาพเต็ม / บันทึกภาพ
+            </a>
+          </div>
+        </div>
+
+        <!-- Title & Metadata -->
+        <div class="space-y-2 pt-1">
+          ${item.code ? `<span class="text-xs font-bold text-blue-600 font-prompt block">${item.code}</span>` : ""}
+          <h3 class="text-lg md:text-xl font-bold text-slate-900 font-prompt leading-snug">${item.title}</h3>
+          
+          <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-prompt">
+            ${item.date ? `<span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-500"></i> ${item.date}</span>` : ""}
+            ${item.organization ? `<span class="flex items-center gap-1"><i data-lucide="building" class="w-3.5 h-3.5 text-blue-500"></i> ${item.organization}</span>` : ""}
+            ${item.location ? `<span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> ${item.location}</span>` : ""}
+          </div>
+        </div>
+
+        <!-- Description Box / Story -->
+        ${(item.description || item.subCategory) ? `
+          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+            <span class="text-xs font-bold font-prompt text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="file-text" class="w-4 h-4 text-indigo-600"></i> คำบรรยายและรายละเอียดผลงาน:
+            </span>
+            <p class="text-xs md:text-sm text-slate-600 font-sarabun whitespace-pre-line leading-relaxed pl-1">
+              ${item.description || item.subCategory}
+            </p>
+          </div>
+        ` : `
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-400 text-center">
+            ไม่มีคำบรรยายเพิ่มเติม
+          </div>
+        `}
+
+        <!-- Additional Action Buttons -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
+          <div class="flex items-center gap-2">
+            ${hasPdf ? `
+              <button type="button" onclick="Swal.close(); openDocumentPreview('${item.title}', '${item.pdfUrl}')" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-prompt text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer">
+                <i data-lucide="file" class="w-4 h-4"></i> เปิดไฟล์เอกสาร PDF
+              </button>
+            ` : ""}
+            <a href="${imgSrc}" target="_blank" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-prompt text-xs font-semibold flex items-center gap-1.5 transition-all">
+              <i data-lucide="zoom-in" class="w-4 h-4"></i> ขยายภาพ
+            </a>
+          </div>
+
+          ${isAdmin ? `
+            <button type="button" onclick="Swal.close(); openEditItemModal('${collectionName}', '${item.id}')" class="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-prompt text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-700"></i> แก้ไขข้อมูลนี้
+            </button>
+          ` : ""}
+        </div>
+      </div>
+    `,
+    width: "680px",
+    showConfirmButton: false,
+    showCloseButton: true,
+    didOpen: () => initIcons()
+  });
+}
+
+// ==========================================
+// Mobile More Menu Sheet (จอเล็ก/มือถือ)
+// ==========================================
+function openMobileMoreMenu() {
+  const data = window.portfolioStorage.getData();
+  const isAdmin = window.portfolioStorage.isAdmin();
+
+  Swal.fire({
+    title: null,
+    html: `
+      <div class="space-y-4 text-left font-prompt -m-1">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
+              <i data-lucide="grid" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm">เมนูทั้งหมดในระบบ</h4>
+              <p class="text-[10px] text-slate-400">เลือกเมนูที่ต้องการนำทาง</p>
+            </div>
+          </div>
+          <button type="button" onclick="Swal.close()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button onclick="Swal.close(); navigateTo('dashboard')" class="p-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 text-blue-600 shrink-0"></i>
+            <span class="font-semibold">แดชบอร์ด</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('profile')" class="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="user" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+            <span class="font-semibold">ประวัติส่วนตัว</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('intensive-prep')" class="p-3 rounded-xl bg-slate-50 hover:bg-teal-50 text-slate-700 hover:text-teal-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="graduation-cap" class="w-4 h-4 text-teal-600 shrink-0"></i>
+            <span class="font-semibold">ครูผู้ช่วย (4 ครั้ง)</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('pa')" class="p-3 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="file-check" class="w-4 h-4 text-amber-600 shrink-0"></i>
+            <span class="font-semibold">การประเมิน วPA</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('lesson-plans')" class="p-3 rounded-xl bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="book-open" class="w-4 h-4 text-sky-600 shrink-0"></i>
+            <span class="font-semibold">แผนการสอน</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('official-docs')" class="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="folder-kanban" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+            <span class="font-semibold">เอกสารราชการ</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('achievements')" class="p-3 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="trophy" class="w-4 h-4 text-amber-500 shrink-0"></i>
+            <span class="font-semibold">ผลงานและรางวัล</span>
+          </button>
+
+          <button onclick="Swal.close(); navigateTo('gallery')" class="p-3 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 flex items-center gap-2.5 transition-all text-left cursor-pointer">
+            <i data-lucide="images" class="w-4 h-4 text-rose-600 shrink-0"></i>
+            <span class="font-semibold">ภาพกิจกรรม</span>
+          </button>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
+          <button onclick="Swal.close(); handleAdminToggleClick()" class="w-full py-2.5 px-4 rounded-xl ${isAdmin ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-amber-500 text-white font-bold'} text-xs flex items-center justify-center gap-2 transition-all cursor-pointer">
+            <i data-lucide="${isAdmin ? 'log-out' : 'shield-check'}" class="w-4 h-4"></i>
+            <span>${isAdmin ? 'ออกจากโหมดผู้ดูแลระบบ (Admin)' : 'เข้าสู่ระบบผู้ดูแลระบบ (Admin)'}</span>
+          </button>
+          
+          <button onclick="Swal.close(); openBackupRestoreModal()" class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+            <i data-lucide="database" class="w-3.5 h-3.5 text-blue-600"></i>
+            <span>สำรองและกู้คืนข้อมูล (Backup/Restore)</span>
+          </button>
+        </div>
+      </div>
+    `,
+    showConfirmButton: false,
+    width: "440px",
+    didOpen: () => initIcons()
+  });
 }
 
 // ==========================================
@@ -2349,43 +2554,47 @@ function confirmDeleteItem(collectionName, itemId) {
 
 // Add Item Modal
 function openAddItemModal(collectionName) {
+  const isAchievement = collectionName === "achievements";
   Swal.fire({
-    title: "เพิ่มรายการเอกสาร/ผลงานใหม่",
+    title: isAchievement ? "🏆 เพิ่มผลงาน / รางวัล / เกียรติบัตรใหม่" : "เพิ่มรายการเอกสาร/ผลงานใหม่",
     html: `
-      <div class="space-y-3 text-left font-sarabun text-xs max-h-[65vh] overflow-y-auto p-1">
+      <div class="space-y-3 text-left font-sarabun text-xs max-h-[70vh] overflow-y-auto p-1">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ชื่อเอกสาร / หัวข้อผลงาน: *</label>
-          <input id="modal-item-title" class="w-full p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500" placeholder="เช่น แผนการจัดการเรียนรู้ วิทยาการคำนวณ">
+          <label class="block font-bold text-slate-700 mb-1">${isAchievement ? 'ชื่อผลงาน / รางวัล / เกียรติบัตร: *' : 'ชื่อเอกสาร / หัวข้อผลงาน: *'}</label>
+          <input id="modal-item-title" class="w-full p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-prompt" placeholder="เช่น รางวัลชนะเลิศ ครูผู้สอนดีเด่น ระดับชาติ">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">หมวดหมู่ / ระดับชั้น / ตัวชี้วัด:</label>
-            <input id="modal-item-category" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น ป.6 หรือ การปฏิบัติตน">
+            <label class="block font-bold text-slate-700 mb-1">หมวดหมู่ / ระดับรางวัล / หน่วยงาน:</label>
+            <input id="modal-item-category" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt" placeholder="เช่น ระดับชาติ หรือ สพฐ.">
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">ปีการศึกษา / ปีงบประมาณ:</label>
-            <input id="modal-item-year" class="w-full p-2.5 rounded-lg border border-slate-300" value="2568">
+            <label class="block font-bold text-slate-700 mb-1">ปีการศึกษา / ปี พ.ศ.:</label>
+            <input id="modal-item-year" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt" value="2568">
           </div>
         </div>
 
         <!-- Image Upload from Device or URL -->
-        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-          <label class="block font-bold text-slate-700">รูปภาพหน้าปก / เอกสาร (เลือกไฟล์หรือใส่ลิงก์):</label>
-          <input type="file" id="modal-item-file" accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <label class="block font-bold text-slate-800 font-prompt flex items-center gap-1.5">
+            <i data-lucide="image" class="w-4 h-4 text-amber-600"></i> รูปภาพผลงาน / รูปเกียรติบัตร (เลือกไฟล์หรือใส่ลิงก์):
+          </label>
+          <input type="file" id="modal-item-file" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
           <input id="modal-item-cover" class="w-full p-2 text-[11px] rounded-lg border border-slate-300" placeholder="หรือใส่ลิงก์รูปภาพ URL https://..." value="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=600&q=80">
           <div class="flex items-center gap-3 pt-1">
-            <span class="text-[11px] text-slate-400">พรีวิวรูปภาพ:</span>
-            <img id="modal-item-preview" src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=600&q=80" class="w-16 h-12 rounded object-cover border">
+            <span class="text-[11px] text-slate-400 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="modal-item-preview" src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=600&q=80" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ลิงก์ไฟล์เอกสาร PDF / Google Drive: *</label>
-          <input id="modal-item-pdf" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+          <label class="block font-bold text-slate-700 mb-1">คำบรรยายรายละเอียดผลงาน / ความเป็นมา (เขียนบรรยายได้เต็มที่):</label>
+          <textarea id="modal-item-desc" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 font-sarabun" placeholder="ระบุรายละเอียดความสำเร็จ ประโยชน์ที่เกิดต่อผู้เรียน หรือหน่วยงานที่มอบรางวัล"></textarea>
         </div>
+
         <div>
-          <label class="block font-bold text-slate-700 mb-1">คำอธิบายรายละเอียดเพิ่มเติม:</label>
-          <textarea id="modal-item-desc" rows="2" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="ระบุรายละเอียดสังเขป"></textarea>
+          <label class="block font-bold text-slate-700 mb-1">ลิงก์ไฟล์เอกสาร PDF / Google Drive (ถ้ามี / ไม่บังคับ):</label>
+          <input id="modal-item-pdf" class="w-full p-2.5 rounded-lg border border-slate-300 font-sarabun" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF (เว้นว่างได้หากไม่มี)">
         </div>
       </div>
     `,
@@ -2396,6 +2605,7 @@ function openAddItemModal(collectionName) {
     confirmButtonColor: "#2563eb",
     cancelButtonColor: "#64748b",
     didOpen: () => {
+      initIcons();
       const fileInput = document.getElementById("modal-item-file");
       const coverInput = document.getElementById("modal-item-cover");
       const previewImg = document.getElementById("modal-item-preview");
@@ -2426,7 +2636,7 @@ function openAddItemModal(collectionName) {
       const description = document.getElementById("modal-item-desc").value.trim();
 
       if (!title) {
-        Swal.showValidationMessage("กรุณากรอกชื่อเอกสาร");
+        Swal.showValidationMessage("กรุณากรอกชื่อผลงานหรือเอกสาร");
         return false;
       }
       return { title, category, academicYear, coverUrl, pdfUrl, description, round: AppState.activeIpRound, type: AppState.activeAchTab };
@@ -2458,40 +2668,43 @@ function openEditItemModal(collectionName, itemId) {
   Swal.fire({
     title: "แก้ไขข้อมูลรายการ",
     html: `
-      <div class="space-y-3 text-left font-sarabun text-xs max-h-[65vh] overflow-y-auto p-1">
+      <div class="space-y-3 text-left font-sarabun text-xs max-h-[70vh] overflow-y-auto p-1">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ชื่อเอกสาร / หัวข้อผลงาน:</label>
-          <input id="edit-item-title" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.title || item.roundTitle || ''}">
+          <label class="block font-bold text-slate-700 mb-1">ชื่อเอกสาร / หัวข้อผลงาน: *</label>
+          <input id="edit-item-title" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt" value="${item.title || item.roundTitle || ''}">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">หมวดหมู่ / ระดับชั้น / คะแนน:</label>
-            <input id="edit-item-category" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.category || item.score || item.level || item.code || ''}">
+            <label class="block font-bold text-slate-700 mb-1">หมวดหมู่ / ระดับชั้น / ระดับรางวัล:</label>
+            <input id="edit-item-category" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt" value="${item.category || item.score || item.level || item.code || ''}">
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">ปีการศึกษา / ปีงบประมาณ:</label>
-            <input id="edit-item-year" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.academicYear || item.fiscalYear || ''}">
+            <input id="edit-item-year" class="w-full p-2.5 rounded-lg border border-slate-300 font-prompt" value="${item.academicYear || item.fiscalYear || ''}">
           </div>
         </div>
 
         <!-- Image Upload from Device or URL -->
-        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-          <label class="block font-bold text-slate-700">รูปภาพหน้าปก (เลือกไฟล์จากเครื่อง หรือใส่ลิงก์):</label>
-          <input type="file" id="edit-item-file" accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <label class="block font-bold text-slate-800 font-prompt flex items-center gap-1.5">
+            <i data-lucide="image" class="w-4 h-4 text-amber-600"></i> รูปภาพผลงาน / รูปเกียรติบัตร (เลือกไฟล์หรือใส่ลิงก์):
+          </label>
+          <input type="file" id="edit-item-file" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
           <input id="edit-item-cover" class="w-full p-2 text-[11px] rounded-lg border border-slate-300" value="${currentCover}">
           <div class="flex items-center gap-3 pt-1">
-            <span class="text-[11px] text-slate-400">พรีวิวรูปภาพ:</span>
-            <img id="edit-item-preview" src="${currentCover || 'https://images.unsplash.com/photo-1544717305-2782549b5136'}" class="w-16 h-12 rounded object-cover border">
+            <span class="text-[11px] text-slate-400 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="edit-item-preview" src="${currentCover || 'https://images.unsplash.com/photo-1544717305-2782549b5136'}" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ลิงก์ไฟล์เอกสาร PDF / Google Drive:</label>
-          <input id="edit-item-pdf" class="w-full p-2.5 rounded-lg border border-slate-300" value="${item.pdfUrl || item.certificateUrl || item.pa1DocUrl || ''}">
+          <label class="block font-bold text-slate-700 mb-1">คำบรรยายและรายละเอียดผลงาน (เขียนบรรยายได้เต็มที่):</label>
+          <textarea id="edit-item-desc" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 font-sarabun">${item.description || item.challengeTitle || ''}</textarea>
         </div>
+
         <div>
-          <label class="block font-bold text-slate-700 mb-1">คำอธิบายรายละเอียด:</label>
-          <textarea id="edit-item-desc" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300">${item.description || item.challengeTitle || ''}</textarea>
+          <label class="block font-bold text-slate-700 mb-1">ลิงก์ไฟล์เอกสาร PDF / Google Drive (ถ้ามี / ไม่บังคับ):</label>
+          <input id="edit-item-pdf" class="w-full p-2.5 rounded-lg border border-slate-300 font-sarabun" value="${item.pdfUrl || item.certificateUrl || item.pa1DocUrl || ''}">
         </div>
       </div>
     `,
@@ -2502,6 +2715,7 @@ function openEditItemModal(collectionName, itemId) {
     confirmButtonColor: "#2563eb",
     cancelButtonColor: "#64748b",
     didOpen: () => {
+      initIcons();
       const fileInput = document.getElementById("edit-item-file");
       const coverInput = document.getElementById("edit-item-cover");
       const previewImg = document.getElementById("edit-item-preview");
@@ -2550,9 +2764,9 @@ function openEditItemModal(collectionName, itemId) {
 }
 
 // Edit Profile Modal
-function openProfileEditModal() {
+function openProfileEditModal(overrideData = null) {
   const data = window.portfolioStorage.getData();
-  const p = data.profile || {};
+  const p = overrideData || data.profile || {};
 
   Swal.fire({
     title: "แก้ไขข้อมูลประวัติส่วนตัวและโรงเรียน",
@@ -2607,7 +2821,12 @@ function openProfileEditModal() {
         <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
           <label class="block font-bold text-slate-700">รูปภาพโปรไฟล์ (เลือกไฟล์จากเครื่อง หรือใส่ URL):</label>
           <input type="file" id="prof-avatar-file" accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-          <input id="prof-avatar" class="w-full p-2 text-[11px] rounded-lg border border-slate-300" value="${p.avatarUrl || ''}">
+          <div class="flex gap-2 items-center">
+            <input id="prof-avatar" class="w-full p-2 text-[11px] rounded-lg border border-slate-300" value="${p.avatarUrl || ''}">
+            <button type="button" id="prof-crop-btn" class="px-2.5 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold shrink-0 border border-amber-300 cursor-pointer">
+              ครอปภาพ
+            </button>
+          </div>
           <div class="flex items-center gap-3 pt-1">
             <span class="text-[11px] text-slate-400">พรีวิว:</span>
             <img id="prof-avatar-preview" src="${p.avatarUrl || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2'}" class="w-12 h-12 rounded-full object-cover border-2 border-amber-400 shadow">
@@ -2648,20 +2867,51 @@ function openProfileEditModal() {
       const fileInput = document.getElementById("prof-avatar-file");
       const urlInput = document.getElementById("prof-avatar");
       const previewImg = document.getElementById("prof-avatar-preview");
+      const cropBtn = document.getElementById("prof-crop-btn");
+
+      const getFormData = () => ({
+        fullName: document.getElementById("prof-name")?.value || "",
+        position: document.getElementById("prof-pos")?.value || "",
+        academicStanding: document.getElementById("prof-acad")?.value || "",
+        subjectGroup: document.getElementById("prof-subject-group")?.value || "",
+        positionNumber: document.getElementById("prof-pos-num")?.value || "",
+        appointmentDate: document.getElementById("prof-app-date")?.value || "",
+        yearsOfService: document.getElementById("prof-years-service")?.value || "",
+        school: document.getElementById("prof-school")?.value || "",
+        affiliation: document.getElementById("prof-affil")?.value || "",
+        motto: document.getElementById("prof-motto")?.value || "",
+        bio: document.getElementById("prof-bio")?.value || "",
+        phone: document.getElementById("prof-phone")?.value || "",
+        email: document.getElementById("prof-email")?.value || "",
+        lineId: document.getElementById("prof-line")?.value || ""
+      });
+
       if (fileInput) {
         fileInput.addEventListener("change", (e) => {
           const file = e.target.files[0];
           if (!file) return;
+          const currentFormValues = getFormData();
           const reader = new FileReader();
           reader.onload = (ev) => {
             openAvatarCropperModal(ev.target.result, (croppedDataUrl) => {
-              urlInput.value = croppedDataUrl;
-              previewImg.src = croppedDataUrl;
-            });
+              openProfileEditModal({ ...currentFormValues, avatarUrl: croppedDataUrl });
+            }, false);
           };
           reader.readAsDataURL(file);
         });
       }
+
+      if (cropBtn) {
+        cropBtn.addEventListener("click", () => {
+          const currentSrc = urlInput?.value || p.avatarUrl;
+          if (!currentSrc) return;
+          const currentFormValues = getFormData();
+          openAvatarCropperModal(currentSrc, (croppedDataUrl) => {
+            openProfileEditModal({ ...currentFormValues, avatarUrl: croppedDataUrl });
+          }, false);
+        });
+      }
+
       if (urlInput) {
         urlInput.addEventListener("input", (e) => {
           if (previewImg) previewImg.src = e.target.value;
@@ -4996,7 +5246,7 @@ function openYearConfigModal() {
 // ==========================================
 let currentCropperInstance = null;
 
-function openAvatarCropperModal(imageSrc, onCropDone) {
+function openAvatarCropperModal(imageSrc, onCropDone, shouldSaveToProfile = true) {
   Swal.fire({
     title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
       <i data-lucide="crop" class="w-5 h-5 text-blue-600"></i> ปรับขนาดและครอบตัดรูปโปรไฟล์ (LINE Style)
@@ -5009,7 +5259,7 @@ function openAvatarCropperModal(imageSrc, onCropDone) {
 
         <!-- Cropper Canvas Container -->
         <div class="relative w-full h-[320px] bg-slate-950 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center border border-slate-700">
-          <img id="cropper-target-image" src="${imageSrc}" class="max-w-full max-h-full block" alt="Crop Target">
+          <img id="cropper-target-image" crossorigin="anonymous" src="${imageSrc}" class="max-w-full max-h-full block" alt="Crop Target">
         </div>
 
         <!-- Controls Toolbar -->
@@ -5017,7 +5267,7 @@ function openAvatarCropperModal(imageSrc, onCropDone) {
           <!-- Zoom Slider -->
           <div class="flex items-center justify-between gap-3 text-slate-700 font-semibold text-xs">
             <span class="flex items-center gap-1 shrink-0"><i data-lucide="zoom-out" class="w-4 h-4 text-slate-400"></i> ซูม:</span>
-            <input type="range" id="crop-slider-zoom" min="0.1" max="3" step="0.05" value="1" class="w-full accent-blue-600 cursor-pointer">
+            <input type="range" id="crop-slider-zoom" min="0.1" max="3" step="0.02" value="1" class="w-full accent-blue-600 cursor-pointer">
             <span class="flex items-center gap-1 shrink-0"><i data-lucide="zoom-in" class="w-4 h-4 text-slate-400"></i></span>
           </div>
 
@@ -5041,7 +5291,7 @@ function openAvatarCropperModal(imageSrc, onCropDone) {
     `,
     width: "540px",
     showCancelButton: true,
-    confirmButtonText: "✅ ตัดรูปและใช้ภาพนี้",
+    confirmButtonText: "✅ ตัดรูปและใช้ภาพนี้ทันที",
     cancelButtonText: "ยกเลิก",
     confirmButtonColor: "#2563eb",
     cancelButtonColor: "#64748b",
@@ -5067,6 +5317,7 @@ function openAvatarCropperModal(imageSrc, onCropDone) {
           cropBoxMovable: false,
           cropBoxResizable: false,
           toggleDragModeOnDblclick: false,
+          checkCrossOrigin: true,
           ready() {
             const slider = document.getElementById("crop-slider-zoom");
             if (slider) {
@@ -5102,25 +5353,44 @@ function openAvatarCropperModal(imageSrc, onCropDone) {
     },
     preConfirm: () => {
       if (currentCropperInstance) {
-        const canvas = currentCropperInstance.getCroppedCanvas({
-          width: 500,
-          height: 500,
-          fillColor: "#ffffff",
-          imageSmoothingEnabled: true,
-          imageSmoothingQuality: "high"
-        });
-        return canvas.toDataURL("image/jpeg", 0.92);
+        try {
+          const croppedCanvas = currentCropperInstance.getCroppedCanvas({
+            width: 600,
+            height: 600,
+            fillColor: "#ffffff",
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: "high"
+          });
+          if (croppedCanvas) {
+            return croppedCanvas.toDataURL("image/jpeg", 0.92);
+          }
+        } catch (e) {
+          console.warn("Canvas crop failed:", e);
+        }
       }
       return imageSrc;
     }
   }).then((result) => {
+    const croppedResult = result.value;
     if (currentCropperInstance) {
       currentCropperInstance.destroy();
       currentCropperInstance = null;
     }
-    if (result.isConfirmed && result.value) {
+    if (result.isConfirmed && croppedResult) {
+      if (shouldSaveToProfile) {
+        window.portfolioStorage.updateProfile({ avatarUrl: croppedResult });
+        Swal.fire({
+          icon: "success",
+          title: "บันทึกและเปลี่ยนรูปโปรไฟล์เรียบร้อยแล้ว",
+          text: "รูปโปรไฟล์ได้รับการตัดและจัดตำแหน่งตามที่คุณครูกำหนดเรียบร้อย",
+          timer: 1800,
+          showConfirmButton: false
+        });
+        updateGlobalStats();
+        renderCurrentView();
+      }
       if (typeof onCropDone === "function") {
-        onCropDone(result.value);
+        onCropDone(croppedResult);
       }
     }
   });
@@ -5155,7 +5425,7 @@ function openQuickAvatarModal() {
           <label class="block font-bold text-slate-700">2. หรือ วางลิงก์รูปภาพ (Image URL):</label>
           <div class="flex gap-2">
             <input id="avatar-url-input" class="w-full p-2.5 rounded-lg border border-slate-300 text-xs" value="${currentAvatar}" placeholder="https://...">
-            <button type="button" id="btn-crop-url-avatar" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold shrink-0">
+            <button type="button" id="btn-crop-url-avatar" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold shrink-0 cursor-pointer">
               ครอป
             </button>
           </div>
@@ -5173,38 +5443,29 @@ function openQuickAvatarModal() {
       const urlInput = document.getElementById("avatar-url-input");
       const previewImg = document.getElementById("avatar-live-preview");
 
-      // Handle File Upload ➔ Open LINE-style Cropper
+      // Handle File Upload ➔ Open LINE-style Cropper & Auto-save!
       if (fileInput) {
         fileInput.addEventListener("change", (e) => {
           const file = e.target.files[0];
           if (!file) return;
           const reader = new FileReader();
           reader.onload = (ev) => {
-            openAvatarCropperModal(ev.target.result, (croppedDataUrl) => {
-              urlInput.value = croppedDataUrl;
-              previewImg.src = croppedDataUrl;
-            });
+            openAvatarCropperModal(ev.target.result, null, true);
           };
           reader.readAsDataURL(file);
         });
       }
 
-      // Crop Current Avatar
+      // Crop Current Avatar ➔ Open LINE-style Cropper & Auto-save!
       document.getElementById("btn-crop-current-avatar")?.addEventListener("click", () => {
-        const currentSrc = urlInput.value || currentAvatar;
-        openAvatarCropperModal(currentSrc, (croppedDataUrl) => {
-          urlInput.value = croppedDataUrl;
-          previewImg.src = croppedDataUrl;
-        });
+        const currentSrc = urlInput ? urlInput.value : currentAvatar;
+        openAvatarCropperModal(currentSrc, null, true);
       });
 
       document.getElementById("btn-crop-url-avatar")?.addEventListener("click", () => {
-        const currentSrc = urlInput.value;
+        const currentSrc = urlInput?.value;
         if (currentSrc) {
-          openAvatarCropperModal(currentSrc, (croppedDataUrl) => {
-            urlInput.value = croppedDataUrl;
-            previewImg.src = croppedDataUrl;
-          });
+          openAvatarCropperModal(currentSrc, null, true);
         }
       });
 
