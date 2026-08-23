@@ -3559,63 +3559,277 @@ function confirmDeleteWorkExp(idx) {
   });
 }
 
-// 3. Teaching Duties CRUD Modals
+// 3. Teaching Duties CRUD Modals (รองรับการเพิ่มทีละหลายวิชาพร้อมกัน)
 function openAddTeachingDutyModal() {
+  const initialRows = [
+    { code: "", name: "", grade: "", hours: 2, students: 30 },
+    { code: "", name: "", grade: "", hours: 1, students: 30 },
+    { code: "", name: "", grade: "", hours: 2, students: 30 }
+  ];
+
   Swal.fire({
-    title: "เพิ่มรายวิชาสอนตามตารางสอน",
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="book-plus" class="w-5 h-5 text-emerald-600"></i> เพิ่มรายวิชาสอนตามตารางสอน (เพิ่มหลายวิชาพร้อมกัน)
+    </span>`,
     html: `
-      <div class="space-y-3 text-left font-sarabun text-xs">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">รหัสวิชา: *</label>
-            <input id="duty-code" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น ส15101">
+      <div class="space-y-3.5 text-left font-sarabun text-xs">
+        
+        <!-- Quick Paste Accordion / Toggle -->
+        <div class="p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-emerald-900 flex items-center gap-1.5 font-prompt text-xs">
+              <i data-lucide="clipboard-paste" class="w-4 h-4 text-emerald-600"></i> วางข้อความนำเข้าหลายวิชาแบบด่วน (Quick Paste):
+            </span>
           </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">ระดับชั้น: *</label>
-            <input id="duty-grade" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น ชั้นประถมศึกษาปีที่ 5">
+          <p class="text-[11px] text-emerald-800/90 leading-relaxed font-sarabun">
+            สามารถ Copy จาก Excel หรือพิมพ์วางข้อความ (1 บรรทัดต่อ 1 วิชา) แล้วกดปุ่ม <b>"แปลงเป็นแถวตาราง"</b> ระบบจะกรอกลงตารางให้อัตโนมัติครับ
+          </p>
+          <div class="space-y-1.5">
+            <textarea id="bulk-subject-text" rows="2" class="w-full p-2.5 rounded-lg border border-emerald-300 font-mono text-[11px] bg-white focus:ring-2 focus:ring-emerald-500" placeholder="ตัวอย่าง:
+ส15101 สังคมศึกษาฯ ชั้น ป.5 2 30
+ส15102 ประวัติศาสตร์ ชั้น ป.5 1 30
+ส16101 สังคมศึกษาฯ ชั้น ป.6 2 32"></textarea>
+            <button type="button" id="btn-parse-bulk-subjects" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-prompt text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> แปลงข้อความเป็นแถวตาราง
+            </button>
           </div>
         </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">ชื่อรายวิชา: *</label>
-          <input id="duty-name" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น สังคมศึกษา ศาสนา และวัฒนธรรม">
+
+        <!-- Dynamic Multi-Row Table -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-slate-800 font-prompt text-xs flex items-center gap-1.5">
+              <i data-lucide="list-plus" class="w-4 h-4 text-blue-600"></i> ตารางกรอกรายวิชาที่ต้องการเพิ่ม:
+            </label>
+            <button type="button" id="btn-add-subject-row" class="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold font-prompt flex items-center gap-1 transition-all cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มแถววิชา (+1)
+            </button>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl overflow-hidden shadow-2xs max-h-[38vh] overflow-y-auto bg-slate-50/50">
+            <table class="w-full text-left font-sarabun text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-prompt sticky top-0 z-10 border-b border-slate-200 text-[11px]">
+                <tr>
+                  <th class="p-2 w-8 text-center">#</th>
+                  <th class="p-2 w-28">รหัสวิชา *</th>
+                  <th class="p-2">ชื่อรายวิชา *</th>
+                  <th class="p-2 w-32">ระดับชั้น *</th>
+                  <th class="p-2 w-20 text-center">คาบ/สัปดาห์</th>
+                  <th class="p-2 w-20 text-center">นร. (คน)</th>
+                  <th class="p-2 w-10 text-center">ลบ</th>
+                </tr>
+              </thead>
+              <tbody id="multi-subject-tbody" class="divide-y divide-slate-200 bg-white">
+                <!-- Rows injected dynamically -->
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">จำนวนชั่วโมง/สัปดาห์ (คาบ): *</label>
-            <input id="duty-hours" type="number" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น 2" value="2">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">จำนวนนักเรียน (คน):</label>
-            <input id="duty-students" type="number" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="เช่น 30" value="30">
-          </div>
+
+        <!-- Real-time Summary Badge -->
+        <div id="multi-subject-summary" class="p-2.5 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-prompt text-slate-700">
+          <span class="font-semibold text-emerald-800">📊 รวมทั้งหมด: <b id="sum-count">0</b> รายวิชา</span>
+          <span class="font-semibold text-blue-800">⏱️ รวม: <b id="sum-hours">0</b> คาบ/สัปดาห์</span>
         </div>
       </div>
     `,
-    width: "550px",
+    width: "780px",
     showCancelButton: true,
-    confirmButtonText: "บันทึกรายวิชา",
+    confirmButtonText: "💾 บันทึกรายวิชาทั้งหมด",
     cancelButtonText: "ยกเลิก",
     confirmButtonColor: "#059669",
     cancelButtonColor: "#64748b",
-    preConfirm: () => {
-      const subjectCode = document.getElementById("duty-code").value.trim();
-      const subjectName = document.getElementById("duty-name").value.trim();
-      const grade = document.getElementById("duty-grade").value.trim();
-      const hoursPerWeek = parseInt(document.getElementById("duty-hours").value) || 1;
-      const studentsCount = parseInt(document.getElementById("duty-students").value) || 0;
+    didOpen: () => {
+      initIcons();
 
-      if (!subjectCode || !subjectName || !grade) {
-        Swal.showValidationMessage("กรุณากรอกรหัสวิชา ชื่อวิชา และระดับชั้น");
+      const tbody = document.getElementById("multi-subject-tbody");
+      let rowCount = 0;
+
+      function renderRow(code = "", name = "", grade = "", hours = 2, students = 30) {
+        rowCount++;
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50/80 transition-colors group";
+        tr.innerHTML = `
+          <td class="p-2 text-center text-slate-400 font-bold row-index text-[11px]">${rowCount}</td>
+          <td class="p-1.5">
+            <input class="row-code w-full p-1.5 rounded-lg border border-slate-300 font-semibold text-blue-700 text-xs focus:ring-2 focus:ring-emerald-500" value="${escapeHtml(code)}" placeholder="เช่น ส15101">
+          </td>
+          <td class="p-1.5">
+            <input class="row-name w-full p-1.5 rounded-lg border border-slate-300 text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500" value="${escapeHtml(name)}" placeholder="เช่น สังคมศึกษา ศาสนาฯ">
+          </td>
+          <td class="p-1.5">
+            <input class="row-grade w-full p-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs focus:ring-2 focus:ring-emerald-500" value="${escapeHtml(grade)}" placeholder="เช่น ชั้น ป.5">
+          </td>
+          <td class="p-1.5 text-center">
+            <input type="number" min="1" max="40" class="row-hours w-full p-1.5 rounded-lg border border-slate-300 text-center font-bold text-slate-800 text-xs" value="${hours}">
+          </td>
+          <td class="p-1.5 text-center">
+            <input type="number" min="0" max="500" class="row-students w-full p-1.5 rounded-lg border border-slate-300 text-center text-slate-700 text-xs" value="${students}">
+          </td>
+          <td class="p-1.5 text-center">
+            <button type="button" class="btn-remove-row p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="ลบแถวนี้">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        `;
+
+        tr.querySelector(".btn-remove-row")?.addEventListener("click", () => {
+          tr.remove();
+          updateRowIndices();
+          updateSummary();
+        });
+
+        tr.querySelectorAll("input").forEach(input => {
+          input.addEventListener("input", updateSummary);
+        });
+
+        tbody.appendChild(tr);
+        initIcons();
+        updateSummary();
+      }
+
+      function updateRowIndices() {
+        const rows = tbody.querySelectorAll("tr");
+        rows.forEach((row, i) => {
+          const idxEl = row.querySelector(".row-index");
+          if (idxEl) idxEl.textContent = i + 1;
+        });
+        rowCount = rows.length;
+      }
+
+      function updateSummary() {
+        const rows = tbody.querySelectorAll("tr");
+        let validSubjects = 0;
+        let totalHours = 0;
+
+        rows.forEach(row => {
+          const code = row.querySelector(".row-code")?.value.trim();
+          const name = row.querySelector(".row-name")?.value.trim();
+          const hours = parseInt(row.querySelector(".row-hours")?.value) || 0;
+
+          if (code || name) {
+            validSubjects++;
+            totalHours += hours;
+          }
+        });
+
+        const sumCountEl = document.getElementById("sum-count");
+        const sumHoursEl = document.getElementById("sum-hours");
+        if (sumCountEl) sumCountEl.textContent = validSubjects;
+        if (sumHoursEl) sumHoursEl.textContent = totalHours;
+      }
+
+      // Populate initial 3 rows
+      initialRows.forEach(r => renderRow(r.code, r.name, r.grade, r.hours, r.students));
+
+      // Add Row button
+      document.getElementById("btn-add-subject-row")?.addEventListener("click", () => {
+        renderRow("", "", "", 2, 30);
+      });
+
+      // Quick Parse bulk text button
+      document.getElementById("btn-parse-bulk-subjects")?.addEventListener("click", () => {
+        const text = document.getElementById("bulk-subject-text")?.value.trim();
+        if (!text) {
+          Swal.showValidationMessage("กรุณากรอกข้อความก่อนกดแปลง");
+          return;
+        }
+
+        const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length === 0) return;
+
+        // Clear existing empty rows if not filled
+        const existingRows = tbody.querySelectorAll("tr");
+        let hasFilledRow = false;
+        existingRows.forEach(r => {
+          if (r.querySelector(".row-code")?.value.trim() || r.querySelector(".row-name")?.value.trim()) {
+            hasFilledRow = true;
+          }
+        });
+
+        if (!hasFilledRow) {
+          tbody.innerHTML = "";
+          rowCount = 0;
+        }
+
+        lines.forEach(line => {
+          let parts = line.includes("\t") ? line.split("\t") :
+                      line.includes("|") ? line.split("|") :
+                      line.includes(",") ? line.split(",") : [];
+
+          if (parts.length >= 2) {
+            const code = parts[0]?.trim() || "";
+            const name = parts[1]?.trim() || "";
+            const grade = parts[2]?.trim() || "ชั้นประถมศึกษา";
+            const hours = parseInt(parts[3]?.trim()) || 2;
+            const students = parseInt(parts[4]?.trim()) || 30;
+            renderRow(code, name, grade, hours, students);
+          } else {
+            const tokens = line.split(/\s+/);
+            if (tokens.length >= 2) {
+              const code = tokens[0];
+              const lastToken = tokens[tokens.length - 1];
+              const secondLastToken = tokens[tokens.length - 2];
+              let students = parseInt(lastToken) || 30;
+              let hours = parseInt(secondLastToken) || 2;
+              let nameTokens = tokens.slice(1);
+              if (!isNaN(parseInt(lastToken))) nameTokens.pop();
+              if (!isNaN(parseInt(secondLastToken))) nameTokens.pop();
+              const name = nameTokens.join(" ");
+              renderRow(code, name, "ชั้นประถมศึกษา", hours, students);
+            } else {
+              renderRow("", line, "ชั้นประถมศึกษา", 2, 30);
+            }
+          }
+        });
+
+        updateRowIndices();
+        updateSummary();
+      });
+    },
+    preConfirm: () => {
+      const tbody = document.getElementById("multi-subject-tbody");
+      const rows = tbody.querySelectorAll("tr");
+      const validItems = [];
+
+      rows.forEach(row => {
+        const subjectCode = row.querySelector(".row-code")?.value.trim();
+        const subjectName = row.querySelector(".row-name")?.value.trim();
+        const grade = row.querySelector(".row-grade")?.value.trim() || "ชั้นประถมศึกษา";
+        const hoursPerWeek = parseInt(row.querySelector(".row-hours")?.value) || 1;
+        const studentsCount = parseInt(row.querySelector(".row-students")?.value) || 0;
+
+        if (subjectCode && subjectName) {
+          validItems.push({
+            subjectCode,
+            subjectName,
+            grade,
+            hoursPerWeek,
+            studentsCount
+          });
+        }
+      });
+
+      if (validItems.length === 0) {
+        Swal.showValidationMessage("กรุณากรอกรหัสวิชาและชื่อวิชาอย่างน้อย 1 รายการ");
         return false;
       }
-      return { subjectCode, subjectName, grade, hoursPerWeek, studentsCount };
+      return validItems;
     }
   }).then((result) => {
-    if (result.isConfirmed) {
+    if (result.isConfirmed && result.value) {
       const data = window.portfolioStorage.getData();
       if (!data.profile.teachingDuties) data.profile.teachingDuties = [];
-      data.profile.teachingDuties.push(result.value);
+      data.profile.teachingDuties.push(...result.value);
       window.portfolioStorage.saveData(data);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: `เพิ่ม ${result.value.length} รายวิชาสอนเรียบร้อยแล้ว`,
+        showConfirmButton: false,
+        timer: 1500
+      });
       renderCurrentView();
     }
   });
