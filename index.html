@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KRUSOS E-Portfolio | แฟ้มสะสมงานครูซอสสอนสังคม</title>
+  
+  <!-- Favicon & Meta -->
+  <meta name="description" content="ระบบรวบรวมผลงานและประเมินผลออนไลน์ KRUSOS E-Portfolio แฟ้มสะสมงานครูซอสสอนสังคม">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  
+  <!-- Google Fonts: Prompt & Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            prompt: ['Prompt', 'sans-serif'],
+            sarabun: ['Sarabun', 'sans-serif'],
+          },
+          colors: {
+            navy: {
+              50: '#f0f5ff',
+              100: '#e0ebff',
+              600: '#1e40af',
+              800: '#1e3a8a',
+              900: '#0f2c59',
+              950: '#081735'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Cropper.js (For LINE-Style Profile Cropping) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+  <!-- Custom CSS (Support both root and subfolder structures) -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+/* Custom Styling for Teacher E-Portfolio Web App */
+@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap');
+
+:root {
+  --primary-navy: #0f2c59;
+  --primary-blue: #1e40af;
+  --primary-accent: #2563eb;
+  --gold-accent: #d97706;
+  --gold-light: #fef3c7;
+  --gold-dark: #b45309;
+}
+
+/* Universal Unified Thai Font (Prompt) */
+*, body, button, input, select, textarea, p, h1, h2, h3, h4, h5, h6, span, label, div {
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+/* SweetAlert font unification */
+.swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, .swal2-confirm, .swal2-cancel, .swal2-input, .swal2-textarea {
+  font-family: 'Prompt', sans-serif !important;
+}
+
+/* Welcome Page Glow Effects */
+.welcome-glow {
+  box-shadow: 0 0 50px -10px rgba(217, 119, 6, 0.35);
+}
+
+.welcome-portrait-ring {
+  background: linear-gradient(135deg, #f59e0b, #3b82f6, #d97706);
+  padding: 5px;
+  border-radius: 9999px;
+  box-shadow: 0 15px 35px -5px rgba(15, 44, 89, 0.4);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Glassmorphism Classes */
+.glass-header {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 3D Book Cover & Digital Shelf Styles */
+.book-card {
+  perspective: 1000px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.book-card:hover {
+  transform: translateY(-8px);
+}
+
+.book-cover {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(15, 44, 89, 0.2), 0 8px 10px -6px rgba(15, 44, 89, 0.1);
+  transition: all 0.3s ease;
+  aspect-ratio: 3/4;
+}
+
+.book-cover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 12px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.2));
+  z-index: 10;
+  pointer-events: none;
+}
+
+.book-cover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  bottom: 0;
+  width: 2px;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.book-card:hover .book-cover {
+  box-shadow: 0 20px 30px -10px rgba(15, 44, 89, 0.35), 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+}
+
+/* Badge Ribbon */
+.ribbon-badge {
+  position: absolute;
+  top: 12px;
+  right: -8px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px 0 0 4px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  z-index: 15;
+}
+
+.ribbon-badge::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 0;
+  border-left: 6px solid #b45309;
+  border-bottom: 6px solid transparent;
+}
+
+/* Subtle Gradient Grids */
+.bg-education-gradient {
+  background: linear-gradient(135deg, #0f2c59 0%, #1e40af 50%, #172554 100%);
+}
+
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+/* Smooth Page Transitions */
+.page-view {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Nav Item Active State */
+.nav-link {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-link.active {
+  color: #1e40af;
+  font-weight: 600;
+  background-color: #eff6ff;
+}
+
+.nav-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  background: #2563eb;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Print Friendly Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .glass-card, .book-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: avoid;
+  }
+}
+
+</style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 font-prompt antialiased flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- 1. Standalone Welcome / Landing Cover Screen (หน้าแรกสุดก่อนเข้าระบบ) -->
+  <!-- ========================================== -->
+  <div id="welcome-cover-screen" class="h-screen max-h-screen w-full bg-gradient-to-b from-navy-950 via-navy-900 to-navy-950 text-slate-100 flex flex-col justify-between overflow-hidden hidden">
+    <!-- Rendered dynamically by renderWelcomeView -->
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. Main Application Workspace (Dashboard & Modules) -->
+  <!-- ========================================== -->
+  <div id="main-app-workspace" class="flex h-screen overflow-hidden">
+
+    <!-- ========================================== -->
+    <!-- Sidebar Navigation Drawer -->
+    <!-- ========================================== -->
+    <!-- ========================================== -->
+    <!-- Sidebar Navigation Drawer -->
+    <!-- ========================================== -->
+    <aside id="sidebar-container" class="fixed inset-y-0 left-0 z-50 w-72 bg-navy-950 text-slate-200 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 -translate-x-full shadow-2xl lg:shadow-none border-r border-navy-900 shrink-0 h-full max-h-screen">
+      
+      <!-- Top Brand & Teacher Avatar (Fixed Header) -->
+      <div class="shrink-0">
+        <div class="p-4 border-b border-navy-900 flex items-center justify-between">
+          <div onclick="navigateTo('welcome')" class="flex items-center gap-3 min-w-0 flex-1 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" title="คลิกเพื่อกลับหน้าปก">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-navy-950 font-bold shadow-lg shrink-0">
+              <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0 flex-1 overflow-hidden">
+              <span class="text-xs uppercase tracking-wider text-amber-400 font-bold block app-title-text truncate">KRUSOS E-PORTFOLIO</span>
+              <span class="text-[10px] text-slate-400 font-medium block truncate">แฟ้มสะสมงานครูซอสสอนสังคม</span>
+            </div>
+          </div>
+          <!-- Close Button on Mobile -->
+          <button onclick="toggleMobileMenu()" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-navy-900 shrink-0 ml-1">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Teacher Mini Card -->
+        <div class="p-3 mx-3 my-2 rounded-2xl bg-navy-900/80 border border-blue-900/40 flex items-center gap-2.5">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80" alt="Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-amber-400 shrink-0 teacher-avatar">
+          <div class="overflow-hidden flex-1">
+            <h4 class="font-bold text-xs text-white truncate teacher-name">ครูวิมลรัตน์ ปัญญาสว่าง</h4>
+            <p class="text-[10px] text-blue-300 truncate teacher-position">ครู อันดับ คศ.1</p>
+            <span class="inline-flex items-center text-[10px] text-emerald-400 font-medium truncate">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse shrink-0"></span> <span class="eval-status-text truncate">พร้อมรับการประเมิน</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Menu Items (Flexible Scrollable List) -->
+      <nav class="flex-1 min-h-0 overflow-y-auto px-3 py-1 space-y-1">
+        <a href="#" data-view="dashboard" class="nav-link active flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-blue-400"></i>
+          <span>แดชบอร์ดภาพรวม</span>
+        </a>
+        <a href="#" data-view="profile" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="user" class="w-4 h-4 text-indigo-400"></i>
+          <span>ประวัติส่วนตัว (Profile)</span>
+        </a>
+        <a href="#" data-view="intensive-prep" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="graduation-cap" class="w-4 h-4 text-teal-400"></i>
+          <span>การประเมินครูผู้ช่วย (4 ครั้ง)</span>
+        </a>
+        <a href="#" data-view="pa" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="file-check" class="w-4 h-4 text-amber-400"></i>
+          <span>การประเมิน วPA</span>
+        </a>
+        <a href="#" data-view="lesson-plans" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="book-open" class="w-4 h-4 text-sky-400"></i>
+          <span>แผนการจัดการเรียนรู้</span>
+        </a>
+        <a href="#" data-view="official-docs" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="folder-kanban" class="w-4 h-4 text-indigo-400"></i>
+          <span>เอกสารทางราชการ</span>
+        </a>
+        <a href="#" data-view="achievements" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="trophy" class="w-4 h-4 text-yellow-400"></i>
+          <span>ผลงานและรางวัลที่ภูมิใจ</span>
+        </a>
+        <a href="#" data-view="gallery" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-xs md:text-sm font-medium hover:bg-navy-900 transition-colors">
+          <i data-lucide="images" class="w-4 h-4 text-rose-400"></i>
+          <span>ภาพกิจกรรมต่าง ๆ</span>
+        </a>
+      </nav>
+
+      <!-- Bottom Admin Controls (Pinned Clean Footer) -->
+      <div class="shrink-0 p-3 border-t border-navy-900 space-y-1.5 bg-navy-950">
+        <!-- Admin Only Tools (Visible only when logged in as Admin) -->
+        <div id="admin-tools-container" class="hidden space-y-1.5 pb-0.5">
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="openBackupRestoreModal()" class="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold text-amber-200 hover:text-white bg-navy-900 hover:bg-navy-800 border border-amber-500/30 transition-all shadow-sm cursor-pointer" title="สำรองและกู้คืนข้อมูล">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>สำรองข้อมูล</span>
+            </button>
+            <button onclick="openChangePinModal()" class="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold text-slate-300 hover:text-white bg-navy-900/70 hover:bg-navy-900 border border-blue-900/40 transition-all cursor-pointer" title="เปลี่ยนรหัส PIN">
+              <i data-lucide="key" class="w-3.5 h-3.5 text-blue-400"></i>
+              <span>เปลี่ยน PIN</span>
+            </button>
+          </div>
+          <button onclick="toggleViewerSimulation(true)" class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold text-amber-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-amber-400/30 transition-all cursor-pointer">
+            <i data-lucide="eye" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>ดูมุมมองคนดู (Viewer View)</span>
+          </button>
+        </div>
+        
+        <button id="btn-admin-toggle" class="w-full flex items-center justify-center px-3.5 py-2.5 text-xs font-bold rounded-xl text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-sm transition-all cursor-pointer">
+          <i data-lucide="lock" class="w-4 h-4 mr-1.5"></i>
+          <span>เข้าสู่ระบบ Admin</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ========================================== -->
+    <!-- Main Content Area -->
+    <!-- ========================================== -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+      <!-- Top Notification Banner for Viewer Simulation (Solving Image 1) -->
+      <div id="simulation-top-bar" class="hidden bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 text-navy-950 px-4 md:px-8 py-2.5 text-xs font-bold flex items-center justify-between shadow-md z-50 border-b border-amber-600 animate-in fade-in">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-navy-950 animate-ping shrink-0"></span>
+          <span class="font-bold">👀 คุณกำลังดูตัวอย่างใน "มุมมองผู้เข้าชม (Public View)"</span>
+          <span class="hidden md:inline font-medium text-slate-900">• ปุ่มแก้ไขทั้งหมดถูกซ่อนตามที่คนภายนอกเห็นจริง</span>
+        </div>
+        <button onclick="toggleViewerSimulation(false)" class="px-3.5 py-1.5 rounded-lg bg-navy-950 hover:bg-slate-900 text-amber-300 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0">
+          <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+          <span>กลับสู่โหมด Admin</span>
+        </button>
+      </div>
+
+      <!-- Distinct High-Contrast Header Topbar -->
+      <header class="bg-gradient-to-r from-navy-950 via-navy-900 to-blue-950 text-white sticky top-0 z-40 border-b border-blue-900/60 px-4 md:px-8 py-3 flex items-center justify-between gap-4 shadow-xl">
+        
+        <div class="flex items-center gap-3 flex-1 max-w-xl">
+          <button id="mobile-menu-toggle" class="lg:hidden p-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 transition-colors" aria-label="Toggle Menu">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          
+          <!-- Modern Search Bar with Live Suggestions -->
+          <div class="relative w-full max-w-md" id="search-box-container">
+            <div class="relative flex items-center group">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-300">
+                <i data-lucide="search" class="w-4 h-4"></i>
+              </div>
+              <input id="global-search-input" type="text" autocomplete="off" placeholder="พิมพ์เพื่อค้นหาเอกสาร, แผนการสอน, วPA..." 
+                class="w-full pl-10 pr-20 py-2 text-xs md:text-sm rounded-xl bg-white/10 hover:bg-white/15 focus:bg-white text-white focus:text-slate-800 placeholder:text-blue-200/60 focus:placeholder:text-slate-400 border border-white/20 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30 font-sarabun transition-all shadow-inner">
+              <button onclick="triggerSearchButtonClick()" class="absolute right-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1">
+                <span>ค้นหา</span>
+              </button>
+            </div>
+
+            <!-- Live Search Autocomplete / Suggestions Dropdown -->
+            <div id="search-suggestions-dropdown" class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/90 text-slate-800 overflow-hidden hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-[75vh] flex flex-col">
+              <!-- Quick filter tags -->
+              <div class="p-3 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto text-[11px]">
+                <span class="text-slate-400 font-medium shrink-0 flex items-center gap-1">
+                  <i data-lucide="sparkles" class="w-3 h-3 text-amber-500"></i> แนะนำ:
+                </span>
+                <button type="button" onclick="applySearchSuggestion('แผนการสอน')" class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium whitespace-nowrap transition-colors">แผนการสอน</button>
+                <button type="button" onclick="applySearchSuggestion('วPA')" class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium whitespace-nowrap transition-colors">วPA</button>
+                <button type="button" onclick="applySearchSuggestion('ครูผู้ช่วย')" class="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 font-medium whitespace-nowrap transition-colors">ครูผู้ช่วย</button>
+                <button type="button" onclick="applySearchSuggestion('รางวัล')" class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-medium whitespace-nowrap transition-colors">รางวัล</button>
+                <button type="button" onclick="applySearchSuggestion('คำสั่ง')" class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-medium whitespace-nowrap transition-colors">คำสั่ง</button>
+                <button type="button" onclick="applySearchSuggestion('กิจกรรม')" class="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 font-medium whitespace-nowrap transition-colors">กิจกรรม</button>
+              </div>
+              
+              <!-- Results List -->
+              <div id="search-results-list" class="overflow-y-auto p-2 space-y-1 divide-y divide-slate-100 text-xs font-sarabun">
+                <!-- Injected by JavaScript -->
+              </div>
+              
+              <!-- Footer -->
+              <div class="p-2.5 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between font-sarabun px-4">
+                <span>คลิกที่รายการเพื่อเปิดดูเอกสาร / นำทางทันที</span>
+                <span id="search-results-count" class="font-medium text-slate-600"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side Actions -->
+        <div class="flex items-center gap-2 md:gap-3">
+          <!-- Academic Year Tag -->
+          <div class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm text-amber-300 text-xs font-semibold border border-white/15 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="current-year-text">ปีการศึกษา 2568</span>
+          </div>
+
+          <!-- Share Button -->
+          <button onclick="copyShareLink()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 shadow-sm transition-all" title="คัดลอกลิงก์แชร์แฟ้มผลงาน">
+            <i data-lucide="share-2" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="hidden md:inline">แชร์แฟ้มผลงาน</span>
+          </button>
+
+          <!-- Print Button -->
+          <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 shadow-sm transition-all" title="พิมพ์รายงาน">
+            <i data-lucide="printer" class="w-3.5 h-3.5 text-blue-300"></i>
+            <span class="hidden md:inline">พิมพ์</span>
+          </button>
+
+          <!-- Admin Mode Indicator Badge (Only appears when Admin is active) -->
+          <div id="user-role-badge"></div>
+        </div>
+      </header>
+
+      <!-- Dynamic Page View Container -->
+      <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+        <div id="main-content-area" class="max-w-7xl mx-auto">
+          <!-- Views rendered by app.js -->
+        </div>
+
+        <!-- Footer -->
+        <footer class="pt-8 pb-4 text-center text-xs text-slate-400 font-sarabun border-t border-slate-200 mt-12">
+          <p>© 2568 KRUSOS E-PORTFOLIO | แฟ้มสะสมงานครูซอสสอนสังคม</p>
+          <p class="text-[11px] text-slate-400 mt-1">พัฒนาและออกแบบเพื่อการเก็บรวบรวมผลงาน การประเมิน วPA และการประเมินวิทยฐานะ</p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- Global Modal: PDF Preview Modal -->
+  <!-- ========================================== -->
+  <div id="pdf-preview-modal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+    <div class="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-3.5 bg-navy-950 text-white flex items-center justify-between border-b border-navy-900">
+        <div class="flex items-center gap-2.5 overflow-hidden">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+            <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
+          </div>
+          <h3 id="pdf-modal-title" class="font-bold text-sm md:text-base truncate">เอกสารประกอบการประเมิน</h3>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <a id="pdf-modal-external-btn" href="#" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow transition-colors">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">เปิดในแท็บใหม่ / Google Drive</span>
+          </a>
+          <button onclick="closePdfModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-navy-900 transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Viewer Iframe) -->
+      <div class="flex-1 bg-slate-100 relative">
+        <iframe id="pdf-modal-iframe" src="about:blank" class="w-full h-full border-none" title="PDF Document Viewer"></iframe>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-sarabun">
+        <span>คำแนะนำ: หากเปิดเอกสารพรีวิวไม่ได้ กรุณาคลิกปุ่ม "เปิดในแท็บใหม่ / Google Drive" ด้านบน</span>
+        <button onclick="closePdfModal()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-prompt font-semibold transition-colors">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts (Auto-detects Root or js/ directory) -->
+  <script src="data.js" onerror="this.onerror=null;this.src='js/data.js'"></script>
+  <script src="storage.js" onerror="this.onerror=null;this.src='js/storage.js'"></script>
+  <script src="app.js" onerror="this.onerror=null;this.src='js/app.js'"></script>
+</body>
+</html>
