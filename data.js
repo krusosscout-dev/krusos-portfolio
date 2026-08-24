@@ -127,7 +127,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2564",
       date: "31 ตุลาคม 2564",
       coverUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     {
@@ -141,7 +141,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2564",
       date: "31 ตุลาคม 2564",
       coverUrl: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     // ครั้งที่ 2
@@ -156,7 +156,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2564",
       date: "30 เมษายน 2565",
       coverUrl: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     {
@@ -170,7 +170,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2564",
       date: "30 เมษายน 2565",
       coverUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     // ครั้งที่ 3
@@ -185,7 +185,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2565",
       date: "31 ตุลาคม 2565",
       coverUrl: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     {
@@ -199,7 +199,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2565",
       date: "31 ตุลาคม 2565",
       coverUrl: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     // ครั้งที่ 4
@@ -214,7 +214,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2565",
       date: "30 เมษายน 2566",
       coverUrl: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     {
@@ -228,7 +228,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       academicYear: "2565",
       date: "30 เมษายน 2566",
       coverUrl: "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     }
   ],
@@ -500,7 +500,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       unitsCount: "12 แผน (20 ชั่วโมง)",
       description: "หน่วยการเรียนรู้ที่ 1 การแก้ปัญหาด้วยเหตุผลเชิงตรรกะ และหน่วยที่ 2 การเขียนโปรแกรมด้วย Scratch 3.0",
       coverUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       driveUrl: "https://drive.google.com",
       isVisible: true
     },
@@ -515,7 +515,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       unitsCount: "10 แผน (20 ชั่วโมง)",
       description: "หน่วยการเรียนรู้การค้นหาข้อมูลทางอินเทอร์เน็ตอย่างปลอดภัยและการเขียนโปรแกรมแบบมีเงื่อนไข",
       coverUrl: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       driveUrl: "https://drive.google.com",
       isVisible: true
     },
@@ -530,7 +530,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       unitsCount: "10 แผน (20 ชั่วโมง)",
       description: "เน้นการเรียนรู้แบบ Unplugged Coding และการใช้โปรแกรมประมวลผลคำอย่างมีจริยธรรม",
       coverUrl: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       driveUrl: "https://drive.google.com",
       isVisible: true
     },
@@ -545,7 +545,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       unitsCount: "14 แผน (20 ชั่วโมง)",
       description: "กระบวนการออกแบบเชิงวิศวกรรม (Engineering Design Process) และการสร้างสิ่งประดิษฐ์เพื่อชุมชน",
       coverUrl: "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       driveUrl: "https://drive.google.com",
       isVisible: true
     }
@@ -562,7 +562,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       issueDate: "15 พฤษภาคม 2568",
       description: "ปฏิบัติหน้าที่หัวหน้างานระบบสารสนเทศและดูแลระบบเครือข่ายอินเทอร์เน็ตของโรงเรียน",
       coverUrl: "https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     {
@@ -574,7 +574,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       issueDate: "12 กรกฎาคม 2567",
       description: "หลักสูตรพัฒนาครูแกนนำด้านปัญญาประดิษฐ์ทางการศึกษา (AI in Education) จำนวน 20 ชั่วโมง",
       coverUrl: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     {
@@ -586,7 +586,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       issueDate: "1 พฤษภาคม 2568",
       description: "ภาระงานสอน 20 คาบ/สัปดาห์ พร้อมตารางเวรประจำวันและงานดูแลนักเรียน",
       coverUrl: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     },
     {
@@ -598,7 +598,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       issueDate: "16 พฤษภาคม 2567",
       description: "ปฏิบัติหน้าที่ครูประจำชั้น ควบคุมดูแลระเบียบวินัย และระบบดูแลช่วยเหลือนักเรียน",
       coverUrl: "https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=600&q=80",
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfUrl: "",
       isVisible: true
     }
   ],
