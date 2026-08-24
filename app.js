@@ -6621,11 +6621,18 @@ function renderDashboardHeroCarousel(slides, isAdmin) {
           return `
             <div class="hero-slide-item absolute inset-0 transition-all duration-700 ease-in-out ${isActive ? 'opacity-100 scale-100 pointer-events-auto z-10' : 'opacity-0 scale-105 pointer-events-none z-0'}" data-slide-index="${idx}">
               
-              <!-- Slide Photo (Sharp & Responsive) -->
-              <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title || 'Highlight'}" class="w-full h-full object-cover">
+              <!-- Slide Photo (Support both Fit Original with Ambient Glow and Cover Fill) -->
+              ${slide.fitMode === 'cover' ? `
+                <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title || 'Highlight'}" class="w-full h-full object-cover">
+              ` : `
+                <!-- Ambient Glow Backdrop -->
+                <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="Ambient Backdrop" class="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-40 filter brightness-75 pointer-events-none">
+                <!-- Sharp Full Image (100% Original Ratio, No Cutoffs) -->
+                <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title || 'Highlight'}" class="relative z-10 w-full h-full object-contain mx-auto drop-shadow-2xl">
+              `}
               
               <!-- Cinematic Dark Gradient Overlay -->
-              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10 z-15 pointer-events-none"></div>
 
               <!-- Top Left Tag / Badge -->
               ${slide.tag ? `
@@ -6937,11 +6944,39 @@ function openAddHeroSlideModal() {
           </div>
         </div>
 
-        <!-- Image Source Selector (Upload or URL) -->
-        <div class="space-y-2 pt-1 border-t border-slate-100">
-          <label class="block font-bold text-slate-700 mb-1 font-prompt">รูปภาพสำหรับสไลด์: *</label>
+        <!-- Image Source Selector & Crop Tool -->
+        <div class="space-y-3 pt-2 border-t border-slate-200">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-slate-700 font-prompt">รูปภาพสำหรับสไลด์: *</label>
+            <button type="button" id="btn-crop-new-slide" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold font-prompt text-xs cursor-pointer shadow-xs transition-all">
+              <i data-lucide="crop" class="w-3.5 h-3.5 text-amber-700"></i>
+              <span>✂️ ครอป/ตัดแต่งภาพ</span>
+            </button>
+          </div>
+
+          <!-- Fit Mode Selector (Contain vs Cover) -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5 font-prompt">โหมดการแสดงผลภาพ:</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/60 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/90 transition-all">
+                <input type="radio" name="slide-fit-mode" value="contain" checked class="text-amber-600 focus:ring-amber-500">
+                <div>
+                  <span class="block font-bold text-xs text-slate-800 font-prompt">🖼️ แสดงภาพเต็ม 100% (ไม่ตัดขอบ)</span>
+                  <span class="block text-[10px] text-slate-500 font-sarabun">คงสัดส่วนเดิม 100% พร้อมพื้นหลังเบลอ</span>
+                </div>
+              </label>
+
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/60 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/90 transition-all">
+                <input type="radio" name="slide-fit-mode" value="cover" class="text-amber-600 focus:ring-amber-500">
+                <div>
+                  <span class="block font-bold text-xs text-slate-800 font-prompt">📐 ขยายเต็มกรอบ (Cover Fill)</span>
+                  <span class="block text-[10px] text-slate-500 font-sarabun">ขยายภาพเต็มพื้นที่แบนเนอร์</span>
+                </div>
+              </label>
+            </div>
+          </div>
           
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
             <div class="flex items-center gap-2">
               <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold font-prompt text-xs shadow-xs cursor-pointer">
                 <i data-lucide="upload" class="w-3.5 h-3.5"></i>
@@ -6953,15 +6988,19 @@ function openAddHeroSlideModal() {
 
             <input id="slide-url-input" type="text" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="https://images.unsplash.com/...">
 
-            <!-- Image Preview Box -->
-            <div class="relative h-28 rounded-lg overflow-hidden border border-slate-200 bg-slate-200 flex items-center justify-center">
-              <img id="slide-img-preview" src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80" alt="Preview" class="w-full h-full object-cover">
+            <!-- Image Preview Box with Quick Crop Action -->
+            <div class="relative h-36 rounded-xl overflow-hidden border border-slate-300 bg-slate-950 flex items-center justify-center group/prev">
+              <img id="slide-img-preview" src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80" alt="Preview" class="w-full h-full object-contain">
+              <button type="button" id="btn-quick-crop-new" class="absolute inset-0 bg-black/60 opacity-0 group-hover/prev:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs font-prompt cursor-pointer backdrop-blur-xs">
+                <i data-lucide="crop" class="w-4 h-4 text-amber-400"></i>
+                <span>คลิกเพื่อครอป / ปรับสัดส่วนภาพ</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
     `,
-    width: "560px",
+    width: "580px",
     showCancelButton: true,
     confirmButtonText: "💾 บันทึกภาพสไลด์",
     cancelButtonText: "ยกเลิก",
@@ -6972,6 +7011,8 @@ function openAddHeroSlideModal() {
       const fileInput = document.getElementById("slide-file-input");
       const urlInput = document.getElementById("slide-url-input");
       const imgPreview = document.getElementById("slide-img-preview");
+      const cropBtn = document.getElementById("btn-crop-new-slide");
+      const quickCropBtn = document.getElementById("btn-quick-crop-new");
 
       if (urlInput) {
         urlInput.addEventListener("input", (e) => {
@@ -6990,11 +7031,29 @@ function openAddHeroSlideModal() {
               const base64 = evt.target?.result;
               if (imgPreview) imgPreview.src = base64;
               if (urlInput) urlInput.value = base64;
+              // Open cropper automatically on file select for best user experience
+              openSlideCropperModal(base64, (croppedBase64) => {
+                if (imgPreview) imgPreview.src = croppedBase64;
+                if (urlInput) urlInput.value = croppedBase64;
+              });
             };
             reader.readAsDataURL(file);
           }
         });
       }
+
+      function handleCropClick() {
+        const currentSrc = urlInput?.value.trim() || imgPreview?.src;
+        if (currentSrc) {
+          openSlideCropperModal(currentSrc, (croppedBase64) => {
+            if (imgPreview) imgPreview.src = croppedBase64;
+            if (urlInput) urlInput.value = croppedBase64;
+          });
+        }
+      }
+
+      if (cropBtn) cropBtn.addEventListener("click", handleCropClick);
+      if (quickCropBtn) quickCropBtn.addEventListener("click", handleCropClick);
     },
     preConfirm: () => {
       const title = document.getElementById("slide-title-input").value.trim();
@@ -7002,6 +7061,8 @@ function openAddHeroSlideModal() {
       const tag = document.getElementById("slide-tag-input").value.trim();
       const linkView = document.getElementById("slide-link-input").value;
       const imageUrl = document.getElementById("slide-url-input").value.trim() || document.getElementById("slide-img-preview").src;
+      const fitModeInput = document.querySelector('input[name="slide-fit-mode"]:checked');
+      const fitMode = fitModeInput ? fitModeInput.value : "contain";
 
       if (!title) {
         Swal.showValidationMessage("กรุณากรอกหัวข้อภาพสไลด์");
@@ -7019,6 +7080,7 @@ function openAddHeroSlideModal() {
         tag: tag || "กิจกรรมเด่น",
         linkView,
         imageUrl,
+        fitMode,
         isVisible: true
       };
     }
@@ -7042,6 +7104,8 @@ function openEditHeroSlideModal(slideId) {
   const data = window.portfolioStorage.getData();
   const slide = (data.heroSlides || []).find(s => String(s.id) === String(slideId));
   if (!slide) return;
+
+  const currentFitMode = slide.fitMode || "contain";
 
   Swal.fire({
     title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
@@ -7080,11 +7144,39 @@ function openEditHeroSlideModal(slideId) {
           </div>
         </div>
 
-        <!-- Image Source Selector (Upload or URL) -->
-        <div class="space-y-2 pt-1 border-t border-slate-100">
-          <label class="block font-bold text-slate-700 mb-1 font-prompt">รูปภาพสำหรับสไลด์: *</label>
-          
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+        <!-- Image Source Selector & Crop Tool -->
+        <div class="space-y-3 pt-2 border-t border-slate-200">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-slate-700 font-prompt">รูปภาพสำหรับสไลด์: *</label>
+            <button type="button" id="btn-crop-edit-slide" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold font-prompt text-xs cursor-pointer shadow-xs transition-all">
+              <i data-lucide="crop" class="w-3.5 h-3.5 text-amber-700"></i>
+              <span>✂️ ครอป/ตัดแต่งภาพ</span>
+            </button>
+          </div>
+
+          <!-- Fit Mode Selector (Contain vs Cover) -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5 font-prompt">โหมดการแสดงผลภาพ:</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/60 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/90 transition-all">
+                <input type="radio" name="edit-slide-fit-mode" value="contain" ${currentFitMode === 'contain' ? 'checked' : ''} class="text-amber-600 focus:ring-amber-500">
+                <div>
+                  <span class="block font-bold text-xs text-slate-800 font-prompt">🖼️ แสดงภาพเต็ม 100% (ไม่ตัดขอบ)</span>
+                  <span class="block text-[10px] text-slate-500 font-sarabun">คงสัดส่วนเดิม 100% พร้อมพื้นหลังเบลอ</span>
+                </div>
+              </label>
+
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/60 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/90 transition-all">
+                <input type="radio" name="edit-slide-fit-mode" value="cover" ${currentFitMode === 'cover' ? 'checked' : ''} class="text-amber-600 focus:ring-amber-500">
+                <div>
+                  <span class="block font-bold text-xs text-slate-800 font-prompt">📐 ขยายเต็มกรอบ (Cover Fill)</span>
+                  <span class="block text-[10px] text-slate-500 font-sarabun">ขยายภาพเต็มพื้นที่แบนเนอร์</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
             <div class="flex items-center gap-2">
               <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold font-prompt text-xs shadow-xs cursor-pointer">
                 <i data-lucide="upload" class="w-3.5 h-3.5"></i>
@@ -7096,15 +7188,19 @@ function openEditHeroSlideModal(slideId) {
 
             <input id="edit-slide-url-input" type="text" value="${slide.imageUrl || ''}" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="URL รูปภาพ">
 
-            <!-- Image Preview Box -->
-            <div class="relative h-28 rounded-lg overflow-hidden border border-slate-200 bg-slate-200 flex items-center justify-center">
-              <img id="edit-slide-img-preview" src="${slide.imageUrl || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80'}" alt="Preview" class="w-full h-full object-cover">
+            <!-- Image Preview Box with Quick Crop Action -->
+            <div class="relative h-36 rounded-xl overflow-hidden border border-slate-300 bg-slate-950 flex items-center justify-center group/prev">
+              <img id="edit-slide-img-preview" src="${slide.imageUrl || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80'}" alt="Preview" class="w-full h-full object-contain">
+              <button type="button" id="btn-quick-crop-edit" class="absolute inset-0 bg-black/60 opacity-0 group-hover/prev:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs font-prompt cursor-pointer backdrop-blur-xs">
+                <i data-lucide="crop" class="w-4 h-4 text-amber-400"></i>
+                <span>คลิกเพื่อครอป / ปรับสัดส่วนภาพ</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
     `,
-    width: "560px",
+    width: "580px",
     showCancelButton: true,
     confirmButtonText: "💾 บันทึกการแก้ไข",
     cancelButtonText: "ยกเลิก",
@@ -7115,6 +7211,8 @@ function openEditHeroSlideModal(slideId) {
       const fileInput = document.getElementById("edit-slide-file-input");
       const urlInput = document.getElementById("edit-slide-url-input");
       const imgPreview = document.getElementById("edit-slide-img-preview");
+      const cropBtn = document.getElementById("btn-crop-edit-slide");
+      const quickCropBtn = document.getElementById("btn-quick-crop-edit");
 
       if (urlInput) {
         urlInput.addEventListener("input", (e) => {
@@ -7133,11 +7231,28 @@ function openEditHeroSlideModal(slideId) {
               const base64 = evt.target?.result;
               if (imgPreview) imgPreview.src = base64;
               if (urlInput) urlInput.value = base64;
+              openSlideCropperModal(base64, (croppedBase64) => {
+                if (imgPreview) imgPreview.src = croppedBase64;
+                if (urlInput) urlInput.value = croppedBase64;
+              });
             };
             reader.readAsDataURL(file);
           }
         });
       }
+
+      function handleCropClick() {
+        const currentSrc = urlInput?.value.trim() || imgPreview?.src;
+        if (currentSrc) {
+          openSlideCropperModal(currentSrc, (croppedBase64) => {
+            if (imgPreview) imgPreview.src = croppedBase64;
+            if (urlInput) urlInput.value = croppedBase64;
+          });
+        }
+      }
+
+      if (cropBtn) cropBtn.addEventListener("click", handleCropClick);
+      if (quickCropBtn) quickCropBtn.addEventListener("click", handleCropClick);
     },
     preConfirm: () => {
       const title = document.getElementById("edit-slide-title-input").value.trim();
@@ -7145,6 +7260,8 @@ function openEditHeroSlideModal(slideId) {
       const tag = document.getElementById("edit-slide-tag-input").value.trim();
       const linkView = document.getElementById("edit-slide-link-input").value;
       const imageUrl = document.getElementById("edit-slide-url-input").value.trim() || document.getElementById("edit-slide-img-preview").src;
+      const fitModeInput = document.querySelector('input[name="edit-slide-fit-mode"]:checked');
+      const fitMode = fitModeInput ? fitModeInput.value : "contain";
 
       if (!title) {
         Swal.showValidationMessage("กรุณากรอกหัวข้อภาพสไลด์");
@@ -7160,7 +7277,8 @@ function openEditHeroSlideModal(slideId) {
         subtitle,
         tag: tag || "กิจกรรมเด่น",
         linkView,
-        imageUrl
+        imageUrl,
+        fitMode
       };
     }
   }).then((result) => {
@@ -7177,5 +7295,107 @@ function openEditHeroSlideModal(slideId) {
       renderCurrentView();
     }
   });
+}
+
+// ==========================================
+// Interactive Banner Cropper Modal (Cropper.js Tool)
+// ==========================================
+let currentSlideCropper = null;
+
+function openSlideCropperModal(imageSrc, onCroppedCallback) {
+  if (!imageSrc) return;
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="crop" class="w-5 h-5 text-amber-500"></i> ครอปและปรับสัดส่วนภาพสไลด์
+    </span>`,
+    html: `
+      <div class="space-y-3 font-sarabun text-xs">
+        <!-- Preset Ratio Selector Buttons -->
+        <div class="flex items-center justify-center gap-1.5 flex-wrap pb-1">
+          <span class="text-slate-500 font-bold text-[11px] mr-1">เลือกสัดส่วน:</span>
+          <button type="button" onclick="setSlideCropRatio(21/9, this)" class="crop-ratio-btn px-3 py-1 rounded-lg bg-amber-500 text-navy-950 font-bold font-prompt text-xs shadow-xs cursor-pointer">21:9 (แบนเนอร์กว้าง)</button>
+          <button type="button" onclick="setSlideCropRatio(16/9, this)" class="crop-ratio-btn px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium font-prompt text-xs cursor-pointer">16:9 (มาตรฐาน)</button>
+          <button type="button" onclick="setSlideCropRatio(4/3, this)" class="crop-ratio-btn px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium font-prompt text-xs cursor-pointer">4:3 (รูปถ่ายทั่วไป)</button>
+          <button type="button" onclick="setSlideCropRatio(NaN, this)" class="crop-ratio-btn px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium font-prompt text-xs cursor-pointer">อิสระ (Free)</button>
+        </div>
+
+        <!-- Cropper Workspace Container -->
+        <div class="relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 flex items-center justify-center shadow-inner" style="max-height: 52vh; min-height: 280px;">
+          <img id="cropper-target-img" src="${imageSrc}" class="max-w-full block" style="max-height: 48vh;">
+        </div>
+
+        <!-- Zoom & Rotate Toolbar -->
+        <div class="flex items-center justify-center gap-2 pt-1 flex-wrap">
+          <button type="button" onclick="if(currentSlideCropper) currentSlideCropper.zoom(0.1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 cursor-pointer">
+            <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i> ซูมเข้า (+)
+          </button>
+          <button type="button" onclick="if(currentSlideCropper) currentSlideCropper.zoom(-0.1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 cursor-pointer">
+            <i data-lucide="zoom-out" class="w-3.5 h-3.5"></i> ซูมออก (-)
+          </button>
+          <button type="button" onclick="if(currentSlideCropper) currentSlideCropper.rotate(90)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 cursor-pointer">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> หมุน 90°
+          </button>
+          <button type="button" onclick="if(currentSlideCropper) currentSlideCropper.reset()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 cursor-pointer">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> รีเซ็ต
+          </button>
+        </div>
+      </div>
+    `,
+    width: "740px",
+    showCancelButton: true,
+    confirmButtonText: "✂️ บันทึกรูปที่ตัดแต่ง",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const img = document.getElementById("cropper-target-img");
+      if (img && typeof Cropper !== "undefined") {
+        currentSlideCropper = new Cropper(img, {
+          aspectRatio: 21 / 9,
+          viewMode: 1,
+          autoCropArea: 1,
+          responsive: true,
+          guides: true,
+          center: true,
+          highlight: false,
+          background: true
+        });
+      }
+    },
+    preConfirm: () => {
+      if (currentSlideCropper) {
+        const canvas = currentSlideCropper.getCroppedCanvas({
+          maxWidth: 1920,
+          maxHeight: 1080,
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: "high"
+        });
+        return canvas.toDataURL("image/jpeg", 0.92);
+      }
+      return imageSrc;
+    }
+  }).then((result) => {
+    if (currentSlideCropper) {
+      currentSlideCropper.destroy();
+      currentSlideCropper = null;
+    }
+    if (result.isConfirmed && onCroppedCallback) {
+      onCroppedCallback(result.value);
+    }
+  });
+}
+
+function setSlideCropRatio(ratio, btn) {
+  if (currentSlideCropper) {
+    currentSlideCropper.setAspectRatio(ratio);
+  }
+  document.querySelectorAll(".crop-ratio-btn").forEach(b => {
+    b.className = "crop-ratio-btn px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium font-prompt text-xs cursor-pointer";
+  });
+  if (btn) {
+    btn.className = "crop-ratio-btn px-3 py-1 rounded-lg bg-amber-500 text-navy-950 font-bold font-prompt text-xs shadow-xs cursor-pointer";
+  }
 }
 
