@@ -2749,20 +2749,127 @@ function openMobileMoreMenu() {
 }
 
 // ==========================================
-// Modal Handlers: PDF Preview Modal
+// Modal Handlers: PDF & Document Preview Modal (Smart Drive/Docs/PDF Embedder)
 // ==========================================
+function normalizePdfViewerUrl(url) {
+  if (!url || typeof url !== "string") return "";
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === "#") return "";
+
+  // 1. Google Drive File Links (e.g. drive.google.com/file/d/FILE_ID/view...)
+  const driveFileMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch && driveFileMatch[1]) {
+    return `https://drive.google.com/file/d/${driveFileMatch[1]}/preview`;
+  }
+
+  // 2. Google Drive Open/UC ID parameter (e.g. drive.google.com/open?id=FILE_ID or /uc?id=FILE_ID)
+  const driveIdMatch = trimmed.match(/drive\.google\.com\/(?:open|uc)\?(?:.*&)?id=([a-zA-Z0-9_-]+)/);
+  if (driveIdMatch && driveIdMatch[1]) {
+    return `https://drive.google.com/file/d/${driveIdMatch[1]}/preview`;
+  }
+
+  // 3. Google Docs / Presentation / Sheets
+  if (trimmed.includes("docs.google.com/document/d/")) {
+    return trimmed.replace(/\/edit.*$/, "/preview").replace(/\/view.*$/, "/preview");
+  }
+  if (trimmed.includes("docs.google.com/presentation/d/")) {
+    return trimmed.replace(/\/edit.*$/, "/preview").replace(/\/view.*$/, "/preview");
+  }
+  if (trimmed.includes("docs.google.com/spreadsheets/d/")) {
+    return trimmed.replace(/\/edit.*$/, "/preview").replace(/\/view.*$/, "/preview");
+  }
+
+  // 4. Google Drive Folder
+  const driveFolderMatch = trimmed.match(/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/);
+  if (driveFolderMatch && driveFolderMatch[1]) {
+    return `https://drive.google.com/embeddedfolderview?id=${driveFolderMatch[1]}#list`;
+  }
+
+  // 5. Canva Embed
+  if (trimmed.includes("canva.com/design/")) {
+    return trimmed.includes("?") ? `${trimmed}&embed` : `${trimmed}?embed`;
+  }
+
+  // 6. Direct PDF on Web / Local / Blob / Data URL
+  if (trimmed.toLowerCase().endsWith(".pdf") || trimmed.startsWith("blob:") || trimmed.startsWith("data:")) {
+    return trimmed;
+  }
+
+  // 7. For other HTTP/HTTPS documents, fallback to Google Docs Viewer
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(trimmed)}&embedded=true`;
+  }
+
+  return trimmed;
+}
+
 function openDocumentPreview(title, docUrl) {
   const modal = document.getElementById("pdf-preview-modal");
   const modalTitle = document.getElementById("pdf-modal-title");
   const iframe = document.getElementById("pdf-modal-iframe");
   const openExternalBtn = document.getElementById("pdf-modal-external-btn");
 
-  if (modalTitle) modalTitle.textContent = title || "เอกสารประกอบการประเมิน";
-  if (openExternalBtn) openExternalBtn.href = docUrl;
+  const cleanTitle = title || "เอกสารประกอบการประเมิน";
+  if (modalTitle) modalTitle.textContent = cleanTitle;
+  if (openExternalBtn) {
+    openExternalBtn.href = docUrl || "#";
+    openExternalBtn.style.display = (docUrl && docUrl !== "#" && !docUrl.includes("dummy.pdf")) ? "inline-flex" : "none";
+  }
 
-  // Use Google Docs Viewer for universal PDF preview compatibility
-  const previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(docUrl)}&embedded=true`;
-  if (iframe) iframe.src = previewUrl;
+  const embedUrl = normalizePdfViewerUrl(docUrl);
+  const isDummyOrEmpty = !docUrl || docUrl === "#" || docUrl.includes("dummy.pdf") || !embedUrl;
+
+  if (isDummyOrEmpty) {
+    if (iframe) {
+      iframe.removeAttribute("src");
+      iframe.srcdoc = `
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>body { font-family: 'Prompt', 'Sarabun', sans-serif; }</style>
+        </head>
+        <body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-6 text-center">
+          <div class="max-w-lg p-8 bg-slate-950/90 rounded-3xl border border-slate-800 shadow-2xl space-y-5">
+            <div class="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div class="space-y-2">
+              <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold font-prompt border border-amber-500/30">
+                เอกสารตัวอย่างเริ่มต้น (Placeholder)
+              </span>
+              <h3 class="text-lg font-bold text-white pt-1">${cleanTitle}</h3>
+              <p class="text-xs text-slate-300 leading-relaxed font-sarabun">
+                รายการนี้ยังไม่ได้ระบุลิงก์เอกสารจริง หรือลิงก์ยังเป็นไฟล์จำลองของระบบ
+              </p>
+            </div>
+            <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 text-left text-xs font-sarabun space-y-2 text-slate-300">
+              <p class="font-bold text-amber-300 flex items-center gap-1 font-prompt">
+                📌 วิธีนำลิงก์ไฟล์ PDF มาใส่ในระบบ:
+              </p>
+              <ol class="list-decimal list-inside space-y-1 text-[11px] leading-relaxed text-slate-400">
+                <li>อัปโหลดไฟล์ PDF ขึ้นใน <b>Google Drive</b></li>
+                <li>คลิกขวาที่ไฟล์ ➔ เลือก <b>แชร์ (Share)</b></li>
+                <li>เปลี่ยนสิทธิ์เป็น <b>"ทุกคนที่มีลิงก์ (Anyone with the link)"</b></li>
+                <li>คัดลอกลิงก์มาวางในระบบผ่านปุ่ม <b>"แก้ไข"</b> ได้ทันที</li>
+              </ol>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+  } else {
+    if (iframe) {
+      iframe.removeAttribute("srcdoc");
+      iframe.src = embedUrl;
+    }
+  }
 
   if (modal) {
     modal.classList.remove("hidden");
@@ -2774,7 +2881,10 @@ function openDocumentPreview(title, docUrl) {
 function closePdfModal() {
   const modal = document.getElementById("pdf-preview-modal");
   const iframe = document.getElementById("pdf-modal-iframe");
-  if (iframe) iframe.src = "about:blank";
+  if (iframe) {
+    iframe.removeAttribute("srcdoc");
+    iframe.src = "about:blank";
+  }
   if (modal) {
     modal.classList.add("hidden");
     document.body.style.overflow = "auto";
