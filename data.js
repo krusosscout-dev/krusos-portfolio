@@ -14,6 +14,37 @@ const DEFAULT_PORTFOLIO_DATA = {
     evaluationStatus: "พร้อมรับการประเมิน", // 'พร้อมรับการประเมิน' | 'ยังไม่เริ่มประเมิน / เตรียมการ' | 'ประเมินเสร็จสิ้น'
     dashboardUpdateLayout: "cards" // 'cards' | 'timeline' | 'spotlight'
   },
+
+  // ภาพสไลด์หมุนเวียนหน้าภาพรวม (Dashboard Hero Carousel)
+  heroSlides: [
+    {
+      id: "slide-1",
+      title: "การประเมินการเตรียมความพร้อมและพัฒนาอย่างเข้ม ตำแหน่งครูผู้ช่วย ครั้งที่ 1",
+      subtitle: "นายนรากรณ์ จูงาม ครูโรงเรียนวัดบางปูน สำนักงานเขตพื้นที่การศึกษาประถมศึกษาสิงห์บุรี",
+      tag: "🎓 การประเมินครูผู้ช่วย",
+      imageUrl: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
+      linkView: "intensive-prep",
+      isVisible: true
+    },
+    {
+      id: "slide-2",
+      title: "พิธีมอบเกียรติบัตรและรายงานผลการปฏิบัติงานต่อคณะกรรมการสถานศึกษา",
+      subtitle: "ร่วมแรงร่วมใจพัฒนาคุณภาพการศึกษาและยกระดับศักยภาพผู้เรียนโรงเรียนวัดบางปูน",
+      tag: "⭐ กิจกรรมเด่น",
+      imageUrl: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=1200&q=80",
+      linkView: "gallery",
+      isVisible: true
+    },
+    {
+      id: "slide-3",
+      title: "การพัฒนานวัตกรรมการจัดการเรียนรู้ Active Learning สังคมศึกษาและเทคโนโลยี",
+      subtitle: "บูรณาการสื่อนวัตกรรมและเทคโนโลยีดิจิทัลเพื่อเสริมสร้างทักษะในศตวรรษที่ 21",
+      tag: "💡 นวัตกรรมและสื่อการสอน",
+      imageUrl: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=80",
+      linkView: "media-systems",
+      isVisible: true
+    }
+  ],
   
   profile: {
     fullName: "ครูวิมลรัตน์ ปัญญาสว่าง (ครูซอส)",

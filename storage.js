@@ -28,6 +28,9 @@ class PortfolioStorage {
       if (raw) {
         const parsed = JSON.parse(raw);
         // Merge missing default keys
+        if (!parsed.heroSlides) {
+          parsed.heroSlides = DEFAULT_PORTFOLIO_DATA.heroSlides || [];
+        }
         if (!parsed.recentUpdates) {
           parsed.recentUpdates = DEFAULT_PORTFOLIO_DATA.recentUpdates || [];
         }

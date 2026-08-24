@@ -810,6 +810,12 @@ function renderCurrentView() {
           html = renderDashboardView(data, isAdmin);
       }
       container.innerHTML = html;
+
+      if (AppState.currentView === "dashboard" || !AppState.currentView) {
+        initHeroSliderAutoplay();
+      } else {
+        if (heroSlideTimer) clearInterval(heroSlideTimer);
+      }
     }
   }
 
@@ -947,6 +953,7 @@ function renderDashboardView(data, isAdmin) {
   const isSimulating = window.portfolioStorage.isSimulatingViewer();
   const effectiveIsAdmin = isAdmin && !isSimulating;
 
+  const heroSlides = data.heroSlides || [];
   const lpCount = data.lessonPlans?.filter(i => effectiveIsAdmin || i.isVisible).length || 0;
   const docCount = data.officialDocs?.filter(i => effectiveIsAdmin || i.isVisible).length || 0;
   const achCount = data.achievements?.filter(i => effectiveIsAdmin || i.isVisible).length || 0;
@@ -1062,6 +1069,11 @@ function renderDashboardView(data, isAdmin) {
           </div>
         </div>
       </div>
+
+      <!-- ======================================================= -->
+      <!-- Highlight Photo Slider Carousel (ภาพสไลด์หมุนเวียนหน้าแรก) -->
+      <!-- ======================================================= -->
+      ${renderDashboardHeroCarousel(heroSlides, effectiveIsAdmin)}
 
       <!-- Quick Stats Cards (5 Grid) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
@@ -6552,5 +6564,590 @@ function reloadInAppIframe() {
   if (iframe) {
     iframe.src = iframe.src;
   }
+}
+
+// ==========================================
+// Dashboard Hero Photo Carousel & Slider Manager (ภาพสไลด์หมุนเวียนหน้าแรก)
+// ==========================================
+let heroSlideTimer = null;
+let currentHeroSlideIndex = 0;
+
+function renderDashboardHeroCarousel(slides, isAdmin) {
+  const visibleSlides = (slides || []).filter(s => isAdmin || s.isVisible);
+
+  if (visibleSlides.length === 0 && !isAdmin) return "";
+
+  if (visibleSlides.length === 0 && isAdmin) {
+    return `
+      <div class="glass-card p-8 rounded-3xl border-2 border-dashed border-amber-300/80 bg-amber-50/40 text-center space-y-3 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+          <i data-lucide="image-plus" class="w-6 h-6"></i>
+        </div>
+        <h4 class="font-bold text-slate-800 text-base font-prompt">ยังไม่มีภาพสไลด์หมุนเวียน (Highlight Carousel)</h4>
+        <p class="text-xs text-slate-500 font-sarabun max-w-md mx-auto">แอดมินสามารถเพิ่มภาพกิจกรรมเด่น ภาพรับรางวัล หรือภาพพิธีสำคัญเพื่อให้แสดงผลสไลด์หมุนเวียนอัตโนมัติที่หน้าแรกได้ครับ</p>
+        <button onclick="openAddHeroSlideModal()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-bold font-prompt shadow-md hover:scale-105 transition-all cursor-pointer">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มภาพสไลด์แรก
+        </button>
+      </div>
+    `;
+  }
+
+  // Ensure index in bounds
+  if (currentHeroSlideIndex >= visibleSlides.length) {
+    currentHeroSlideIndex = 0;
+  }
+
+  return `
+    <div class="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-slate-700/60 bg-slate-950 group" id="hero-carousel-container">
+      
+      <!-- Admin Management Overlay Toolbar -->
+      ${isAdmin ? `
+        <div class="absolute top-4 right-4 z-30 flex items-center gap-2">
+          <button onclick="openHeroSlideManagerModal()" class="px-3.5 py-1.5 rounded-xl bg-navy-950/85 hover:bg-navy-900 text-amber-300 border border-amber-400/40 backdrop-blur-md text-xs font-bold font-prompt flex items-center gap-1.5 shadow-xl transition-all hover:scale-105 cursor-pointer">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+            <span>จัดการภาพสไลด์ (${visibleSlides.length})</span>
+          </button>
+          <button onclick="openAddHeroSlideModal()" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-navy-950 font-extrabold font-prompt text-xs flex items-center gap-1 shadow-xl transition-all hover:scale-105 cursor-pointer">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            <span>เพิ่มภาพ</span>
+          </button>
+        </div>
+      ` : ""}
+
+      <!-- Slide Items Frame -->
+      <div class="relative aspect-[16/9] sm:aspect-[21/9] min-h-[280px] md:min-h-[380px] lg:min-h-[440px] w-full overflow-hidden">
+        ${visibleSlides.map((slide, idx) => {
+          const isActive = idx === currentHeroSlideIndex;
+          return `
+            <div class="hero-slide-item absolute inset-0 transition-all duration-700 ease-in-out ${isActive ? 'opacity-100 scale-100 pointer-events-auto z-10' : 'opacity-0 scale-105 pointer-events-none z-0'}" data-slide-index="${idx}">
+              
+              <!-- Slide Photo (Sharp & Responsive) -->
+              <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title || 'Highlight'}" class="w-full h-full object-cover">
+              
+              <!-- Cinematic Dark Gradient Overlay -->
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10"></div>
+
+              <!-- Top Left Tag / Badge -->
+              ${slide.tag ? `
+                <div class="absolute top-4 left-4 z-20">
+                  <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold font-prompt bg-amber-500 text-navy-950 shadow-lg border border-amber-300/60">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>${slide.tag}</span>
+                  </span>
+                </div>
+              ` : ""}
+
+              <!-- Slide Bottom Content -->
+              <div class="absolute bottom-0 inset-x-0 p-6 md:p-8 lg:p-10 z-20 space-y-2 max-w-3xl text-left">
+                <h3 class="text-lg sm:text-2xl md:text-3xl font-extrabold text-white font-prompt leading-tight drop-shadow-lg">
+                  ${slide.title}
+                </h3>
+                ${slide.subtitle ? `
+                  <p class="text-xs sm:text-sm text-slate-200 font-sarabun line-clamp-2 leading-relaxed drop-shadow">
+                    ${slide.subtitle}
+                  </p>
+                ` : ""}
+
+                <div class="pt-2 flex flex-wrap items-center gap-2.5">
+                  ${slide.linkView ? `
+                    <button onclick="handleSlideActionClick('${slide.linkView}')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-navy-950 text-xs font-extrabold font-prompt shadow-lg hover:scale-105 transition-all cursor-pointer">
+                      <span>ดูรายละเอียด</span>
+                      <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                  ` : ""}
+                  <button onclick="openPhotoViewer('${slide.imageUrl}', '${slide.title}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white backdrop-blur-md text-xs font-medium font-prompt border border-white/20 transition-all cursor-pointer">
+                    <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                    <span>ดูภาพเต็ม</span>
+                  </button>
+                </div>
+              </div>
+
+              ${!slide.isVisible ? `
+                <div class="absolute inset-0 bg-slate-950/80 z-25 flex items-center justify-center text-white font-bold text-sm">
+                  <i data-lucide="eye-off" class="w-5 h-5 mr-2 text-amber-400"></i> แอดมินตั้งค่าซ่อนจากผู้ชม
+                </div>
+              ` : ""}
+            </div>
+          `;
+        }).join("")}
+      </div>
+
+      <!-- Navigation Arrows (Prev / Next) -->
+      ${visibleSlides.length > 1 ? `
+        <button onclick="prevHeroSlide()" class="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white backdrop-blur-md border border-white/20 transition-all flex items-center justify-center opacity-70 hover:opacity-100 cursor-pointer shadow-xl hover:scale-110" title="ภาพก่อนหน้า">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+        <button onclick="nextHeroSlide()" class="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white backdrop-blur-md border border-white/20 transition-all flex items-center justify-center opacity-70 hover:opacity-100 cursor-pointer shadow-xl hover:scale-110" title="ภาพถัดไป">
+          <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+      ` : ""}
+
+      <!-- Pagination Dots Indicator -->
+      ${visibleSlides.length > 1 ? `
+        <div class="absolute bottom-3 md:bottom-4 inset-x-0 z-30 flex items-center justify-center gap-2 py-1">
+          ${visibleSlides.map((_, dotIdx) => `
+            <button onclick="jumpToHeroSlide(${dotIdx})" class="transition-all duration-300 cursor-pointer rounded-full ${dotIdx === currentHeroSlideIndex ? 'w-8 h-2.5 bg-amber-400 shadow-lg shadow-amber-400/60' : 'w-2.5 h-2.5 bg-white/50 hover:bg-white/90'}" title="ไปยังภาพที่ ${dotIdx + 1}"></button>
+          `).join("")}
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function jumpToHeroSlide(index) {
+  currentHeroSlideIndex = index;
+  updateHeroSlideUI();
+  resetHeroSlideTimer();
+}
+
+function nextHeroSlide() {
+  const data = window.portfolioStorage.getData();
+  const isAdmin = window.portfolioStorage.isAdmin();
+  const isSimulating = window.portfolioStorage.isSimulatingViewer();
+  const effectiveIsAdmin = isAdmin && !isSimulating;
+  const slides = (data.heroSlides || []).filter(s => effectiveIsAdmin || s.isVisible);
+  if (slides.length <= 1) return;
+
+  currentHeroSlideIndex = (currentHeroSlideIndex + 1) % slides.length;
+  updateHeroSlideUI();
+  resetHeroSlideTimer();
+}
+
+function prevHeroSlide() {
+  const data = window.portfolioStorage.getData();
+  const isAdmin = window.portfolioStorage.isAdmin();
+  const isSimulating = window.portfolioStorage.isSimulatingViewer();
+  const effectiveIsAdmin = isAdmin && !isSimulating;
+  const slides = (data.heroSlides || []).filter(s => effectiveIsAdmin || s.isVisible);
+  if (slides.length <= 1) return;
+
+  currentHeroSlideIndex = (currentHeroSlideIndex - 1 + slides.length) % slides.length;
+  updateHeroSlideUI();
+  resetHeroSlideTimer();
+}
+
+function updateHeroSlideUI() {
+  const container = document.getElementById("hero-carousel-container");
+  if (!container) return;
+
+  const slideItems = container.querySelectorAll(".hero-slide-item");
+  slideItems.forEach((item, idx) => {
+    if (idx === currentHeroSlideIndex) {
+      item.classList.remove("opacity-0", "scale-105", "pointer-events-none", "z-0");
+      item.classList.add("opacity-100", "scale-100", "pointer-events-auto", "z-10");
+    } else {
+      item.classList.remove("opacity-100", "scale-100", "pointer-events-auto", "z-10");
+      item.classList.add("opacity-0", "scale-105", "pointer-events-none", "z-0");
+    }
+  });
+
+  const dots = container.querySelectorAll(".bottom-3 button, .bottom-4 button");
+  dots.forEach((dot, idx) => {
+    if (idx === currentHeroSlideIndex) {
+      dot.className = "transition-all duration-300 cursor-pointer rounded-full w-8 h-2.5 bg-amber-400 shadow-lg shadow-amber-400/60";
+    } else {
+      dot.className = "transition-all duration-300 cursor-pointer rounded-full w-2.5 h-2.5 bg-white/50 hover:bg-white/90";
+    }
+  });
+}
+
+function initHeroSliderAutoplay() {
+  if (heroSlideTimer) clearInterval(heroSlideTimer);
+  heroSlideTimer = setInterval(() => {
+    nextHeroSlide();
+  }, 4500);
+
+  const container = document.getElementById("hero-carousel-container");
+  if (container) {
+    container.addEventListener("mouseenter", () => {
+      if (heroSlideTimer) clearInterval(heroSlideTimer);
+    });
+    container.addEventListener("mouseleave", () => {
+      resetHeroSlideTimer();
+    });
+  }
+}
+
+function resetHeroSlideTimer() {
+  if (heroSlideTimer) clearInterval(heroSlideTimer);
+  heroSlideTimer = setInterval(() => {
+    nextHeroSlide();
+  }, 4500);
+}
+
+function handleSlideActionClick(viewKey) {
+  if (!viewKey) return;
+  if (viewKey.startsWith("http://") || viewKey.startsWith("https://")) {
+    window.open(viewKey, "_blank");
+  } else {
+    navigateTo(viewKey);
+  }
+}
+
+// --- Admin Hero Slide Management Modals ---
+function openHeroSlideManagerModal() {
+  const data = window.portfolioStorage.getData();
+  const slides = data.heroSlides || [];
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="sliders-horizontal" class="w-5 h-5 text-amber-500"></i> จัดการภาพสไลด์หมุนเวียนหน้าแรก (Hero Carousel)
+    </span>`,
+    html: `
+      <div class="space-y-4 text-left font-sarabun text-xs">
+        <div class="flex items-center justify-between p-2 bg-blue-50/80 rounded-xl border border-blue-100">
+          <p class="text-blue-900 text-xs font-sarabun">มีภาพสไลด์ทั้งหมด <b>${slides.length}</b> ภาพ</p>
+          <button onclick="Swal.close(); openAddHeroSlideModal();" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-navy-950 font-bold font-prompt text-xs flex items-center gap-1 shadow-sm transition-all cursor-pointer">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> เพิ่มภาพใหม่
+          </button>
+        </div>
+
+        <div class="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
+          ${slides.length === 0 ? `
+            <div class="p-8 text-center text-slate-400 font-sarabun border border-dashed rounded-xl">
+              ยังไม่มีภาพสไลด์ กดปุ่ม "เพิ่มภาพใหม่" ด้านบนเพื่อเริ่มสร้างภาพสไลด์แรก
+            </div>
+          ` : slides.map((slide, idx) => `
+            <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-between gap-3 hover:border-blue-400 transition-colors">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-[11px] shrink-0 font-mono">${idx + 1}</span>
+                <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title}" class="w-16 h-11 rounded-lg object-cover border border-slate-200 shrink-0">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 truncate shrink-0">${slide.tag || 'ทั่วไป'}</span>
+                    <h5 class="font-bold text-slate-800 truncate text-xs font-prompt">${slide.title}</h5>
+                  </div>
+                  <p class="text-[11px] text-slate-500 truncate mt-0.5">${slide.subtitle || '-'}</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="toggleHeroSlideVisibility('${slide.id}')" class="p-1.5 rounded-lg border ${slide.isVisible ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'} hover:scale-105 transition-all cursor-pointer" title="${slide.isVisible ? 'กำลังแสดงผล (คลิกเพื่อซ่อน)' : 'ซ่อนอยู่ (คลิกเพื่อแสดง)'}">
+                  <i data-lucide="${slide.isVisible ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
+                </button>
+                <button onclick="Swal.close(); openEditHeroSlideModal('${slide.id}');" class="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 transition-all cursor-pointer" title="แก้ไข">
+                  <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </button>
+                <button onclick="confirmDeleteHeroSlide('${slide.id}')" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer" title="ลบภาพนี้">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `,
+    width: "600px",
+    showConfirmButton: false,
+    showCancelButton: true,
+    cancelButtonText: "ปิดหน้าต่าง",
+    cancelButtonColor: "#64748b",
+    didOpen: () => initIcons()
+  });
+}
+
+function toggleHeroSlideVisibility(slideId) {
+  window.portfolioStorage.toggleItemVisibility("heroSlides", slideId);
+  openHeroSlideManagerModal();
+  renderCurrentView();
+}
+
+function confirmDeleteHeroSlide(slideId) {
+  Swal.fire({
+    title: "ยืนยันการลบภาพสไลด์?",
+    text: "ภาพสไลด์นี้จะถูกลบออกจากหน้าภาพรวม",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b",
+    confirmButtonText: "ยืนยันลบ",
+    cancelButtonText: "ยกเลิก"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.portfolioStorage.deleteItem("heroSlides", slideId);
+      openHeroSlideManagerModal();
+      renderCurrentView();
+    }
+  });
+}
+
+function openAddHeroSlideModal() {
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="plus-circle" class="w-5 h-5 text-amber-500"></i> เพิ่มภาพสไลด์หมุนเวียนใหม่
+    </span>`,
+    html: `
+      <div class="space-y-3.5 text-left font-sarabun text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">หัวข้อภาพสไลด์ (Title): *</label>
+          <input id="slide-title-input" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น การประเมินการเตรียมความพร้อมครูผู้ช่วย ครั้งที่ 1">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">คำบรรยาย / รายละเอียดภาพ (Subtitle):</label>
+          <textarea id="slide-subtitle-input" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs" placeholder="เช่น บรรยากาศการนำเสนอผลงานและรับมอบเกียรติบัตรต่อหน้าคณะกรรมการสถานศึกษา"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ป้ายข้อความ (Tag / Badge):</label>
+            <input id="slide-tag-input" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น ⭐ กิจกรรมเด่น หรือ 🏆 รางวัล">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">การนำทางเมื่อคลิก (Link View):</label>
+            <select id="slide-link-input" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs bg-white">
+              <option value="">ไม่มี / ดูภาพอย่างเดียว</option>
+              <option value="profile">ประวัติส่วนตัว (Profile)</option>
+              <option value="intensive-prep">การประเมินครูผู้ช่วย (4 ครั้ง)</option>
+              <option value="pa">การประเมิน วPA</option>
+              <option value="lesson-plans">แผนการจัดการเรียนรู้</option>
+              <option value="official-docs">คำสั่งและเอกสารราชการ</option>
+              <option value="achievements">ผลงานและรางวัล</option>
+              <option value="gallery">ภาพกิจกรรม</option>
+              <option value="media-systems">สื่อและระบบออนไลน์</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Image Source Selector (Upload or URL) -->
+        <div class="space-y-2 pt-1 border-t border-slate-100">
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">รูปภาพสำหรับสไลด์: *</label>
+          
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <div class="flex items-center gap-2">
+              <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold font-prompt text-xs shadow-xs cursor-pointer">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                <span>เลือกไฟล์ภาพจากเครื่อง</span>
+                <input type="file" id="slide-file-input" accept="image/*" class="hidden">
+              </label>
+              <span class="text-slate-400 text-[11px]">หรือระบุ URL ด้านล่าง</span>
+            </div>
+
+            <input id="slide-url-input" type="text" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="https://images.unsplash.com/...">
+
+            <!-- Image Preview Box -->
+            <div class="relative h-28 rounded-lg overflow-hidden border border-slate-200 bg-slate-200 flex items-center justify-center">
+              <img id="slide-img-preview" src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80" alt="Preview" class="w-full h-full object-cover">
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+    width: "560px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกภาพสไลด์",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("slide-file-input");
+      const urlInput = document.getElementById("slide-url-input");
+      const imgPreview = document.getElementById("slide-img-preview");
+
+      if (urlInput) {
+        urlInput.addEventListener("input", (e) => {
+          if (imgPreview && e.target.value.trim()) {
+            imgPreview.src = e.target.value.trim();
+          }
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener("change", (e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              const base64 = evt.target?.result;
+              if (imgPreview) imgPreview.src = base64;
+              if (urlInput) urlInput.value = base64;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    },
+    preConfirm: () => {
+      const title = document.getElementById("slide-title-input").value.trim();
+      const subtitle = document.getElementById("slide-subtitle-input").value.trim();
+      const tag = document.getElementById("slide-tag-input").value.trim();
+      const linkView = document.getElementById("slide-link-input").value;
+      const imageUrl = document.getElementById("slide-url-input").value.trim() || document.getElementById("slide-img-preview").src;
+
+      if (!title) {
+        Swal.showValidationMessage("กรุณากรอกหัวข้อภาพสไลด์");
+        return false;
+      }
+      if (!imageUrl) {
+        Swal.showValidationMessage("กรุณาระบุหรืออัปโหลดรูปภาพ");
+        return false;
+      }
+
+      return {
+        id: `slide-${Date.now()}`,
+        title,
+        subtitle,
+        tag: tag || "กิจกรรมเด่น",
+        linkView,
+        imageUrl,
+        isVisible: true
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.portfolioStorage.addItem("heroSlides", result.value);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "เพิ่มภาพสไลด์เรียบร้อยแล้ว",
+        showConfirmButton: false,
+        timer: 1500
+      });
+      renderCurrentView();
+    }
+  });
+}
+
+function openEditHeroSlideModal(slideId) {
+  const data = window.portfolioStorage.getData();
+  const slide = (data.heroSlides || []).find(s => String(s.id) === String(slideId));
+  if (!slide) return;
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="edit-3" class="w-5 h-5 text-blue-600"></i> แก้ไขภาพสไลด์หมุนเวียน
+    </span>`,
+    html: `
+      <div class="space-y-3.5 text-left font-sarabun text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">หัวข้อภาพสไลด์ (Title): *</label>
+          <input id="edit-slide-title-input" type="text" value="${slide.title || ''}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="หัวข้อภาพ">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">คำบรรยาย / รายละเอียดภาพ (Subtitle):</label>
+          <textarea id="edit-slide-subtitle-input" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs" placeholder="คำบรรยาย">${slide.subtitle || ''}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ป้ายข้อความ (Tag / Badge):</label>
+            <input id="edit-slide-tag-input" type="text" value="${slide.tag || ''}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="ป้ายกำกับ">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">การนำทางเมื่อคลิก (Link View):</label>
+            <select id="edit-slide-link-input" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs bg-white">
+              <option value="" ${!slide.linkView ? 'selected' : ''}>ไม่มี / ดูภาพอย่างเดียว</option>
+              <option value="profile" ${slide.linkView === 'profile' ? 'selected' : ''}>ประวัติส่วนตัว (Profile)</option>
+              <option value="intensive-prep" ${slide.linkView === 'intensive-prep' ? 'selected' : ''}>การประเมินครูผู้ช่วย (4 ครั้ง)</option>
+              <option value="pa" ${slide.linkView === 'pa' ? 'selected' : ''}>การประเมิน วPA</option>
+              <option value="lesson-plans" ${slide.linkView === 'lesson-plans' ? 'selected' : ''}>แผนการจัดการเรียนรู้</option>
+              <option value="official-docs" ${slide.linkView === 'official-docs' ? 'selected' : ''}>คำสั่งและเอกสารราชการ</option>
+              <option value="achievements" ${slide.linkView === 'achievements' ? 'selected' : ''}>ผลงานและรางวัล</option>
+              <option value="gallery" ${slide.linkView === 'gallery' ? 'selected' : ''}>ภาพกิจกรรม</option>
+              <option value="media-systems" ${slide.linkView === 'media-systems' ? 'selected' : ''}>สื่อและระบบออนไลน์</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Image Source Selector (Upload or URL) -->
+        <div class="space-y-2 pt-1 border-t border-slate-100">
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">รูปภาพสำหรับสไลด์: *</label>
+          
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <div class="flex items-center gap-2">
+              <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold font-prompt text-xs shadow-xs cursor-pointer">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                <span>เปลี่ยนไฟล์ภาพใหม่</span>
+                <input type="file" id="edit-slide-file-input" accept="image/*" class="hidden">
+              </label>
+              <span class="text-slate-400 text-[11px]">หรือแก้ไข URL</span>
+            </div>
+
+            <input id="edit-slide-url-input" type="text" value="${slide.imageUrl || ''}" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="URL รูปภาพ">
+
+            <!-- Image Preview Box -->
+            <div class="relative h-28 rounded-lg overflow-hidden border border-slate-200 bg-slate-200 flex items-center justify-center">
+              <img id="edit-slide-img-preview" src="${slide.imageUrl || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80'}" alt="Preview" class="w-full h-full object-cover">
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+    width: "560px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("edit-slide-file-input");
+      const urlInput = document.getElementById("edit-slide-url-input");
+      const imgPreview = document.getElementById("edit-slide-img-preview");
+
+      if (urlInput) {
+        urlInput.addEventListener("input", (e) => {
+          if (imgPreview && e.target.value.trim()) {
+            imgPreview.src = e.target.value.trim();
+          }
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener("change", (e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              const base64 = evt.target?.result;
+              if (imgPreview) imgPreview.src = base64;
+              if (urlInput) urlInput.value = base64;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    },
+    preConfirm: () => {
+      const title = document.getElementById("edit-slide-title-input").value.trim();
+      const subtitle = document.getElementById("edit-slide-subtitle-input").value.trim();
+      const tag = document.getElementById("edit-slide-tag-input").value.trim();
+      const linkView = document.getElementById("edit-slide-link-input").value;
+      const imageUrl = document.getElementById("edit-slide-url-input").value.trim() || document.getElementById("edit-slide-img-preview").src;
+
+      if (!title) {
+        Swal.showValidationMessage("กรุณากรอกหัวข้อภาพสไลด์");
+        return false;
+      }
+      if (!imageUrl) {
+        Swal.showValidationMessage("กรุณาระบุหรืออัปโหลดรูปภาพ");
+        return false;
+      }
+
+      return {
+        title,
+        subtitle,
+        tag: tag || "กิจกรรมเด่น",
+        linkView,
+        imageUrl
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.portfolioStorage.updateItem("heroSlides", slideId, result.value);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "บันทึกการแก้ไขเรียบร้อยแล้ว",
+        showConfirmButton: false,
+        timer: 1500
+      });
+      renderCurrentView();
+    }
+  });
 }
 
