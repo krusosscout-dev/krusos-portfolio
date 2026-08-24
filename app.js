@@ -495,24 +495,74 @@ function promptShareUrl(url) {
 
 function openChangePinModal() {
   Swal.fire({
-    title: "เปลี่ยนรหัส PIN ผู้ดูแลระบบ",
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="key-round" class="w-5 h-5 text-amber-500"></i> เปลี่ยนรหัส PIN ผู้ดูแลระบบ
+    </span>`,
     html: `
-      <div class="space-y-3 text-left font-sarabun text-xs">
+      <div class="space-y-4 text-left font-sarabun text-xs">
+        <!-- Old PIN -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">รหัส PIN เดิม (ค่าเริ่มต้น: 1234):</label>
-          <input id="old-pin-input" type="password" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="ใส่รหัส PIN ปัจจุบัน">
+          <label class="block font-bold text-slate-700 mb-1.5 font-prompt">รหัส PIN เดิม (ค่าเริ่มต้น: 1234): *</label>
+          <div class="relative flex items-center">
+            <input id="old-pin-input" type="password" maxlength="10" class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 font-mono tracking-wider" placeholder="ใส่รหัส PIN ปัจจุบัน">
+            <button type="button" id="btn-toggle-old-pin" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-blue-600 cursor-pointer" title="ดูรหัสผ่าน">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
+
+        <!-- New PIN -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">รหัส PIN ใหม่ (อย่างน้อย 4 หลัก):</label>
-          <input id="new-pin-input" type="password" class="w-full p-2.5 rounded-lg border border-slate-300" placeholder="ใส่รหัส PIN ใหม่">
+          <label class="block font-bold text-slate-700 mb-1.5 font-prompt">รหัส PIN ใหม่ (อย่างน้อย 4 หลัก): *</label>
+          <div class="relative flex items-center">
+            <input id="new-pin-input" type="password" maxlength="10" class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 font-mono tracking-wider" placeholder="ใส่รหัส PIN ใหม่">
+            <button type="button" id="btn-toggle-new-pin" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-blue-600 cursor-pointer" title="ดูรหัสผ่าน">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-2.5 bg-amber-50 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 font-sarabun flex items-center gap-1.5">
+          <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0"></i>
+          <span>กดที่ไอคอนรูปตา 👁️ เพื่อดูรหัสที่กำลังพิมพ์ได้ครับ</span>
         </div>
       </div>
     `,
+    width: "480px",
     showCancelButton: true,
-    confirmButtonText: "บันทึก PIN ใหม่",
+    confirmButtonText: "💾 บันทึก PIN ใหม่",
     cancelButtonText: "ยกเลิก",
     confirmButtonColor: "#2563eb",
     cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+
+      const oldInput = document.getElementById("old-pin-input");
+      const newInput = document.getElementById("new-pin-input");
+      const toggleOldBtn = document.getElementById("btn-toggle-old-pin");
+      const toggleNewBtn = document.getElementById("btn-toggle-new-pin");
+
+      let showOld = false;
+      let showNew = false;
+
+      if (toggleOldBtn && oldInput) {
+        toggleOldBtn.addEventListener("click", () => {
+          showOld = !showOld;
+          oldInput.type = showOld ? "text" : "password";
+          toggleOldBtn.innerHTML = `<i data-lucide="${showOld ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+          initIcons();
+        });
+      }
+
+      if (toggleNewBtn && newInput) {
+        toggleNewBtn.addEventListener("click", () => {
+          showNew = !showNew;
+          newInput.type = showNew ? "text" : "password";
+          toggleNewBtn.innerHTML = `<i data-lucide="${showNew ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+          initIcons();
+        });
+      }
+    },
     preConfirm: () => {
       const oldPin = document.getElementById("old-pin-input").value.trim();
       const newPin = document.getElementById("new-pin-input").value.trim();
