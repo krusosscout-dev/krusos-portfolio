@@ -6648,15 +6648,15 @@ function renderDashboardHeroCarousel(slides, isAdmin) {
                   </p>
                 ` : ""}
 
-                <div class="pt-2 flex flex-wrap items-center gap-2.5">
+                <div class="pt-3 flex flex-wrap items-center gap-2.5">
                   ${slide.linkView ? `
-                    <button onclick="handleSlideActionClick('${slide.linkView}')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-navy-950 text-xs font-extrabold font-prompt shadow-lg hover:scale-105 transition-all cursor-pointer">
+                    <button type="button" onclick="handleSlideActionClick('${slide.linkView}')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-500 text-navy-950 text-xs md:text-sm font-extrabold font-prompt shadow-xl shadow-amber-500/25 hover:scale-105 transition-all cursor-pointer">
                       <span>ดูรายละเอียด</span>
-                      <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                      <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
                   ` : ""}
-                  <button onclick="openPhotoViewer('${slide.imageUrl}', '${slide.title}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white backdrop-blur-md text-xs font-medium font-prompt border border-white/20 transition-all cursor-pointer">
-                    <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                  <button type="button" onclick="openPhotoViewer('${slide.imageUrl || ''}', '${(slide.title || '').replace(/'/g, "\\'")}')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white backdrop-blur-md text-xs md:text-sm font-semibold font-prompt border border-slate-600/80 shadow-lg hover:scale-105 transition-all cursor-pointer">
+                    <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-amber-300"></i>
                     <span>ดูภาพเต็ม</span>
                   </button>
                 </div>
@@ -6781,7 +6781,35 @@ function handleSlideActionClick(viewKey) {
     window.open(viewKey, "_blank");
   } else {
     navigateTo(viewKey);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
+
+function openPhotoViewer(imgUrl, caption) {
+  if (!imgUrl) return;
+  const cleanTitle = caption || "ดูภาพขนาดเต็ม";
+  Swal.fire({
+    title: `<span class="text-sm md:text-base font-bold font-prompt text-white flex items-center justify-center gap-2">
+      <i data-lucide="image" class="w-4 h-4 text-amber-400"></i> ${cleanTitle}
+    </span>`,
+    html: `
+      <div class="space-y-3 text-center -mx-2">
+        <div class="relative max-h-[75vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 flex items-center justify-center p-1 shadow-inner">
+          <img src="${imgUrl}" alt="${cleanTitle}" class="max-h-[70vh] w-auto max-w-full object-contain rounded-xl shadow-2xl">
+        </div>
+        ${caption ? `<p class="text-xs text-slate-300 font-sarabun text-center px-4 leading-relaxed">${caption}</p>` : ''}
+      </div>
+    `,
+    background: "#081735",
+    showCloseButton: true,
+    showConfirmButton: false,
+    width: "auto",
+    maxWidth: "92vw",
+    customClass: {
+      popup: "rounded-3xl p-4 md:p-6 shadow-2xl border-2 border-amber-400/40 text-white max-w-5xl backdrop-blur-xl"
+    },
+    didOpen: () => initIcons()
+  });
 }
 
 // --- Admin Hero Slide Management Modals ---
