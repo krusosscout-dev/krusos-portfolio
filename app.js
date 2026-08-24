@@ -3119,15 +3119,12 @@ function openAddItemModal(collectionName) {
       const coverInput = document.getElementById("modal-item-cover");
       const previewImg = document.getElementById("modal-item-preview");
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            coverInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.82);
+          coverInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
         });
       }
       if (coverInput) {
@@ -3229,15 +3226,12 @@ function openEditItemModal(collectionName, itemId) {
       const coverInput = document.getElementById("edit-item-cover");
       const previewImg = document.getElementById("edit-item-preview");
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            coverInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.82);
+          coverInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
         });
       }
       if (coverInput) {
@@ -3396,17 +3390,14 @@ function openProfileEditModal(overrideData = null) {
       });
 
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
           const currentFormValues = getFormData();
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            openAvatarCropperModal(ev.target.result, (croppedDataUrl) => {
-              openProfileEditModal({ ...currentFormValues, avatarUrl: croppedDataUrl });
-            }, false);
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.85);
+          openAvatarCropperModal(compressed, (croppedDataUrl) => {
+            openProfileEditModal({ ...currentFormValues, avatarUrl: croppedDataUrl });
+          }, false);
         });
       }
 
@@ -5148,23 +5139,20 @@ function openEditSingleIndicatorModal(paId, aspectIndex, indCode) {
       }
 
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           syncCaptions();
           const files = Array.from(e.target.files);
-          files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-              currentImages.push({
-                url: ev.target.result,
-                caption: file.name ? `ภาพกิจกรรม: ${file.name.replace(/\.[^/.]+$/, "")}` : "ภาพกิจกรรมประกอบการประเมิน"
-              });
-              if (container) {
-                container.innerHTML = renderImageListHtml();
-                initIcons();
-              }
-            };
-            reader.readAsDataURL(file);
-          });
+          for (const file of files) {
+            const compressed = await window.compressImage(file, 1280, 0.82);
+            currentImages.push({
+              url: compressed,
+              caption: file.name ? `ภาพกิจกรรม: ${file.name.replace(/\.[^/.]+$/, "")}` : "ภาพกิจกรรมประกอบการประเมิน"
+            });
+          }
+          if (container) {
+            container.innerHTML = renderImageListHtml();
+            initIcons();
+          }
         });
       }
 
@@ -5767,15 +5755,12 @@ function openAddUpdateModal() {
       const coverInput = document.getElementById("upd-cover");
       const previewImg = document.getElementById("upd-preview-img");
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            coverInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.82);
+          coverInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
         });
       }
       if (coverInput) {
@@ -5896,15 +5881,12 @@ function openEditUpdateModal(updateId) {
       const coverInput = document.getElementById("upd-cover");
       const previewImg = document.getElementById("upd-preview-img");
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            coverInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.82);
+          coverInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
         });
       }
       if (coverInput) {
@@ -6207,14 +6189,11 @@ function openQuickAvatarModal() {
 
       // Handle File Upload ➔ Open LINE-style Cropper & Auto-save!
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            openAvatarCropperModal(ev.target.result, null, true);
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.85);
+          openAvatarCropperModal(compressed, null, true);
         });
       }
 
@@ -6323,15 +6302,12 @@ function openAddOnlineSystemModal() {
       const coverInput = document.getElementById("sys-cover");
       const previewImg = document.getElementById("sys-preview");
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            coverInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.82);
+          coverInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
         });
       }
       if (coverInput) {
@@ -6434,15 +6410,12 @@ function openEditOnlineSystemModal(itemId) {
       const coverInput = document.getElementById("sys-cover");
       const previewImg = document.getElementById("sys-preview");
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            coverInput.value = ev.target.result;
-            previewImg.src = ev.target.result;
-          };
-          reader.readAsDataURL(file);
+          const compressed = await window.compressImage(file, 1280, 0.82);
+          coverInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
         });
       }
       if (coverInput) {
@@ -7016,21 +6989,17 @@ function openAddHeroSlideModal() {
       }
 
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files?.[0];
           if (file) {
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-              const base64 = evt.target?.result;
-              if (imgPreview) imgPreview.src = base64;
-              if (urlInput) urlInput.value = base64;
-              // Open cropper automatically on file select for best user experience
-              openSlideCropperModal(base64, (croppedBase64) => {
-                if (imgPreview) imgPreview.src = croppedBase64;
-                if (urlInput) urlInput.value = croppedBase64;
-              });
-            };
-            reader.readAsDataURL(file);
+            const base64 = await window.compressImage(file, 1600, 0.85);
+            if (imgPreview) imgPreview.src = base64;
+            if (urlInput) urlInput.value = base64;
+            // Open cropper automatically on file select for best user experience
+            openSlideCropperModal(base64, (croppedBase64) => {
+              if (imgPreview) imgPreview.src = croppedBase64;
+              if (urlInput) urlInput.value = croppedBase64;
+            });
           }
         });
       }
@@ -7216,20 +7185,16 @@ function openEditHeroSlideModal(slideId) {
       }
 
       if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
+        fileInput.addEventListener("change", async (e) => {
           const file = e.target.files?.[0];
           if (file) {
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-              const base64 = evt.target?.result;
-              if (imgPreview) imgPreview.src = base64;
-              if (urlInput) urlInput.value = base64;
-              openSlideCropperModal(base64, (croppedBase64) => {
-                if (imgPreview) imgPreview.src = croppedBase64;
-                if (urlInput) urlInput.value = croppedBase64;
-              });
-            };
-            reader.readAsDataURL(file);
+            const base64 = await window.compressImage(file, 1600, 0.85);
+            if (imgPreview) imgPreview.src = base64;
+            if (urlInput) urlInput.value = base64;
+            openSlideCropperModal(base64, (croppedBase64) => {
+              if (imgPreview) imgPreview.src = croppedBase64;
+              if (urlInput) urlInput.value = croppedBase64;
+            });
           }
         });
       }
