@@ -6598,86 +6598,64 @@ function renderDashboardHeroCarousel(slides, isAdmin) {
   }
 
   return `
-    <div class="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-700/70 bg-slate-950 group" id="hero-carousel-container">
+    <div class="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-slate-700/60 bg-slate-950 group" id="hero-carousel-container">
       
-      <!-- Top Bar: Category indicator & Admin Controls -->
-      <div class="absolute top-4 inset-x-4 md:top-5 md:inset-x-6 z-30 flex items-center justify-between pointer-events-none">
-        <div class="flex items-center gap-2 pointer-events-auto">
-          <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-navy-950/85 backdrop-blur-xl border border-white/20 text-white font-bold font-prompt text-xs shadow-xl">
-            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            <span>ภาพกิจกรรมและผลงานเด่น</span>
-          </span>
+      <!-- Admin Management Overlay Toolbar -->
+      ${isAdmin ? `
+        <div class="absolute top-4 right-4 z-30 flex items-center gap-2">
+          <button onclick="openHeroSlideManagerModal()" class="px-3.5 py-1.5 rounded-xl bg-navy-950/85 hover:bg-navy-900 text-amber-300 border border-amber-400/40 backdrop-blur-md text-xs font-bold font-prompt flex items-center gap-1.5 shadow-xl transition-all hover:scale-105 cursor-pointer">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+            <span>จัดการภาพสไลด์ (${visibleSlides.length})</span>
+          </button>
+          <button onclick="openAddHeroSlideModal()" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-navy-950 font-extrabold font-prompt text-xs flex items-center gap-1 shadow-xl transition-all hover:scale-105 cursor-pointer">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            <span>เพิ่มภาพ</span>
+          </button>
         </div>
+      ` : ""}
 
-        ${isAdmin ? `
-          <div class="flex items-center gap-1.5 pointer-events-auto bg-navy-950/85 backdrop-blur-xl border border-amber-400/40 p-1.5 rounded-2xl shadow-xl">
-            <button onclick="openHeroSlideManagerModal()" class="px-3 py-1.5 rounded-xl hover:bg-white/10 text-amber-300 text-xs font-bold font-prompt flex items-center gap-1.5 transition-all cursor-pointer">
-              <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-              <span>จัดการสไลด์ (${visibleSlides.length})</span>
-            </button>
-            <button onclick="openAddHeroSlideModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-navy-950 font-extrabold font-prompt text-xs flex items-center gap-1 shadow-md transition-all cursor-pointer">
-              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-              <span>เพิ่มภาพ</span>
-            </button>
-          </div>
-        ` : ""}
-      </div>
-
-      <!-- Slide Items Stage -->
-      <div class="relative min-h-[380px] sm:min-h-[440px] md:min-h-[480px] lg:min-h-[520px] w-full overflow-hidden flex items-center justify-center">
+      <!-- Slide Items Frame -->
+      <div class="relative aspect-[16/9] sm:aspect-[21/9] min-h-[280px] md:min-h-[380px] lg:min-h-[440px] w-full overflow-hidden">
         ${visibleSlides.map((slide, idx) => {
           const isActive = idx === currentHeroSlideIndex;
           return `
-            <div class="hero-slide-item absolute inset-0 transition-all duration-700 ease-out flex items-center justify-center ${isActive ? 'opacity-100 scale-100 pointer-events-auto z-10' : 'opacity-0 scale-105 pointer-events-none z-0'}" data-slide-index="${idx}">
+            <div class="hero-slide-item absolute inset-0 transition-all duration-700 ease-in-out ${isActive ? 'opacity-100 scale-100 pointer-events-auto z-10' : 'opacity-0 scale-105 pointer-events-none z-0'}" data-slide-index="${idx}">
               
-              <!-- 1. Ambient Glow Backdrop (Eliminates harsh black bars with rich photo glow) -->
-              <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="Backdrop" class="w-full h-full object-cover blur-3xl scale-125 opacity-65 filter brightness-60 saturate-150 transform transition-transform duration-1000">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-slate-950/50"></div>
-                <div class="absolute inset-0 bg-radial from-transparent via-slate-950/25 to-slate-950/75"></div>
-              </div>
+              <!-- Slide Photo (Sharp & Full Coverage) -->
+              <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title || 'Highlight'}" class="w-full h-full object-cover">
+              
+              <!-- Cinematic Dark Gradient Overlay -->
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10"></div>
 
-              <!-- 2. Main Center Photo Showcase (Sharp, High-Res, Framed Elegantly) -->
-              <div class="relative z-10 w-full h-full p-4 md:p-8 flex items-center justify-center">
-                ${slide.fitMode === 'cover' ? `
-                  <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title || 'Highlight'}" class="w-full h-full object-cover rounded-2xl shadow-2xl border border-white/10">
-                ` : `
-                  <div class="relative max-h-full max-w-full flex items-center justify-center">
-                    <img src="${slide.imageUrl || 'https://images.unsplash.com/photo-1577896851231-70ef18881754'}" alt="${slide.title || 'Highlight'}" class="max-h-[340px] sm:max-h-[390px] md:max-h-[430px] lg:max-h-[470px] w-auto max-w-full object-contain rounded-2xl shadow-2xl border border-white/15">
-                  </div>
-                `}
-              </div>
-
-              <!-- 3. Executive Frosted Glass Floating Info Card (Bottom-Left) -->
-              <div class="absolute bottom-4 left-4 md:bottom-6 md:left-6 z-20 max-w-lg lg:max-w-xl p-5 md:p-6 rounded-2xl bg-navy-950/85 backdrop-blur-xl border border-white/20 shadow-2xl space-y-2.5 text-left transition-all duration-500">
-                <div class="flex items-center gap-2">
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold font-prompt bg-amber-400 text-navy-950 shadow-md">
-                    <i data-lucide="tag" class="w-3.5 h-3.5"></i>
-                    <span>${slide.tag || 'กิจกรรมเด่น'}</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-slate-300 bg-white/10 px-2 py-0.5 rounded-md">
-                    ${idx + 1} / ${visibleSlides.length}
+              <!-- Top Left Tag / Badge -->
+              ${slide.tag ? `
+                <div class="absolute top-4 left-4 z-20">
+                  <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold font-prompt bg-amber-500 text-navy-950 shadow-lg border border-amber-300/60">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>${slide.tag}</span>
                   </span>
                 </div>
+              ` : ""}
 
-                <h3 class="text-base sm:text-lg md:text-xl font-bold font-prompt text-white leading-snug drop-shadow">
+              <!-- Slide Bottom Content -->
+              <div class="absolute bottom-0 inset-x-0 p-6 md:p-8 lg:p-10 z-20 space-y-2 max-w-3xl text-left">
+                <h3 class="text-lg sm:text-2xl md:text-3xl font-extrabold text-white font-prompt leading-tight drop-shadow-lg">
                   ${slide.title}
                 </h3>
-
                 ${slide.subtitle ? `
-                  <p class="text-xs text-slate-300 font-sarabun line-clamp-2 leading-relaxed">
+                  <p class="text-xs sm:text-sm text-slate-200 font-sarabun line-clamp-2 leading-relaxed drop-shadow">
                     ${slide.subtitle}
                   </p>
                 ` : ""}
 
-                <div class="pt-1 flex flex-wrap items-center gap-2.5">
+                <div class="pt-3 flex flex-wrap items-center gap-2.5">
                   ${slide.linkView ? `
-                    <button type="button" onclick="handleSlideActionClick('${slide.linkView}')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-500 text-navy-950 text-xs font-extrabold font-prompt shadow-lg shadow-amber-500/25 hover:scale-105 transition-all cursor-pointer">
+                    <button type="button" onclick="handleSlideActionClick('${slide.linkView}')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-500 text-navy-950 text-xs md:text-sm font-extrabold font-prompt shadow-xl shadow-amber-500/25 hover:scale-105 transition-all cursor-pointer">
                       <span>ดูรายละเอียด</span>
-                      <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                      <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
                   ` : ""}
-                  <button type="button" onclick="openPhotoViewer('${slide.imageUrl || ''}', '${(slide.title || '').replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white backdrop-blur-md text-xs font-semibold font-prompt border border-white/20 shadow-md hover:scale-105 transition-all cursor-pointer">
+                  <button type="button" onclick="openPhotoViewer('${slide.imageUrl || ''}', '${(slide.title || '').replace(/'/g, "\\'")}')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white backdrop-blur-md text-xs md:text-sm font-semibold font-prompt border border-slate-600/80 shadow-lg hover:scale-105 transition-all cursor-pointer">
                     <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-amber-300"></i>
                     <span>ดูภาพเต็ม</span>
                   </button>
@@ -6685,7 +6663,7 @@ function renderDashboardHeroCarousel(slides, isAdmin) {
               </div>
 
               ${!slide.isVisible ? `
-                <div class="absolute inset-0 bg-slate-950/85 z-25 flex items-center justify-center text-white font-bold text-sm backdrop-blur-sm">
+                <div class="absolute inset-0 bg-slate-950/80 z-25 flex items-center justify-center text-white font-bold text-sm">
                   <i data-lucide="eye-off" class="w-5 h-5 mr-2 text-amber-400"></i> แอดมินตั้งค่าซ่อนจากผู้ชม
                 </div>
               ` : ""}
@@ -6694,22 +6672,22 @@ function renderDashboardHeroCarousel(slides, isAdmin) {
         }).join("")}
       </div>
 
-      <!-- 4. Executive Floating Control Capsule (Bottom-Right) -->
+      <!-- Navigation Arrows (Prev / Next) -->
       ${visibleSlides.length > 1 ? `
-        <div class="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-30 flex items-center gap-2 bg-navy-950/85 backdrop-blur-xl border border-white/20 px-3 py-2 rounded-2xl shadow-2xl">
-          <button onclick="prevHeroSlide()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110" title="ภาพก่อนหน้า">
-            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-          </button>
-          
-          <div class="hero-capsule-dots flex items-center gap-1.5 px-1.5">
-            ${visibleSlides.map((_, dotIdx) => `
-              <button onclick="jumpToHeroSlide(${dotIdx})" class="hero-dot-btn transition-all duration-300 rounded-full cursor-pointer ${dotIdx === currentHeroSlideIndex ? 'w-6 h-2 bg-amber-400 shadow-md shadow-amber-400/60' : 'w-2 h-2 bg-white/40 hover:bg-white/80'}" title="ไปยังภาพที่ ${dotIdx + 1}"></button>
-            `).join("")}
-          </div>
+        <button onclick="prevHeroSlide()" class="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white backdrop-blur-md border border-white/20 transition-all flex items-center justify-center opacity-70 hover:opacity-100 cursor-pointer shadow-xl hover:scale-110" title="ภาพก่อนหน้า">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+        <button onclick="nextHeroSlide()" class="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white backdrop-blur-md border border-white/20 transition-all flex items-center justify-center opacity-70 hover:opacity-100 cursor-pointer shadow-xl hover:scale-110" title="ภาพถัดไป">
+          <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+      ` : ""}
 
-          <button onclick="nextHeroSlide()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110" title="ภาพถัดไป">
-            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-          </button>
+      <!-- Pagination Dots Indicator -->
+      ${visibleSlides.length > 1 ? `
+        <div class="absolute bottom-3 md:bottom-4 inset-x-0 z-30 flex items-center justify-center gap-2 py-1">
+          ${visibleSlides.map((_, dotIdx) => `
+            <button onclick="jumpToHeroSlide(${dotIdx})" class="transition-all duration-300 cursor-pointer rounded-full ${dotIdx === currentHeroSlideIndex ? 'w-8 h-2.5 bg-amber-400 shadow-lg shadow-amber-400/60' : 'w-2.5 h-2.5 bg-white/50 hover:bg-white/90'}" title="ไปยังภาพที่ ${dotIdx + 1}"></button>
+          `).join("")}
         </div>
       ` : ""}
     </div>
@@ -6763,12 +6741,12 @@ function updateHeroSlideUI() {
     }
   });
 
-  const dots = container.querySelectorAll(".hero-dot-btn");
+  const dots = container.querySelectorAll(".bottom-3 button, .bottom-4 button");
   dots.forEach((dot, idx) => {
     if (idx === currentHeroSlideIndex) {
-      dot.className = "hero-dot-btn transition-all duration-300 rounded-full cursor-pointer w-6 h-2 bg-amber-400 shadow-md shadow-amber-400/60";
+      dot.className = "transition-all duration-300 cursor-pointer rounded-full w-8 h-2.5 bg-amber-400 shadow-lg shadow-amber-400/60";
     } else {
-      dot.className = "hero-dot-btn transition-all duration-300 rounded-full cursor-pointer w-2 h-2 bg-white/40 hover:bg-white/80";
+      dot.className = "transition-all duration-300 cursor-pointer rounded-full w-2.5 h-2.5 bg-white/50 hover:bg-white/90";
     }
   });
 }
