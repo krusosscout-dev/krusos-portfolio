@@ -278,6 +278,16 @@ const DEFAULT_PORTFOLIO_DATA = {
       challengeResult: "นักเรียนชั้นประถมศึกษาปีที่ 6 จำนวน 28 คน มีผลสัมฤทธิ์ทางการเรียนหลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติ และผ่านเกณฑ์ร้อยละ 85.71",
       youtubeVideoId: "",
       youtubeUrl: "",
+      challengeImages: [
+        {
+          url: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+          caption: "ภาพบรรยากาศการจัดกิจกรรมการเรียนรู้และการใช้นวัตกรรมตามประเด็นท้าทาย"
+        },
+        {
+          url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+          caption: "ผลงานและร่องรอยหลักฐานการพัฒนาทักษะการเขียนโปรแกรมของนักเรียน"
+        }
+      ],
       pa1DocUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", // ข้อตกลง PA-1/ส
       pa2DocUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", // รายงานผล PA-2/ส
       pa3DocUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", // แบบประเมิน PA-3/ส
@@ -441,6 +451,21 @@ const DEFAULT_PORTFOLIO_DATA = {
               title: "การพัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง",
               details: "เข้ารับการอบรมพัฒนาทักษะด้านปัญญาประดิษฐ์ (AI in Education) และนวัตกรรมการจัดการเรียนรู้เชิงรุก รวมกว่า 30 ชั่วโมง",
               docUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+              trainings: [
+                {
+                  id: "tr-1",
+                  no: "๑",
+                  title: "การอบรมเชิงปฏิบัติการวิทยากรแกนนำการจัดการเรียนรู้ผ่านฐานการเรียนรู้ตามหลักปรัชญาของเศรษฐกิจพอเพียง จำนวน ๖ ชั่วโมง",
+                  date: "๑๙ ธ.ค. ๖๘",
+                  organizer: "สพป.สิงห์บุรี",
+                  evidenceType: "เกียรติบัตร/รูปภาพ",
+                  certificateUrl: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80",
+                  pdfUrl: "",
+                  images: [
+                    { url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80", caption: "เกียรติบัตรผ่านการอบรมวิทยากรแกนนำ" }
+                  ]
+                }
+              ],
               images: [
                 { url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80", caption: "เกียรติบัตรการผ่านการอบรมหลักสูตรพัฒนาวิชาชีพครู" }
               ]
@@ -450,6 +475,21 @@ const DEFAULT_PORTFOLIO_DATA = {
               title: "การมีส่วนร่วมในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC)",
               details: "ร่วมจัดตั้งและเป็นผู้นำกลุ่ม PLC ครูผู้สอนกลุ่มสาระวิทยาศาสตร์และเทคโนโลยี แลกเปลี่ยนแนวทางแก้ปัญหาการจัดการเรียนรู้",
               docUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+              trainings: [
+                {
+                  id: "plc-1",
+                  no: "๑",
+                  title: "การขับเคลื่อนกระบวนการชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) เพื่อยกระดับผลสัมฤทธิ์ทางการเรียนและการคิดเชิงคำนวณ",
+                  date: "๒๕๖๘",
+                  organizer: "โรงเรียนวัดบางปูน",
+                  evidenceType: "เกียรติบัตร/รูปภาพ",
+                  certificateUrl: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80",
+                  pdfUrl: "",
+                  images: [
+                    { url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80", caption: "บันทึกการประชุมชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) และภาพกิจกรรม" }
+                  ]
+                }
+              ],
               images: [
                 { url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80", caption: "บันทึกการประชุมชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) และภาพกิจกรรม" }
               ]

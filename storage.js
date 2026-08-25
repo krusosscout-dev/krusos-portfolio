@@ -215,6 +215,11 @@ class PortfolioStorage {
           rec.totalScore = "";
           rec.status = "พร้อมรับการประเมิน";
         }
+        if (rec.challengeImages && Array.isArray(rec.challengeImages)) {
+          rec.challengeImages = rec.challengeImages.map(img => typeof img === "string" ? { url: img, caption: "ภาพกิจกรรมและร่องรอยหลักฐานประเด็นท้าทาย" } : img);
+        } else if (!rec.challengeImages && DEFAULT_PORTFOLIO_DATA.paRecords?.[0]?.challengeImages) {
+          rec.challengeImages = JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO_DATA.paRecords[0].challengeImages));
+        }
         if (rec.indicators && Array.isArray(rec.indicators)) {
           rec.indicators = rec.indicators.filter(ind => !ind.standard.includes("ส่วนที่ 2"));
           const defaultAspects = DEFAULT_PORTFOLIO_DATA.paRecords?.[0]?.indicators || [];
@@ -222,6 +227,13 @@ class PortfolioStorage {
             const def = defaultAspects[idx] || {};
             if (!ind.items || !Array.isArray(ind.items) || ind.items.length === 0) {
               ind.items = JSON.parse(JSON.stringify(def.items || []));
+            } else if (def.items && Array.isArray(def.items)) {
+              ind.items.forEach(it => {
+                const defIt = def.items.find(d => d.code === it.code);
+                if (defIt && defIt.trainings && !it.trainings) {
+                  it.trainings = JSON.parse(JSON.stringify(defIt.trainings));
+                }
+              });
             }
             if (ind.images && Array.isArray(ind.images)) {
               ind.images = ind.images.map(img => typeof img === "string" ? { url: img, caption: "ภาพกิจกรรมและหลักฐาน" } : img);

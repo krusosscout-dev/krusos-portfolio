@@ -816,6 +816,12 @@ function renderCurrentView() {
       } else {
         if (heroSlideTimer) clearInterval(heroSlideTimer);
       }
+
+      if (AppState.currentView === "pa") {
+        setTimeout(() => initAspectCarousels(), 150);
+      } else {
+        stopAspectCarousels();
+      }
     }
   }
 
@@ -1839,9 +1845,28 @@ function renderPaView(data, isAdmin) {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5 font-sarabun text-xs">
               ${(currentPa.indicators || []).slice(0, 3).map((ind, idx) => {
                 const itemCount = (ind.items && ind.items.length > 0) ? ind.items.length : (idx === 0 ? 8 : idx === 1 ? 4 : 3);
-                const allImgs = (ind.items && ind.items.length > 0) 
-                  ? ind.items.flatMap(it => it.images || []) 
-                  : (ind.images || []);
+                
+                // Collect all images from items and trainings (Indicator 3.1 & 3.2 certs included)
+                let allImgs = [];
+                if (ind.items && ind.items.length > 0) {
+                  ind.items.forEach(it => {
+                    if (it.images && Array.isArray(it.images)) {
+                      allImgs.push(...it.images);
+                    }
+                    if (it.trainings && Array.isArray(it.trainings)) {
+                      it.trainings.forEach(tr => {
+                        if (tr.certificateUrl) {
+                          allImgs.push({ url: tr.certificateUrl, caption: `${tr.no ? tr.no + '. ' : ''}${tr.title || 'เกียรติบัตร/หลักฐาน'}`.trim() });
+                        } else if (tr.images && Array.isArray(tr.images)) {
+                          allImgs.push(...tr.images);
+                        }
+                      });
+                    }
+                  });
+                }
+                if (allImgs.length === 0 && ind.images && Array.isArray(ind.images)) {
+                  allImgs = [...ind.images];
+                }
                 const imgCount = allImgs.length;
 
                 // Clean aspect title (strictly 1 line, without redundant 'ด้านที่ N' prefix since badge already shows it)
@@ -1889,33 +1914,70 @@ function renderPaView(data, isAdmin) {
                         </div>
                       ` : ''}
 
-                      <!-- Photo Gallery Preview Strip -->
+                      <!-- Auto-Rotating Photo Slideshow Preview -->
                       ${imgCount > 0 ? `
                         <div class="space-y-1.5 pt-1">
                           <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                            <span class="flex items-center gap-1"><i data-lucide="image" class="w-3.5 h-3.5 text-amber-600"></i> ภาพกิจกรรม/หลักฐาน</span>
-                            <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-[10px]">📷 ${imgCount} รูป</span>
+                            <span class="flex items-center gap-1 font-prompt font-semibold text-slate-700">
+                              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i> ภาพกิจกรรม/หลักฐาน
+                            </span>
+                            <span class="px-2 py-0.5 bg-amber-100/90 text-amber-900 rounded-full font-bold text-[10px] flex items-center gap-1 shadow-2xs font-prompt">
+                              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                              <span id="aspect-counter-${currentPa.id}-${idx}">1 / ${imgCount}</span>
+                            </span>
                           </div>
-                          <div class="grid grid-cols-3 gap-1.5 h-16 overflow-hidden rounded-xl">
-                            ${allImgs.slice(0, 3).map((imgObj, imgIdx) => {
+
+                          <div id="aspect-carousel-box-${currentPa.id}-${idx}" class="relative h-36 sm:h-40 w-full rounded-2xl overflow-hidden border border-slate-200/90 shadow-2xs bg-slate-950 group/slider cursor-pointer" onclick="openAspectDetailModal('${currentPa.id}', ${idx})" title="คลิกเพื่อเปิดดูรายละเอียดและภาพหลักฐานทั้งหมด">
+                            <!-- Slides -->
+                            ${allImgs.map((imgObj, imgIdx) => {
                               const url = typeof imgObj === 'string' ? imgObj : imgObj.url;
+                              const caption = typeof imgObj === 'string' ? '' : (imgObj.caption || '');
+                              const isActive = imgIdx === 0;
                               return `
-                                <div class="relative h-full overflow-hidden rounded-lg border border-slate-200 group/img bg-slate-100">
-                                  <img src="${url}" class="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-300">
-                                  ${(imgIdx === 2 && imgCount > 3) ? `
-                                    <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xs">
-                                      +${imgCount - 3}
+                                <div class="aspect-slide-item absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}" data-slide-index="${imgIdx}">
+                                  <img src="${url}" class="w-full h-full object-cover group-hover/slider:scale-105 transition-transform duration-500" alt="หลักฐานด้านที่ ${idx + 1}">
+                                  <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
+                                  
+                                  <!-- Bottom Caption & Badge -->
+                                  <div class="absolute bottom-0 inset-x-0 p-2.5 text-white flex items-end justify-between gap-2 z-20">
+                                    <div class="min-w-0 flex-1">
+                                      <p class="text-[11px] font-sarabun text-slate-100 line-clamp-1 leading-snug drop-shadow-sm flex items-center gap-1">
+                                        <i data-lucide="info" class="w-3 h-3 text-amber-400 shrink-0"></i>
+                                        <span class="truncate">${caption || `ภาพกิจกรรมและร่องรอยหลักฐาน (${imgIdx + 1}/${imgCount})`}</span>
+                                      </p>
                                     </div>
-                                  ` : ''}
+                                    <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-xs text-[10px] text-amber-300 font-prompt font-bold shrink-0 border border-white/10">
+                                      <i data-lucide="zoom-in" class="w-3 h-3"></i> ขยาย
+                                    </span>
+                                  </div>
                                 </div>
                               `;
                             }).join('')}
+
+                            <!-- Prev/Next Controls (hover) -->
+                            ${imgCount > 1 ? `
+                              <div class="absolute inset-y-0 inset-x-1.5 flex items-center justify-between pointer-events-none z-30 opacity-0 group-hover/slider:opacity-100 transition-opacity duration-200">
+                                <button type="button" onclick="event.stopPropagation(); prevAspectSlide('${currentPa.id}', ${idx})" class="pointer-events-auto w-6 h-6 rounded-full bg-black/60 hover:bg-amber-600 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer shadow-md" title="ภาพก่อนหน้า">
+                                  <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button type="button" onclick="event.stopPropagation(); nextAspectSlide('${currentPa.id}', ${idx})" class="pointer-events-auto w-6 h-6 rounded-full bg-black/60 hover:bg-amber-600 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer shadow-md" title="ภาพถัดไป">
+                                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                                </button>
+                              </div>
+
+                              <!-- Progress Dots -->
+                              <div class="absolute bottom-1 inset-x-0 flex items-center justify-center gap-1 z-30 pointer-events-none">
+                                ${allImgs.slice(0, 8).map((_, dotIdx) => `
+                                  <span class="aspect-dot-${currentPa.id}-${idx} h-1 rounded-full transition-all duration-300 ${dotIdx === 0 ? 'w-3.5 bg-amber-400' : 'w-1 bg-white/50'}"></span>
+                                `).join('')}
+                              </div>
+                            ` : ''}
                           </div>
                         </div>
                       ` : `
-                        <div class="p-2.5 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
-                          <i data-lucide="camera" class="w-3.5 h-3.5 text-slate-400"></i>
-                          <span>ยังไม่ได้แนบรูปภาพกิจกรรม</span>
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-1.5">
+                          <i data-lucide="camera-off" class="w-5 h-5 text-slate-400"></i>
+                          <span class="font-sarabun">ยังไม่มีรูปภาพกิจกรรม</span>
                         </div>
                       `}
                     </div>
@@ -2030,6 +2092,52 @@ function renderPaView(data, isAdmin) {
                   <p class="text-emerald-900 font-medium mt-1 leading-relaxed text-xs md:text-sm">${currentPa.challengeResult || "-"}</p>
                 </div>
               </div>
+            `}
+
+            <!-- ภาพถ่ายกิจกรรมและร่องรอยหลักฐานประเด็นท้าทาย -->
+            ${(currentPa.challengeImages && currentPa.challengeImages.length > 0) ? `
+              <div class="p-5 bg-white rounded-2xl border border-amber-200/80 shadow-xs space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5 font-prompt">
+                    <i data-lucide="camera" class="w-4 h-4 text-amber-600"></i> ภาพถ่ายกิจกรรมและร่องรอยหลักฐานประเด็นท้าทาย (${currentPa.challengeImages.length} ภาพ):
+                  </span>
+                  <span class="text-[11px] text-slate-400 font-sarabun">คลิกที่รูปภาพเพื่อขยายดูขนาดเต็ม</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                  ${currentPa.challengeImages.map((imgObj, i) => {
+                    const imgUrl = typeof imgObj === 'string' ? imgObj : imgObj.url;
+                    const imgCap = typeof imgObj === 'string' ? '' : (imgObj.caption || '');
+                    const safeTitle = (currentPa.challengeTitle || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    const safeCap = (imgCap || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    return `
+                      <div class="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
+                        <div onclick="openImageViewer('${imgUrl}', 'ประเด็นท้าทาย: ${safeCap || safeTitle}')" class="relative aspect-4/3 overflow-hidden bg-slate-100 cursor-pointer">
+                          <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                          <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1 font-prompt">
+                            <i data-lucide="zoom-in" class="w-4 h-4"></i> ขยายภาพ
+                          </div>
+                        </div>
+                        <div class="p-2.5 bg-slate-50 border-t border-slate-100">
+                          <p class="text-xs font-sarabun text-slate-700 leading-relaxed flex items-start gap-1.5">
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5"></i>
+                            <span>${imgCap || 'ภาพกิจกรรมและผลลัพธ์ประเด็นท้าทาย'}</span>
+                          </p>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : `
+              ${isAdmin ? `
+                <div class="p-4 bg-amber-50/40 rounded-2xl border border-dashed border-amber-300 text-center space-y-2">
+                  <i data-lucide="camera" class="w-6 h-6 text-amber-500 mx-auto"></i>
+                  <p class="text-xs text-amber-900 font-sarabun">ยังไม่มีรูปภาพกิจกรรม/หลักฐานสำหรับประเด็นท้าทายนี้</p>
+                  <button type="button" onclick="openEditPaChallengeModal('${currentPa.id}')" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-navy-950 rounded-xl text-xs font-bold font-prompt transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5">
+                    <i data-lucide="image-plus" class="w-3.5 h-3.5"></i> เพิ่มรูปภาพประเด็นท้าทาย
+                  </button>
+                </div>
+              ` : ''}
             `}
           </div>
 
@@ -4492,40 +4600,115 @@ function openEditPaHeaderModal(paId) {
 }
 
 // ==========================================
-// 2. Modular Edit Modal: Challenge Issue & YouTube Video
+// 2. Modular Edit Modal: Challenge Issue, Images & YouTube Video
 // ==========================================
 function openEditPaChallengeModal(paId) {
   const data = window.portfolioStorage.getData();
   const item = data.paRecords?.find(p => String(p.id) === String(paId));
   if (!item) return;
 
+  let currentChallengeImages = (item.challengeImages || []).map(img => {
+    if (typeof img === "string") return { url: img, caption: "ภาพกิจกรรมและร่องรอยหลักฐานประเด็นท้าทาย" };
+    return { url: img.url || "", caption: img.caption || "" };
+  });
+
+  function renderChallengeImageListHtml() {
+    if (currentChallengeImages.length === 0) {
+      return `<p class="text-xs text-slate-400 font-sarabun py-3 text-center bg-white rounded-xl border border-dashed border-slate-200">ยังไม่มีรูปภาพสำหรับประเด็นท้าทายนี้</p>`;
+    }
+    return `
+      <div class="space-y-3 pt-1">
+        ${currentChallengeImages.map((img, i) => `
+          <div class="p-3 bg-white rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center gap-3 shadow-2xs">
+            <div class="relative w-24 h-18 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
+              <img src="${img.url}" class="w-full h-full object-cover">
+            </div>
+            <div class="flex-1 w-full space-y-1">
+              <label class="block text-[11px] font-bold text-slate-600 font-prompt">คำบรรยายใต้ภาพที่ ${i + 1}:</label>
+              <input id="challenge-img-caption-${i}" class="w-full p-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white font-sarabun" placeholder="พิมพ์คำบรรยายใต้ภาพ เช่น ภาพการจัดกิจกรรมตามประเด็นท้าทาย..." value="${img.caption || ''}">
+            </div>
+            <button type="button" onclick="removeChallengeImage(${i})" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0 font-prompt" title="ลบภาพนี้">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ลบรูป
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Global helper for challenge image removal
+  window.removeChallengeImage = (imgIdx) => {
+    currentChallengeImages.forEach((img, idx) => {
+      const input = document.getElementById(`challenge-img-caption-${idx}`);
+      if (input) img.caption = input.value.trim();
+    });
+    currentChallengeImages.splice(imgIdx, 1);
+    const container = document.getElementById("challenge-images-container");
+    if (container) {
+      container.innerHTML = renderChallengeImageListHtml();
+      initIcons();
+    }
+  };
+
   Swal.fire({
-    title: "แก้ไขส่วนที่ 2: ประเด็นท้าทาย & วิดีโอ",
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="edit-3" class="w-5 h-5 text-amber-600"></i> แก้ไขส่วนที่ 2: ประเด็นท้าทาย, รูปภาพ & วิดีโอ
+    </span>`,
     html: `
       <div class="space-y-3.5 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ชื่อประเด็นท้าทาย: *</label>
-          <input id="edit-pa-challenge-title" class="w-full p-2.5 rounded-lg border border-slate-300 font-bold bg-white" placeholder="เช่น การพัฒนาผลสัมฤทธิ์การเขียนโปรแกรม..." value="${item.challengeTitle || ''}">
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อประเด็นท้าทาย: *</label>
+          <input id="edit-pa-challenge-title" class="w-full p-2.5 rounded-lg border border-slate-300 font-bold bg-white font-prompt" placeholder="เช่น การพัฒนาผลสัมฤทธิ์การเขียนโปรแกรม..." value="${item.challengeTitle || ''}">
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">วัตถุประสงค์:</label>
-          <textarea id="edit-pa-challenge-obj" rows="2" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white" placeholder="ระบุเป้าหมายหรือวัตถุประสงค์">${item.challengeObjective || ''}</textarea>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">วัตถุประสงค์:</label>
+          <textarea id="edit-pa-challenge-obj" rows="2" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white font-sarabun text-xs leading-relaxed" placeholder="ระบุเป้าหมายหรือวัตถุประสงค์">${item.challengeObjective || ''}</textarea>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">วิธีดำเนินการ:</label>
-          <textarea id="edit-pa-challenge-method" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white" placeholder="ระบุกระบวนการ ออกแบบ หรือนวัตกรรมที่นำมาใช้">${item.challengeMethod || ''}</textarea>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">วิธีดำเนินการ:</label>
+          <textarea id="edit-pa-challenge-method" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white font-sarabun text-xs leading-relaxed" placeholder="ระบุกระบวนการ ออกแบบ หรือนวัตกรรมที่นำมาใช้">${item.challengeMethod || ''}</textarea>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ผลลัพธ์ที่เกิดขึ้นจริง:</label>
-          <textarea id="edit-pa-challenge-res" rows="2" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white" placeholder="ระบุผลสัมฤทธิ์เชิงปริมาณและเชิงคุณภาพ">${item.challengeResult || ''}</textarea>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ผลลัพธ์ที่เกิดขึ้นจริง:</label>
+          <textarea id="edit-pa-challenge-res" rows="2" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white font-sarabun text-xs leading-relaxed" placeholder="ระบุผลสัมฤทธิ์เชิงปริมาณและเชิงคุณภาพ">${item.challengeResult || ''}</textarea>
+        </div>
+
+        <!-- Image Management Section with Captions for Challenge Issue -->
+        <div class="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-amber-950 flex items-center gap-1.5 text-xs font-prompt">
+              <i data-lucide="camera" class="w-4 h-4 text-amber-600"></i> จัดการรูปภาพและคำบรรยายใต้ภาพสำหรับประเด็นท้าทาย:
+            </label>
+            <span class="text-[11px] text-amber-800 font-semibold bg-amber-200/60 px-2 py-0.5 rounded-md font-prompt">บีบอัดภาพอัตโนมัติ</span>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[11px] font-semibold text-slate-700 font-prompt">1. อัปโหลดรูปภาพจากคอมพิวเตอร์ / มือถือ (เลือกหลายรูปพร้อมกันได้):</label>
+            <input type="file" id="challenge-file-input" multiple accept="image/*" class="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer">
+          </div>
+
+          <div class="space-y-1 pt-1">
+            <label class="block text-[11px] font-semibold text-slate-700 font-prompt">2. หรือวาง URL ลิงก์รูปภาพ:</label>
+            <div class="flex gap-2">
+              <input id="challenge-url-input" class="flex-1 p-2 rounded-lg border border-slate-300 text-xs bg-white font-mono" placeholder="https://... ลิงก์รูปภาพ">
+              <button type="button" id="btn-add-challenge-url" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0 font-prompt">
+                เพิ่มรูป
+              </button>
+            </div>
+          </div>
+
+          <!-- Image List with Caption Inputs -->
+          <div id="challenge-images-container">
+            ${renderChallengeImageListHtml()}
+          </div>
         </div>
 
         <!-- YouTube Video Link -->
-        <div class="p-3.5 bg-rose-50/80 rounded-xl border border-rose-200 space-y-1.5">
-          <label class="block font-bold text-rose-900 text-xs flex items-center gap-1.5">
+        <div class="p-3.5 bg-rose-50/80 rounded-2xl border border-rose-200 space-y-1.5">
+          <label class="block font-bold text-rose-900 text-xs flex items-center gap-1.5 font-prompt">
             <i data-lucide="video" class="w-4 h-4 text-rose-600"></i> ลิงก์คลิปวิดีโอบันทึกการสอน / นวัตกรรม (YouTube):
           </label>
           <input id="edit-pa-youtube-url" class="w-full p-2.5 rounded-lg border border-rose-300 bg-white font-mono text-xs" placeholder="https://www.youtube.com/watch?v=... หรือ https://youtu.be/... (เว้นว่างได้)" value="${item.youtubeUrl || (item.youtubeVideoId ? `https://www.youtube.com/watch?v=${item.youtubeVideoId}` : '')}">
@@ -4533,13 +4716,62 @@ function openEditPaChallengeModal(paId) {
         </div>
       </div>
     `,
-    width: "680px",
+    width: "740px",
     showCancelButton: true,
-    confirmButtonText: "บันทึกประเด็นท้าทาย",
+    confirmButtonText: "💾 บันทึกข้อมูลประเด็นท้าทาย",
     cancelButtonText: "ยกเลิก",
     confirmButtonColor: "#d97706",
     cancelButtonColor: "#64748b",
-    didOpen: () => initIcons(),
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("challenge-file-input");
+      const urlInput = document.getElementById("challenge-url-input");
+      const addUrlBtn = document.getElementById("btn-add-challenge-url");
+      const container = document.getElementById("challenge-images-container");
+
+      function syncCaptions() {
+        currentChallengeImages.forEach((img, idx) => {
+          const input = document.getElementById(`challenge-img-caption-${idx}`);
+          if (input) img.caption = input.value.trim();
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener("change", async (e) => {
+          syncCaptions();
+          const files = Array.from(e.target.files);
+          for (const file of files) {
+            const compressed = await window.compressImage(file, 1600, 0.85);
+            currentChallengeImages.push({
+              url: compressed,
+              caption: file.name ? `ภาพกิจกรรม: ${file.name.replace(/\.[^/.]+$/, "")}` : "ภาพกิจกรรมและการใช้นวัตกรรมตามประเด็นท้าทาย"
+            });
+          }
+          if (container) {
+            container.innerHTML = renderChallengeImageListHtml();
+            initIcons();
+          }
+        });
+      }
+
+      if (addUrlBtn && urlInput) {
+        addUrlBtn.addEventListener("click", () => {
+          syncCaptions();
+          const url = urlInput.value.trim();
+          if (url) {
+            currentChallengeImages.push({
+              url: url,
+              caption: "ภาพกิจกรรมและการใช้นวัตกรรมตามประเด็นท้าทาย"
+            });
+            urlInput.value = "";
+            if (container) {
+              container.innerHTML = renderChallengeImageListHtml();
+              initIcons();
+            }
+          }
+        });
+      }
+    },
     preConfirm: () => {
       const challengeTitle = document.getElementById("edit-pa-challenge-title").value.trim();
       const challengeObjective = document.getElementById("edit-pa-challenge-obj").value.trim();
@@ -4553,13 +4785,23 @@ function openEditPaChallengeModal(paId) {
         return false;
       }
 
+      // Collect updated captions
+      const finalImages = currentChallengeImages.map((img, idx) => {
+        const input = document.getElementById(`challenge-img-caption-${idx}`);
+        return {
+          url: img.url,
+          caption: input ? input.value.trim() : (img.caption || "")
+        };
+      });
+
       return {
         challengeTitle,
         challengeObjective,
         challengeMethod,
         challengeResult,
         youtubeUrl,
-        youtubeVideoId
+        youtubeVideoId,
+        challengeImages: finalImages
       };
     }
   }).then((result) => {
@@ -4714,22 +4956,66 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
       images: []
     };
     const images = activeItem.images || [];
+    const isPLC = activeItem.code === "3.2";
+    const isTrainingIndicator = activeItem.code === "3.1" || activeItem.code === "3.2" || (activeItem.trainings && activeItem.trainings.length > 0);
+    const dateColLabel = isPLC ? "พ.ศ." : "วันที่เข้าอบรม";
+    const tableHeaderLabel = isPLC 
+      ? `ตารางบันทึกการมีส่วนร่วมในชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) (${(activeItem.trainings || []).length || 1} รายการ):`
+      : `ตารางบันทึกประวัติการเข้าอบรม / สัมมนา / พัฒนาตนเอง (${(activeItem.trainings || []).length || 1} รายการ):`;
+    const addBtnLabel = isPLC ? "➕ เพิ่มรายการ PLC" : "➕ เพิ่มรายการอบรม";
+    const emptyTableText = isPLC ? "ยังไม่มีรายการบันทึก PLC สำหรับตัวชี้วัดนี้" : "ยังไม่มีรายการบันทึกการอบรมสำหรับตัวชี้วัดนี้";
+
+    const trainings = activeItem.trainings || (activeItem.code === "3.1" ? [
+      {
+        id: "tr-1",
+        no: "๑",
+        title: "การอบรมเชิงปฏิบัติการวิทยากรแกนนำการจัดการเรียนรู้ผ่านฐานการเรียนรู้ตามหลักปรัชญาของเศรษฐกิจพอเพียง จำนวน ๖ ชั่วโมง",
+        date: "๑๙ ธ.ค. ๖๘",
+        organizer: "สพป.สิงห์บุรี",
+        evidenceType: "เกียรติบัตร/รูปภาพ",
+        certificateUrl: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80",
+        pdfUrl: "",
+        images: [
+          { url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80", caption: "เกียรติบัตรผ่านการอบรมวิทยากรแกนนำ" }
+        ]
+      }
+    ] : activeItem.code === "3.2" ? [
+      {
+        id: "plc-1",
+        no: "๑",
+        title: "การขับเคลื่อนกระบวนการชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) เพื่อยกระดับผลสัมฤทธิ์ทางการเรียนและการคิดเชิงคำนวณ",
+        date: "๒๕๖๘",
+        organizer: "โรงเรียนวัดบางปูน",
+        evidenceType: "เกียรติบัตร/รูปภาพ",
+        certificateUrl: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80",
+        pdfUrl: "",
+        images: [
+          { url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80", caption: "บันทึกการประชุมชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) และภาพกิจกรรม" }
+        ]
+      }
+    ] : []);
 
     return `
       <div class="p-5 bg-white rounded-2xl border-2 border-amber-400/80 shadow-md space-y-4 animate-in fade-in duration-200">
         <!-- Indicator Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div class="space-y-0.5">
-            <span class="text-xs font-bold text-amber-700 flex items-center gap-1.5">
+            <span class="text-xs font-bold text-amber-700 flex items-center gap-1.5 font-prompt">
               <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i> ตัวชี้วัดที่ ${activeItem.code}
             </span>
-            <h4 class="text-base sm:text-lg font-bold text-slate-800 leading-snug">${activeItem.title}</h4>
+            <h4 class="text-base sm:text-lg font-bold text-slate-800 leading-snug font-prompt">${activeItem.title}</h4>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-2 shrink-0 flex-wrap">
+            ${isTrainingIndicator && isAdmin ? `
+              <button type="button" onclick="openAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                <span>${addBtnLabel}</span>
+              </button>
+            ` : ''}
             ${isAdmin ? `
-              <button type="button" onclick="openEditSingleIndicatorModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-navy-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                <span>แก้ไขตัวชี้วัดนี้/เพิ่มภาพ</span>
+              <button type="button" onclick="openEditSingleIndicatorModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-950 font-bold text-xs flex items-center gap-1.5 transition-all border border-slate-200 hover:border-amber-300 shadow-2xs cursor-pointer">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-600"></i>
+                <span>แก้ไขสรุปผลงาน/ภาพ</span>
               </button>
             ` : ''}
           </div>
@@ -4737,7 +5023,7 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
 
         <!-- 1. คำอธิบายผลการปฏิบัติงานของตัวชี้วัดนี้ -->
         <div class="space-y-1.5">
-          <span class="font-bold text-xs text-slate-700 flex items-center gap-1.5">
+          <span class="font-bold text-xs text-slate-700 flex items-center gap-1.5 font-prompt">
             <i data-lucide="file-edit" class="w-3.5 h-3.5 text-blue-600"></i> ผลการปฏิบัติงานและร่องรอยหลักฐานเชิงประจักษ์:
           </span>
           <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 font-sarabun text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
@@ -4745,10 +5031,104 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
           </div>
         </div>
 
-        <!-- 2. รูปภาพหลักฐานพร้อมคำบรรยายใต้ภาพ -->
+        <!-- 2. ตารางบันทึกการเข้าอบรม/พัฒนาตนเอง หรือ PLC (ตัวชี้วัด 3.1 และ 3.2) -->
+        ${isTrainingIndicator ? `
+          <div class="space-y-2.5 pt-1">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="font-bold text-xs text-slate-800 flex items-center gap-1.5 font-prompt">
+                <i data-lucide="table" class="w-4 h-4 text-amber-600"></i> ${tableHeaderLabel}
+              </span>
+              <span class="text-[11px] text-slate-400 font-sarabun">คลิกที่ปุ่มเกียรติบัตร/รูปภาพ เพื่อเปิดดูหลักฐานเต็มจอ</span>
+            </div>
+
+            ${trainings.length > 0 ? `
+              <div class="overflow-x-auto rounded-2xl border border-slate-300 shadow-xs bg-white">
+                <table class="w-full text-xs font-sarabun text-slate-800 border-collapse">
+                  <thead>
+                    <tr class="bg-gradient-to-r from-slate-100 to-slate-200/90 text-slate-800 font-bold border-b border-slate-300 text-center">
+                      <th class="py-3 px-3 w-12 border-r border-slate-300 font-prompt text-slate-900">ที่</th>
+                      <th class="py-3 px-4 border-r border-slate-300 text-left font-prompt text-slate-900">${isPLC ? 'ชื่อกิจกรรม / หัวข้อการแลกเปลี่ยนเรียนรู้ (PLC)' : 'ชื่อกิจกรรมที่เข้าอบรม/พัฒนา'}</th>
+                      <th class="py-3 px-3 w-28 border-r border-slate-300 font-prompt text-slate-900">${dateColLabel}</th>
+                      <th class="py-3 px-3 w-32 border-r border-slate-300 font-prompt text-slate-900">${isPLC ? 'หน่วยงาน / กลุ่มสาระ' : 'หน่วยงานที่จัดอบรม'}</th>
+                      <th class="py-3 px-3 w-48 font-prompt text-slate-900">หลักฐาน/เอกสารอ้างอิง</th>
+                      ${isAdmin ? `<th class="py-3 px-2 w-20 font-prompt border-l border-slate-300 text-slate-900">จัดการ</th>` : ''}
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200">
+                    ${trainings.map((t, idx) => {
+                      const certImg = t.certificateUrl || (t.images && t.images[0]?.url) || '';
+                      const safeTitle = (t.title || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                      const safeDate = (t.date || '-').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                      const safeOrg = (t.organizer || '-').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                      const safePdf = (t.pdfUrl || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                      return `
+                        <tr class="hover:bg-amber-50/40 transition-colors">
+                          <td class="py-3.5 px-2 text-center font-bold text-slate-700 border-r border-slate-200 bg-slate-50/40">
+                            ${t.no || getNextThaiNumber(idx + 1)}
+                          </td>
+                          <td class="py-3.5 px-4 text-left font-medium text-slate-800 border-r border-slate-200 leading-relaxed">
+                            <p class="font-bold text-slate-800 text-xs sm:text-[13px]">${t.title}</p>
+                          </td>
+                          <td class="py-3.5 px-3 text-center text-slate-700 border-r border-slate-200 font-medium whitespace-nowrap">
+                            ${t.date || '-'}
+                          </td>
+                          <td class="py-3.5 px-3 text-center text-slate-700 border-r border-slate-200 font-medium">
+                            ${t.organizer || '-'}
+                          </td>
+                          <td class="py-3.5 px-3 text-center border-r border-slate-200">
+                            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                              ${certImg ? `
+                                <button type="button" onclick="openCertificateLightbox('${certImg}', '${safeTitle}', '${safeDate}', '${safeOrg}', '${safePdf}', ${isPLC})" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition-all cursor-pointer shadow-2xs group" title="คลิกเพื่อดูรูปภาพหลักฐานเต็มจอ">
+                                  <i data-lucide="award" class="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform"></i>
+                                  <span>${t.evidenceType || (isPLC ? 'เกียรติบัตร/รูปภาพ' : 'เกียรติบัตร/รูปภาพ')}</span>
+                                </button>
+                              ` : `
+                                <span class="text-slate-400 text-xs">${t.evidenceType || 'เกียรติบัตร/รูปภาพ'}</span>
+                              `}
+                              ${t.pdfUrl ? `
+                                <button type="button" onclick="openDocumentPreview('${safeTitle}', '${safePdf}')" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-xs transition-all cursor-pointer shadow-2xs" title="เปิดดูเอกสาร PDF">
+                                  <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-600"></i>
+                                  <span>PDF</span>
+                                </button>
+                              ` : ''}
+                            </div>
+                          </td>
+                          ${isAdmin ? `
+                            <td class="py-3.5 px-2 text-center border-l border-slate-200">
+                              <div class="flex items-center justify-center gap-1">
+                                <button type="button" onclick="openEditTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}', '${t.id}')" class="p-1.5 rounded-lg hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer" title="แก้ไขรายการ">
+                                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button type="button" onclick="deleteTrainingRecord('${paId}', ${aspectIndex}, '${activeItem.code}', '${t.id}')" class="p-1.5 rounded-lg hover:bg-rose-100 text-rose-700 transition-colors cursor-pointer" title="ลบรายการ">
+                                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                              </div>
+                            </td>
+                          ` : ''}
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <div class="p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center space-y-2">
+                <i data-lucide="file-text" class="w-8 h-8 text-slate-300 mx-auto"></i>
+                <p class="text-xs text-slate-500 font-sarabun">${emptyTableText}</p>
+                ${isAdmin ? `
+                  <button type="button" onclick="openAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-navy-950 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs">
+                    ${addBtnLabel}
+                  </button>
+                ` : ''}
+              </div>
+            `}
+          </div>
+        ` : ''}
+
+        <!-- 3. รูปภาพหลักฐานประกอบทั่วไป (พร้อมคำบรรยายใต้ภาพ) -->
         <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between">
-            <span class="font-bold text-xs text-slate-700 flex items-center gap-1.5">
+            <span class="font-bold text-xs text-slate-700 flex items-center gap-1.5 font-prompt">
               <i data-lucide="camera" class="w-4 h-4 text-amber-600"></i> ภาพถ่ายกิจกรรมและหลักฐานเชิงประจักษ์ (${images.length} ภาพ):
             </span>
             <span class="text-[11px] text-slate-400 font-sarabun">คลิกที่รูปภาพเพื่อขยายดูขนาดเต็ม</span>
@@ -4780,7 +5160,7 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
           ` : `
             <div class="p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center space-y-2">
               <i data-lucide="camera" class="w-8 h-8 text-slate-300 mx-auto"></i>
-              <p class="text-xs text-slate-500 font-sarabun">ยังไม่มีรูปภาพกิจกรรมสำหรับตัวชี้วัดนี้</p>
+              <p class="text-xs text-slate-500 font-sarabun">ยังไม่มีรูปภาพกิจกรรมเพิ่มเติมสำหรับตัวชี้วัดนี้</p>
               ${isAdmin ? `
                 <button type="button" onclick="openEditSingleIndicatorModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-navy-950 rounded-lg text-xs font-bold cursor-pointer transition-all">
                   + เพิ่มรูปภาพและคำบรรยาย
@@ -5235,6 +5615,428 @@ function openEditSingleIndicatorModal(paId, aspectIndex, indCode) {
     }
   });
 }
+
+// ==========================================
+// PA Indicator 3.1 Training & Development Table Management
+// ==========================================
+function getNextThaiNumber(num) {
+  const thaiDigits = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+  return String(num).split('').map(d => thaiDigits[d] !== undefined ? thaiDigits[d] : d).join('');
+}
+window.getNextThaiNumber = getNextThaiNumber;
+
+function openCertificateLightbox(certUrl, title, date, organizer, pdfUrl, isPLC = false) {
+  if (!certUrl) {
+    if (pdfUrl) {
+      openDocumentPreview(title, pdfUrl);
+    }
+    return;
+  }
+  const cleanTitle = title || (isPLC ? "หลักฐาน/ภาพกิจกรรม PLC" : "หลักฐาน/เกียรติบัตรการอบรม");
+  const badgeTitle = isPLC ? "หลักฐาน / ภาพกิจกรรม / บันทึก PLC" : "หลักฐาน / เกียรติบัตรการพัฒนาตนเอง";
+  const dateTitle = isPLC ? "พ.ศ." : "วันที่";
+  const orgTitle = isPLC ? "หน่วยงาน/กลุ่มสาระ" : "หน่วยงาน";
+
+  Swal.fire({
+    title: `<div class="text-left font-prompt space-y-1.5 pt-1">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-xs font-bold shadow-2xs">
+          <i data-lucide="award" class="w-3.5 h-3.5 text-amber-700"></i> ${badgeTitle}
+        </span>
+      </div>
+      <h4 class="text-sm sm:text-base font-bold text-slate-800 leading-snug">${cleanTitle}</h4>
+      <p class="text-xs text-slate-500 font-sarabun flex items-center gap-2 flex-wrap">
+        <span>📅 ${dateTitle}: <strong class="text-slate-700">${date || '-'}</strong></span>
+        <span>•</span>
+        <span>🏢 ${orgTitle}: <strong class="text-slate-700">${organizer || '-'}</strong></span>
+      </p>
+    </div>`,
+    imageUrl: certUrl,
+    imageAlt: cleanTitle,
+    imageWidth: "100%",
+    showConfirmButton: !!pdfUrl,
+    confirmButtonText: "📄 เปิดดูเอกสาร PDF เต็ม",
+    confirmButtonColor: "#2563eb",
+    showCloseButton: true,
+    background: "#ffffff",
+    customClass: {
+      popup: "rounded-3xl p-4 sm:p-5 max-w-4xl border border-slate-200 shadow-2xl",
+      image: "rounded-2xl max-h-[75vh] object-contain shadow-sm border border-slate-200"
+    },
+    didOpen: () => initIcons()
+  }).then((result) => {
+    if (result.isConfirmed && pdfUrl) {
+      openDocumentPreview(cleanTitle, pdfUrl);
+    }
+  });
+}
+window.openCertificateLightbox = openCertificateLightbox;
+
+function openAddTrainingModal(paId, aspectIndex, indCode) {
+  const data = window.portfolioStorage.getData();
+  const paRecord = data.paRecords?.find(p => String(p.id) === String(paId));
+  if (!paRecord) return;
+  const aspect = paRecord.indicators?.[aspectIndex];
+  if (!aspect) return;
+  const item = aspect.items?.find(it => it.code === indCode);
+  if (!item) return;
+
+  const isPLC = indCode === "3.2";
+  const currentTrainings = item.trainings || [];
+  const nextNo = getNextThaiNumber(currentTrainings.length + 1);
+
+  const modalTitle = isPLC ? `เพิ่มรายการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC) (ตัวชี้วัด ${indCode})` : `เพิ่มรายการอบรม / พัฒนาตนเอง (ตัวชี้วัด ${indCode})`;
+  const dateLabel = isPLC ? "พ.ศ.: *" : "วันที่เข้าอบรม: *";
+  const datePlaceholder = isPLC ? "เช่น ๒๕๖๘ หรือ 2568" : "เช่น ๑๙ ธ.ค. ๖๘ หรือ 19 ธ.ค. 2568";
+  const defaultDate = isPLC ? "๒๕๖๘" : "";
+  const titleLabel = isPLC ? "ชื่อกิจกรรม / หัวข้อการแลกเปลี่ยนเรียนรู้ (PLC): *" : "ชื่อกิจกรรมที่เข้าอบรม / พัฒนาตนเอง: *";
+  const titlePlaceholder = isPLC ? "เช่น การขับเคลื่อนกระบวนการชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) เพื่อยกระดับผลสัมฤทธิ์ทางการเรียนและการคิดเชิงคำนวณ" : "เช่น การอบรมเชิงปฏิบัติการวิทยากรแกนนำการจัดการเรียนรู้ผ่านฐานการเรียนรู้ตามหลักปรัชญาของเศรษฐกิจพอเพียง จำนวน ๖ ชั่วโมง";
+  const orgLabel = isPLC ? "หน่วยงาน / สถานศึกษา / กลุ่มสาระ: *" : "หน่วยงานที่จัดอบรม: *";
+  const orgPlaceholder = isPLC ? "เช่น โรงเรียนวัดบางปูน หรือ สพป.สิงห์บุรี" : "เช่น สพป.สิงห์บุรี หรือ สพฐ.";
+  const uploadLabel = isPLC ? "รูปภาพกิจกรรม / ภาพบันทึก PLC / เกียรติบัตร (เลือกไฟล์จากเครื่อง):" : "รูปภาพเกียรติบัตร / รูปถ่ายหลักฐาน (เลือกไฟล์จากเครื่อง):";
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="plus-circle" class="w-5 h-5 text-amber-600"></i> ${modalTitle}
+    </span>`,
+    html: `
+      <div class="space-y-3.5 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
+        <div class="grid grid-cols-4 gap-2">
+          <div class="col-span-1">
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ลำดับที่ (ที่): *</label>
+            <input id="tr-no" class="w-full p-2.5 rounded-xl border border-slate-300 font-bold text-center text-sm text-amber-900 bg-amber-50/50" value="${nextNo}">
+          </div>
+          <div class="col-span-3">
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">${dateLabel}</label>
+            <input id="tr-date" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="${datePlaceholder}" value="${defaultDate}">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">${titleLabel}</label>
+          <textarea id="tr-title" rows="3" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs leading-relaxed" placeholder="${titlePlaceholder}"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">${orgLabel}</label>
+            <input id="tr-organizer" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="${orgPlaceholder}" value="${isPLC ? 'โรงเรียนวัดบางปูน' : ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ข้อความประเภทหลักฐาน:</label>
+            <input id="tr-evidence-type" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="เกียรติบัตร/รูปภาพ" placeholder="เกียรติบัตร/รูปภาพ">
+          </div>
+        </div>
+
+        <!-- Certificate / Photo Upload Section with Compression -->
+        <div class="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-amber-950 font-prompt text-xs flex items-center gap-1.5">
+              <i data-lucide="image" class="w-4 h-4 text-amber-600"></i> ${uploadLabel}
+            </label>
+            <span class="text-[11px] text-amber-800 font-semibold bg-amber-200/60 px-2 py-0.5 rounded-md">บีบอัดภาพอัตโนมัติ</span>
+          </div>
+
+          <input type="file" id="tr-file-input" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer">
+          <input id="tr-cert-url" class="w-full p-2 text-[11px] rounded-lg border border-slate-300 font-mono bg-white" placeholder="หรือใส่ลิงก์รูปภาพ URL https://...">
+
+          <div class="flex items-center gap-3 pt-1">
+            <span class="text-[11px] text-slate-500 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="tr-preview-img" src="${isPLC ? 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80'}" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ลิงก์เอกสาร PDF / Google Drive (ถ้ามี / ไม่บังคับ):</label>
+          <input id="tr-pdf-url" class="w-full p-2.5 rounded-xl border border-slate-300 font-mono text-xs" placeholder="https://drive.google.com/file/d/...">
+        </div>
+      </div>
+    `,
+    width: "640px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกรายการ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#d97706",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("tr-file-input");
+      const urlInput = document.getElementById("tr-cert-url");
+      const previewImg = document.getElementById("tr-preview-img");
+
+      if (fileInput) {
+        fileInput.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const compressed = await window.compressImage(file, 1600, 0.85);
+          if (urlInput) urlInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
+        });
+      }
+
+      if (urlInput) {
+        urlInput.addEventListener("input", (e) => {
+          if (previewImg && e.target.value.trim()) previewImg.src = e.target.value.trim();
+        });
+      }
+    },
+    preConfirm: () => {
+      const no = document.getElementById("tr-no").value.trim();
+      const date = document.getElementById("tr-date").value.trim();
+      const title = document.getElementById("tr-title").value.trim();
+      const organizer = document.getElementById("tr-organizer").value.trim();
+      const evidenceType = document.getElementById("tr-evidence-type").value.trim();
+      const certificateUrl = document.getElementById("tr-cert-url").value.trim();
+      const pdfUrl = document.getElementById("tr-pdf-url").value.trim();
+
+      if (!title) {
+        Swal.showValidationMessage(isPLC ? "กรุณากรอกชื่อกิจกรรม / หัวข้อ PLC" : "กรุณากรอกชื่อกิจกรรมที่เข้าอบรม/พัฒนา");
+        return false;
+      }
+
+      return {
+        id: `tr-${Date.now()}`,
+        no: no || "๑",
+        title,
+        date: date || "-",
+        organizer: organizer || "-",
+        evidenceType: evidenceType || "เกียรติบัตร/รูปภาพ",
+        certificateUrl,
+        pdfUrl,
+        images: certificateUrl ? [{ url: certificateUrl, caption: `${isPLC ? 'กิจกรรม PLC' : 'เกียรติบัตร'}: ${title}` }] : []
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const indicators = [...(paRecord.indicators || [])];
+      const itemsCopy = [...(indicators[aspectIndex].items || [])];
+      const targetItem = itemsCopy.find(it => it.code === indCode);
+      if (targetItem) {
+        if (!targetItem.trainings) targetItem.trainings = [];
+        targetItem.trainings.push(result.value);
+        indicators[aspectIndex] = { ...indicators[aspectIndex], items: itemsCopy };
+        window.portfolioStorage.updateItem("paRecords", paId, { indicators });
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: isPLC ? "เพิ่มรายการ PLC สำเร็จ" : "เพิ่มรายการอบรมสำเร็จ",
+          showConfirmButton: false,
+          timer: 1500
+        });
+        renderCurrentView();
+        setTimeout(() => openAspectDetailModal(paId, aspectIndex, indCode), 200);
+      }
+    }
+  });
+}
+window.openAddTrainingModal = openAddTrainingModal;
+
+function openEditTrainingModal(paId, aspectIndex, indCode, trainingId) {
+  const data = window.portfolioStorage.getData();
+  const paRecord = data.paRecords?.find(p => String(p.id) === String(paId));
+  if (!paRecord) return;
+  const aspect = paRecord.indicators?.[aspectIndex];
+  if (!aspect) return;
+  const item = aspect.items?.find(it => it.code === indCode);
+  if (!item) return;
+
+  const isPLC = indCode === "3.2";
+  const training = (item.trainings || []).find(t => String(t.id) === String(trainingId));
+  if (!training) return;
+
+  const currentCert = training.certificateUrl || training.images?.[0]?.url || "";
+
+  const modalTitle = isPLC ? `แก้ไขรายการ PLC (ลำดับที่ ${training.no || ''})` : `แก้ไขรายการอบรม (ลำดับที่ ${training.no || ''})`;
+  const dateLabel = isPLC ? "พ.ศ.: *" : "วันที่เข้าอบรม: *";
+  const titleLabel = isPLC ? "ชื่อกิจกรรม / หัวข้อการแลกเปลี่ยนเรียนรู้ (PLC): *" : "ชื่อกิจกรรมที่เข้าอบรม / พัฒนาตนเอง: *";
+  const orgLabel = isPLC ? "หน่วยงาน / สถานศึกษา / กลุ่มสาระ: *" : "หน่วยงานที่จัดอบรม: *";
+  const uploadLabel = isPLC ? "รูปภาพกิจกรรม / ภาพบันทึก PLC / เกียรติบัตร (เลือกไฟล์จากเครื่อง):" : "รูปภาพเกียรติบัตร / รูปถ่ายหลักฐาน (เลือกไฟล์จากเครื่อง):";
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="edit-3" class="w-5 h-5 text-amber-600"></i> ${modalTitle}
+    </span>`,
+    html: `
+      <div class="space-y-3.5 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
+        <div class="grid grid-cols-4 gap-2">
+          <div class="col-span-1">
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ลำดับที่ (ที่): *</label>
+            <input id="edit-tr-no" class="w-full p-2.5 rounded-xl border border-slate-300 font-bold text-center text-sm text-amber-900 bg-amber-50/50" value="${training.no || ''}">
+          </div>
+          <div class="col-span-3">
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">${dateLabel}</label>
+            <input id="edit-tr-date" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="${training.date || ''}">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">${titleLabel}</label>
+          <textarea id="edit-tr-title" rows="3" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs leading-relaxed">${training.title || ''}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">${orgLabel}</label>
+            <input id="edit-tr-organizer" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="${training.organizer || ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ข้อความประเภทหลักฐาน:</label>
+            <input id="edit-tr-evidence-type" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="${training.evidenceType || 'เกียรติบัตร/รูปภาพ'}">
+          </div>
+        </div>
+
+        <!-- Certificate / Photo Upload Section -->
+        <div class="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-amber-950 font-prompt text-xs flex items-center gap-1.5">
+              <i data-lucide="image" class="w-4 h-4 text-amber-600"></i> ${uploadLabel}
+            </label>
+            <span class="text-[11px] text-amber-800 font-semibold bg-amber-200/60 px-2 py-0.5 rounded-md">บีบอัดภาพอัตโนมัติ</span>
+          </div>
+
+          <input type="file" id="edit-tr-file-input" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer">
+          <input id="edit-tr-cert-url" class="w-full p-2 text-[11px] rounded-lg border border-slate-300 font-mono bg-white" value="${currentCert}" placeholder="หรือใส่ลิงก์รูปภาพ URL https://...">
+
+          <div class="flex items-center gap-3 pt-1">
+            <span class="text-[11px] text-slate-500 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="edit-tr-preview-img" src="${currentCert || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80'}" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ลิงก์เอกสาร PDF / Google Drive (ถ้ามี / ไม่บังคับ):</label>
+          <input id="edit-tr-pdf-url" class="w-full p-2.5 rounded-xl border border-slate-300 font-mono text-xs" value="${training.pdfUrl || ''}">
+        </div>
+      </div>
+    `,
+    width: "640px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#d97706",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("edit-tr-file-input");
+      const urlInput = document.getElementById("edit-tr-cert-url");
+      const previewImg = document.getElementById("edit-tr-preview-img");
+
+      if (fileInput) {
+        fileInput.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const compressed = await window.compressImage(file, 1600, 0.85);
+          if (urlInput) urlInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
+        });
+      }
+
+      if (urlInput) {
+        urlInput.addEventListener("input", (e) => {
+          if (previewImg && e.target.value.trim()) previewImg.src = e.target.value.trim();
+        });
+      }
+    },
+    preConfirm: () => {
+      const no = document.getElementById("edit-tr-no").value.trim();
+      const date = document.getElementById("edit-tr-date").value.trim();
+      const title = document.getElementById("edit-tr-title").value.trim();
+      const organizer = document.getElementById("edit-tr-organizer").value.trim();
+      const evidenceType = document.getElementById("edit-tr-evidence-type").value.trim();
+      const certificateUrl = document.getElementById("edit-tr-cert-url").value.trim();
+      const pdfUrl = document.getElementById("edit-tr-pdf-url").value.trim();
+
+      if (!title) {
+        Swal.showValidationMessage(isPLC ? "กรุณากรอกชื่อกิจกรรม / หัวข้อ PLC" : "กรุณากรอกชื่อกิจกรรมที่เข้าอบรม/พัฒนา");
+        return false;
+      }
+
+      return {
+        id: training.id,
+        no: no || training.no,
+        title,
+        date: date || "-",
+        organizer: organizer || "-",
+        evidenceType: evidenceType || "เกียรติบัตร/รูปภาพ",
+        certificateUrl,
+        pdfUrl,
+        images: certificateUrl ? [{ url: certificateUrl, caption: `${isPLC ? 'กิจกรรม PLC' : 'เกียรติบัตร'}: ${title}` }] : []
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const indicators = [...(paRecord.indicators || [])];
+      const itemsCopy = [...(indicators[aspectIndex].items || [])];
+      const targetItem = itemsCopy.find(it => it.code === indCode);
+      if (targetItem && targetItem.trainings) {
+        const trIdx = targetItem.trainings.findIndex(t => String(t.id) === String(trainingId));
+        if (trIdx !== -1) {
+          targetItem.trainings[trIdx] = result.value;
+          indicators[aspectIndex] = { ...indicators[aspectIndex], items: itemsCopy };
+          window.portfolioStorage.updateItem("paRecords", paId, { indicators });
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            title: isPLC ? "อัปเดตข้อมูล PLC สำเร็จ" : "อัปเดตข้อมูลการอบรมสำเร็จ",
+            showConfirmButton: false,
+            timer: 1500
+          });
+          renderCurrentView();
+          setTimeout(() => openAspectDetailModal(paId, aspectIndex, indCode), 200);
+        }
+      }
+    }
+  });
+}
+window.openEditTrainingModal = openEditTrainingModal;
+
+function deleteTrainingRecord(paId, aspectIndex, indCode, trainingId) {
+  const data = window.portfolioStorage.getData();
+  const paRecord = data.paRecords?.find(p => String(p.id) === String(paId));
+  if (!paRecord) return;
+  const aspect = paRecord.indicators?.[aspectIndex];
+  if (!aspect) return;
+  const item = aspect.items?.find(it => it.code === indCode);
+  if (!item || !item.trainings) return;
+
+  const targetTraining = item.trainings.find(t => String(t.id) === String(trainingId));
+  const trTitle = targetTraining ? targetTraining.title : "รายการนี้";
+
+  Swal.fire({
+    title: "ยืนยันการลบรายการอบรม?",
+    html: `<p class="text-xs font-sarabun text-slate-600">คุณต้องการลบ <strong>"${trTitle}"</strong> ออกจากตารางตัวชี้วัด ${indCode} ใช่หรือไม่?</p>`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบรายการ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const indicators = [...(paRecord.indicators || [])];
+      const itemsCopy = [...(indicators[aspectIndex].items || [])];
+      const targetItem = itemsCopy.find(it => it.code === indCode);
+      if (targetItem && targetItem.trainings) {
+        targetItem.trainings = targetItem.trainings.filter(t => String(t.id) !== String(trainingId));
+        indicators[aspectIndex] = { ...indicators[aspectIndex], items: itemsCopy };
+        window.portfolioStorage.updateItem("paRecords", paId, { indicators });
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "ลบรายการอบรมเรียบร้อยแล้ว",
+          showConfirmButton: false,
+          timer: 1500
+        });
+        renderCurrentView();
+        setTimeout(() => openAspectDetailModal(paId, aspectIndex, indCode), 200);
+      }
+    }
+  });
+}
+window.deleteTrainingRecord = deleteTrainingRecord;
 
 // ==========================================
 // Image Viewer Modal (Full Screen Photo Preview)
@@ -6785,6 +7587,109 @@ function openPhotoViewer(imgUrl, caption) {
   });
 }
 
+// ==========================================
+// Aspect Card Auto-Slideshow Carousel Engine
+// ==========================================
+let aspectCarouselTimers = [];
+
+function stopAspectCarousels() {
+  if (aspectCarouselTimers && aspectCarouselTimers.length > 0) {
+    aspectCarouselTimers.forEach(t => clearInterval(t));
+    aspectCarouselTimers = [];
+  }
+}
+
+function initAspectCarousels() {
+  stopAspectCarousels();
+
+  const boxes = document.querySelectorAll("[id^='aspect-carousel-box-']");
+  boxes.forEach((box, bIdx) => {
+    const idParts = box.id.replace("aspect-carousel-box-", "").split("-");
+    const paId = idParts[0];
+    const aspectIdx = parseInt(idParts[1], 10);
+
+    const slides = box.querySelectorAll(".aspect-slide-item");
+    if (slides.length <= 1) return;
+
+    let currentIndex = 0;
+
+    function showSlide(index) {
+      slides.forEach((s, idx) => {
+        if (idx === index) {
+          s.classList.remove("opacity-0", "z-0", "pointer-events-none");
+          s.classList.add("opacity-100", "z-10");
+        } else {
+          s.classList.remove("opacity-100", "z-10");
+          s.classList.add("opacity-0", "z-0", "pointer-events-none");
+        }
+      });
+
+      // Update counter
+      const counter = document.getElementById(`aspect-counter-${paId}-${aspectIdx}`);
+      if (counter) counter.innerText = `${index + 1} / ${slides.length}`;
+
+      // Update dots
+      const dots = box.querySelectorAll(`.aspect-dot-${paId}-${aspectIdx}`);
+      dots.forEach((dot, dIdx) => {
+        if (dIdx === index % (dots.length || 1)) {
+          dot.className = `aspect-dot-${paId}-${aspectIdx} h-1 rounded-full transition-all duration-300 w-3.5 bg-amber-400`;
+        } else {
+          dot.className = `aspect-dot-${paId}-${aspectIdx} h-1 rounded-full transition-all duration-300 w-1 bg-white/50`;
+        }
+      });
+
+      currentIndex = index;
+    }
+
+    // Attach step functions on window for manual buttons
+    window[`prevAspectSlide_${paId}_${aspectIdx}`] = () => {
+      const newIdx = (currentIndex - 1 + slides.length) % slides.length;
+      showSlide(newIdx);
+    };
+    window[`nextAspectSlide_${paId}_${aspectIdx}`] = () => {
+      const newIdx = (currentIndex + 1) % slides.length;
+      showSlide(newIdx);
+    };
+
+    // Staggered autoplay per aspect card: 3500ms + (bIdx * 500ms)
+    const intervalMs = 3500 + (bIdx * 500);
+    let timer = setInterval(() => {
+      const newIdx = (currentIndex + 1) % slides.length;
+      showSlide(newIdx);
+    }, intervalMs);
+
+    aspectCarouselTimers.push(timer);
+
+    // Pause on hover, resume on leave
+    box.addEventListener("mouseenter", () => {
+      clearInterval(timer);
+    });
+    box.addEventListener("mouseleave", () => {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        const newIdx = (currentIndex + 1) % slides.length;
+        showSlide(newIdx);
+      }, intervalMs);
+      aspectCarouselTimers.push(timer);
+    });
+  });
+}
+
+function prevAspectSlide(paId, aspectIdx) {
+  const fn = window[`prevAspectSlide_${paId}_${aspectIdx}`];
+  if (typeof fn === "function") fn();
+}
+
+function nextAspectSlide(paId, aspectIdx) {
+  const fn = window[`nextAspectSlide_${paId}_${aspectIdx}`];
+  if (typeof fn === "function") fn();
+}
+
+window.initAspectCarousels = initAspectCarousels;
+window.stopAspectCarousels = stopAspectCarousels;
+window.prevAspectSlide = prevAspectSlide;
+window.nextAspectSlide = nextAspectSlide;
+
 // --- Admin Hero Slide Management Modals ---
 function openHeroSlideManagerModal() {
   const data = window.portfolioStorage.getData();
@@ -6872,7 +7777,14 @@ function confirmDeleteHeroSlide(slideId) {
   });
 }
 
-function openAddHeroSlideModal() {
+function openAddHeroSlideModal(initialData = {}) {
+  const currentTitle = initialData.title || '';
+  const currentSubtitle = initialData.subtitle || '';
+  const currentTag = initialData.tag || '';
+  const currentLink = initialData.linkView || '';
+  const currentFitMode = initialData.fitMode || 'contain';
+  const currentImg = initialData.imageUrl || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80';
+
   Swal.fire({
     title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
       <i data-lucide="plus-circle" class="w-5 h-5 text-amber-500"></i> เพิ่มภาพสไลด์หมุนเวียนใหม่
@@ -6881,31 +7793,31 @@ function openAddHeroSlideModal() {
       <div class="space-y-3.5 text-left font-sarabun text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1 font-prompt">หัวข้อภาพสไลด์ (Title): *</label>
-          <input id="slide-title-input" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น การประเมินการเตรียมความพร้อมครูผู้ช่วย ครั้งที่ 1">
+          <input id="slide-title-input" type="text" value="${escapeHtml(currentTitle)}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น การประเมินการเตรียมความพร้อมครูผู้ช่วย ครั้งที่ 1">
         </div>
 
         <div>
           <label class="block font-bold text-slate-700 mb-1 font-prompt">คำบรรยาย / รายละเอียดภาพ (Subtitle):</label>
-          <textarea id="slide-subtitle-input" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs" placeholder="เช่น บรรยากาศการนำเสนอผลงานและรับมอบเกียรติบัตรต่อหน้าคณะกรรมการสถานศึกษา"></textarea>
+          <textarea id="slide-subtitle-input" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs" placeholder="เช่น บรรยากาศการนำเสนอผลงานและรับมอบเกียรติบัตรต่อหน้าคณะกรรมการสถานศึกษา">${escapeHtml(currentSubtitle)}</textarea>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1 font-prompt">ป้ายข้อความ (Tag / Badge):</label>
-            <input id="slide-tag-input" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น ⭐ กิจกรรมเด่น หรือ 🏆 รางวัล">
+            <input id="slide-tag-input" type="text" value="${escapeHtml(currentTag)}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น ⭐ กิจกรรมเด่น หรือ 🏆 รางวัล">
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1 font-prompt">การนำทางเมื่อคลิก (Link View):</label>
             <select id="slide-link-input" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs bg-white">
-              <option value="">ไม่มี / ดูภาพอย่างเดียว</option>
-              <option value="profile">ประวัติส่วนตัว (Profile)</option>
-              <option value="intensive-prep">การประเมินครูผู้ช่วย (4 ครั้ง)</option>
-              <option value="pa">การประเมิน วPA</option>
-              <option value="lesson-plans">แผนการจัดการเรียนรู้</option>
-              <option value="official-docs">คำสั่งและเอกสารราชการ</option>
-              <option value="achievements">ผลงานและรางวัล</option>
-              <option value="gallery">ภาพกิจกรรม</option>
-              <option value="media-systems">สื่อและระบบออนไลน์</option>
+              <option value="" ${!currentLink ? 'selected' : ''}>ไม่มี / ดูภาพอย่างเดียว</option>
+              <option value="profile" ${currentLink === 'profile' ? 'selected' : ''}>ประวัติส่วนตัว (Profile)</option>
+              <option value="intensive-prep" ${currentLink === 'intensive-prep' ? 'selected' : ''}>การประเมินครูผู้ช่วย (4 ครั้ง)</option>
+              <option value="pa" ${currentLink === 'pa' ? 'selected' : ''}>การประเมิน วPA</option>
+              <option value="lesson-plans" ${currentLink === 'lesson-plans' ? 'selected' : ''}>แผนการจัดการเรียนรู้</option>
+              <option value="official-docs" ${currentLink === 'official-docs' ? 'selected' : ''}>คำสั่งและเอกสารราชการ</option>
+              <option value="achievements" ${currentLink === 'achievements' ? 'selected' : ''}>ผลงานและรางวัล</option>
+              <option value="gallery" ${currentLink === 'gallery' ? 'selected' : ''}>ภาพกิจกรรม</option>
+              <option value="media-systems" ${currentLink === 'media-systems' ? 'selected' : ''}>สื่อและระบบออนไลน์</option>
             </select>
           </div>
         </div>
@@ -6925,7 +7837,7 @@ function openAddHeroSlideModal() {
             <label class="block font-bold text-slate-700 mb-1.5 font-prompt">โหมดการแสดงผลภาพ:</label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/60 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/90 transition-all">
-                <input type="radio" name="slide-fit-mode" value="contain" checked class="text-amber-600 focus:ring-amber-500">
+                <input type="radio" name="slide-fit-mode" value="contain" ${currentFitMode === 'contain' ? 'checked' : ''} class="text-amber-600 focus:ring-amber-500">
                 <div>
                   <span class="block font-bold text-xs text-slate-800 font-prompt">🖼️ แสดงภาพเต็ม 100% (ไม่ตัดขอบ)</span>
                   <span class="block text-[10px] text-slate-500 font-sarabun">คงสัดส่วนเดิม 100% พร้อมพื้นหลังเบลอ</span>
@@ -6933,7 +7845,7 @@ function openAddHeroSlideModal() {
               </label>
 
               <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/60 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/90 transition-all">
-                <input type="radio" name="slide-fit-mode" value="cover" class="text-amber-600 focus:ring-amber-500">
+                <input type="radio" name="slide-fit-mode" value="cover" ${currentFitMode === 'cover' ? 'checked' : ''} class="text-amber-600 focus:ring-amber-500">
                 <div>
                   <span class="block font-bold text-xs text-slate-800 font-prompt">📐 ขยายเต็มกรอบ (Cover Fill)</span>
                   <span class="block text-[10px] text-slate-500 font-sarabun">ขยายภาพเต็มพื้นที่แบนเนอร์</span>
@@ -6952,11 +7864,11 @@ function openAddHeroSlideModal() {
               <span class="text-slate-400 text-[11px]">หรือระบุ URL ด้านล่าง</span>
             </div>
 
-            <input id="slide-url-input" type="text" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="https://images.unsplash.com/...">
+            <input id="slide-url-input" type="text" value="${escapeHtml(currentImg)}" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="https://images.unsplash.com/...">
 
             <!-- Image Preview Box with Quick Crop Action -->
             <div class="relative h-36 rounded-xl overflow-hidden border border-slate-300 bg-slate-950 flex items-center justify-center group/prev">
-              <img id="slide-img-preview" src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80" alt="Preview" class="w-full h-full object-contain">
+              <img id="slide-img-preview" src="${currentImg}" alt="Preview" class="w-full h-full object-contain">
               <button type="button" id="btn-quick-crop-new" class="absolute inset-0 bg-black/60 opacity-0 group-hover/prev:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs font-prompt cursor-pointer backdrop-blur-xs">
                 <i data-lucide="crop" class="w-4 h-4 text-amber-400"></i>
                 <span>คลิกเพื่อครอป / ปรับสัดส่วนภาพ</span>
@@ -6980,6 +7892,17 @@ function openAddHeroSlideModal() {
       const cropBtn = document.getElementById("btn-crop-new-slide");
       const quickCropBtn = document.getElementById("btn-quick-crop-new");
 
+      function getCurrentFormData(newImgUrl) {
+        return {
+          title: document.getElementById("slide-title-input")?.value || '',
+          subtitle: document.getElementById("slide-subtitle-input")?.value || '',
+          tag: document.getElementById("slide-tag-input")?.value || '',
+          linkView: document.getElementById("slide-link-input")?.value || '',
+          fitMode: document.querySelector('input[name="slide-fit-mode"]:checked')?.value || 'contain',
+          imageUrl: newImgUrl || document.getElementById("slide-url-input")?.value.trim() || imgPreview?.src || currentImg
+        };
+      }
+
       if (urlInput) {
         urlInput.addEventListener("input", (e) => {
           if (imgPreview && e.target.value.trim()) {
@@ -6993,23 +7916,24 @@ function openAddHeroSlideModal() {
           const file = e.target.files?.[0];
           if (file) {
             const base64 = await window.compressImage(file, 1600, 0.85);
-            if (imgPreview) imgPreview.src = base64;
-            if (urlInput) urlInput.value = base64;
-            // Open cropper automatically on file select for best user experience
+            const formData = getCurrentFormData(base64);
             openSlideCropperModal(base64, (croppedBase64) => {
-              if (imgPreview) imgPreview.src = croppedBase64;
-              if (urlInput) urlInput.value = croppedBase64;
+              openAddHeroSlideModal({ ...formData, imageUrl: croppedBase64 });
+            }, () => {
+              openAddHeroSlideModal(formData);
             });
           }
         });
       }
 
       function handleCropClick() {
-        const currentSrc = urlInput?.value.trim() || imgPreview?.src;
+        const currentSrc = urlInput?.value.trim() || imgPreview?.src || currentImg;
         if (currentSrc) {
+          const formData = getCurrentFormData(currentSrc);
           openSlideCropperModal(currentSrc, (croppedBase64) => {
-            if (imgPreview) imgPreview.src = croppedBase64;
-            if (urlInput) urlInput.value = croppedBase64;
+            openAddHeroSlideModal({ ...formData, imageUrl: croppedBase64 });
+          }, () => {
+            openAddHeroSlideModal(formData);
           });
         }
       }
@@ -7062,12 +7986,17 @@ function openAddHeroSlideModal() {
   });
 }
 
-function openEditHeroSlideModal(slideId) {
+function openEditHeroSlideModal(slideId, initialData = null) {
   const data = window.portfolioStorage.getData();
   const slide = (data.heroSlides || []).find(s => String(s.id) === String(slideId));
-  if (!slide) return;
+  if (!slide && !initialData) return;
 
-  const currentFitMode = slide.fitMode || "contain";
+  const currentTitle = initialData?.title ?? slide?.title ?? '';
+  const currentSubtitle = initialData?.subtitle ?? slide?.subtitle ?? '';
+  const currentTag = initialData?.tag ?? slide?.tag ?? '';
+  const currentLink = initialData?.linkView ?? slide?.linkView ?? '';
+  const currentFitMode = initialData?.fitMode ?? slide?.fitMode ?? 'contain';
+  const currentImg = initialData?.imageUrl ?? slide?.imageUrl ?? 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80';
 
   Swal.fire({
     title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
@@ -7077,31 +8006,31 @@ function openEditHeroSlideModal(slideId) {
       <div class="space-y-3.5 text-left font-sarabun text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1 font-prompt">หัวข้อภาพสไลด์ (Title): *</label>
-          <input id="edit-slide-title-input" type="text" value="${slide.title || ''}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="หัวข้อภาพ">
+          <input id="edit-slide-title-input" type="text" value="${escapeHtml(currentTitle)}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="หัวข้อภาพ">
         </div>
 
         <div>
           <label class="block font-bold text-slate-700 mb-1 font-prompt">คำบรรยาย / รายละเอียดภาพ (Subtitle):</label>
-          <textarea id="edit-slide-subtitle-input" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs" placeholder="คำบรรยาย">${slide.subtitle || ''}</textarea>
+          <textarea id="edit-slide-subtitle-input" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs" placeholder="คำบรรยาย">${escapeHtml(currentSubtitle)}</textarea>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1 font-prompt">ป้ายข้อความ (Tag / Badge):</label>
-            <input id="edit-slide-tag-input" type="text" value="${slide.tag || ''}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="ป้ายกำกับ">
+            <input id="edit-slide-tag-input" type="text" value="${escapeHtml(currentTag)}" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="ป้ายกำกับ">
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1 font-prompt">การนำทางเมื่อคลิก (Link View):</label>
             <select id="edit-slide-link-input" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs bg-white">
-              <option value="" ${!slide.linkView ? 'selected' : ''}>ไม่มี / ดูภาพอย่างเดียว</option>
-              <option value="profile" ${slide.linkView === 'profile' ? 'selected' : ''}>ประวัติส่วนตัว (Profile)</option>
-              <option value="intensive-prep" ${slide.linkView === 'intensive-prep' ? 'selected' : ''}>การประเมินครูผู้ช่วย (4 ครั้ง)</option>
-              <option value="pa" ${slide.linkView === 'pa' ? 'selected' : ''}>การประเมิน วPA</option>
-              <option value="lesson-plans" ${slide.linkView === 'lesson-plans' ? 'selected' : ''}>แผนการจัดการเรียนรู้</option>
-              <option value="official-docs" ${slide.linkView === 'official-docs' ? 'selected' : ''}>คำสั่งและเอกสารราชการ</option>
-              <option value="achievements" ${slide.linkView === 'achievements' ? 'selected' : ''}>ผลงานและรางวัล</option>
-              <option value="gallery" ${slide.linkView === 'gallery' ? 'selected' : ''}>ภาพกิจกรรม</option>
-              <option value="media-systems" ${slide.linkView === 'media-systems' ? 'selected' : ''}>สื่อและระบบออนไลน์</option>
+              <option value="" ${!currentLink ? 'selected' : ''}>ไม่มี / ดูภาพอย่างเดียว</option>
+              <option value="profile" ${currentLink === 'profile' ? 'selected' : ''}>ประวัติส่วนตัว (Profile)</option>
+              <option value="intensive-prep" ${currentLink === 'intensive-prep' ? 'selected' : ''}>การประเมินครูผู้ช่วย (4 ครั้ง)</option>
+              <option value="pa" ${currentLink === 'pa' ? 'selected' : ''}>การประเมิน วPA</option>
+              <option value="lesson-plans" ${currentLink === 'lesson-plans' ? 'selected' : ''}>แผนการจัดการเรียนรู้</option>
+              <option value="official-docs" ${currentLink === 'official-docs' ? 'selected' : ''}>คำสั่งและเอกสารราชการ</option>
+              <option value="achievements" ${currentLink === 'achievements' ? 'selected' : ''}>ผลงานและรางวัล</option>
+              <option value="gallery" ${currentLink === 'gallery' ? 'selected' : ''}>ภาพกิจกรรม</option>
+              <option value="media-systems" ${currentLink === 'media-systems' ? 'selected' : ''}>สื่อและระบบออนไลน์</option>
             </select>
           </div>
         </div>
@@ -7148,11 +8077,11 @@ function openEditHeroSlideModal(slideId) {
               <span class="text-slate-400 text-[11px]">หรือแก้ไข URL</span>
             </div>
 
-            <input id="edit-slide-url-input" type="text" value="${slide.imageUrl || ''}" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="URL รูปภาพ">
+            <input id="edit-slide-url-input" type="text" value="${escapeHtml(currentImg)}" class="w-full p-2 rounded-lg border border-slate-300 text-xs font-mono" placeholder="URL รูปภาพ">
 
             <!-- Image Preview Box with Quick Crop Action -->
             <div class="relative h-36 rounded-xl overflow-hidden border border-slate-300 bg-slate-950 flex items-center justify-center group/prev">
-              <img id="edit-slide-img-preview" src="${slide.imageUrl || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80'}" alt="Preview" class="w-full h-full object-contain">
+              <img id="edit-slide-img-preview" src="${currentImg}" alt="Preview" class="w-full h-full object-contain">
               <button type="button" id="btn-quick-crop-edit" class="absolute inset-0 bg-black/60 opacity-0 group-hover/prev:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs font-prompt cursor-pointer backdrop-blur-xs">
                 <i data-lucide="crop" class="w-4 h-4 text-amber-400"></i>
                 <span>คลิกเพื่อครอป / ปรับสัดส่วนภาพ</span>
@@ -7176,6 +8105,17 @@ function openEditHeroSlideModal(slideId) {
       const cropBtn = document.getElementById("btn-crop-edit-slide");
       const quickCropBtn = document.getElementById("btn-quick-crop-edit");
 
+      function getCurrentFormData(newImgUrl) {
+        return {
+          title: document.getElementById("edit-slide-title-input")?.value || '',
+          subtitle: document.getElementById("edit-slide-subtitle-input")?.value || '',
+          tag: document.getElementById("edit-slide-tag-input")?.value || '',
+          linkView: document.getElementById("edit-slide-link-input")?.value || '',
+          fitMode: document.querySelector('input[name="edit-slide-fit-mode"]:checked')?.value || 'contain',
+          imageUrl: newImgUrl || document.getElementById("edit-slide-url-input")?.value.trim() || imgPreview?.src || currentImg
+        };
+      }
+
       if (urlInput) {
         urlInput.addEventListener("input", (e) => {
           if (imgPreview && e.target.value.trim()) {
@@ -7189,22 +8129,24 @@ function openEditHeroSlideModal(slideId) {
           const file = e.target.files?.[0];
           if (file) {
             const base64 = await window.compressImage(file, 1600, 0.85);
-            if (imgPreview) imgPreview.src = base64;
-            if (urlInput) urlInput.value = base64;
+            const formData = getCurrentFormData(base64);
             openSlideCropperModal(base64, (croppedBase64) => {
-              if (imgPreview) imgPreview.src = croppedBase64;
-              if (urlInput) urlInput.value = croppedBase64;
+              openEditHeroSlideModal(slideId, { ...formData, imageUrl: croppedBase64 });
+            }, () => {
+              openEditHeroSlideModal(slideId, formData);
             });
           }
         });
       }
 
       function handleCropClick() {
-        const currentSrc = urlInput?.value.trim() || imgPreview?.src;
+        const currentSrc = urlInput?.value.trim() || imgPreview?.src || currentImg;
         if (currentSrc) {
+          const formData = getCurrentFormData(currentSrc);
           openSlideCropperModal(currentSrc, (croppedBase64) => {
-            if (imgPreview) imgPreview.src = croppedBase64;
-            if (urlInput) urlInput.value = croppedBase64;
+            openEditHeroSlideModal(slideId, { ...formData, imageUrl: croppedBase64 });
+          }, () => {
+            openEditHeroSlideModal(slideId, formData);
           });
         }
       }
@@ -7260,7 +8202,7 @@ function openEditHeroSlideModal(slideId) {
 // ==========================================
 let currentSlideCropper = null;
 
-function openSlideCropperModal(imageSrc, onCroppedCallback) {
+function openSlideCropperModal(imageSrc, onCroppedCallback, onCancelCallback) {
   if (!imageSrc) return;
 
   Swal.fire({
@@ -7339,8 +8281,10 @@ function openSlideCropperModal(imageSrc, onCroppedCallback) {
       currentSlideCropper.destroy();
       currentSlideCropper = null;
     }
-    if (result.isConfirmed && onCroppedCallback) {
+    if (result.isConfirmed && typeof onCroppedCallback === "function") {
       onCroppedCallback(result.value);
+    } else if (!result.isConfirmed && typeof onCancelCallback === "function") {
+      onCancelCallback();
     }
   });
 }
