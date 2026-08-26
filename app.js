@@ -849,6 +849,9 @@ function renderCurrentView() {
         case "media-systems":
           html = renderMediaSystemsView(data, isAdmin);
           break;
+        case "guestbook":
+          html = renderGuestbookView(data, isAdmin);
+          break;
         default:
           html = renderDashboardView(data, isAdmin);
       }
@@ -1810,10 +1813,22 @@ function renderPaView(data, isAdmin) {
           </h2>
           <p class="text-xs md:text-sm text-slate-500 mt-0.5">แบบข้อตกลงในการพัฒนางาน (PA 1/ส), รายงานผล (PA 2/ส) และคลิปวิดีโอประเด็นท้าทาย</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="printPaSummarySheet('${currentPa ? currentPa.id : ''}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer font-prompt" title="พิมพ์/ส่งออกเอกสารสรุปผลการประเมิน วPA (A4 Print / PDF)">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>🖨️ พิมพ์สรุป วPA (PDF)</span>
+          </button>
+          <button onclick="openPaPresentationMode('${currentPa ? currentPa.id : ''}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer font-prompt" title="เปิดโหมดนำเสนอ วPA เต็มหน้าจอ (สำหรับฉายโปรเจกเตอร์/ทีวี & ใช้รีโมทพ้อยเตอร์)">
+            <i data-lucide="presentation" class="w-4 h-4"></i>
+            <span>📽️ โหมดนำเสนอ วPA (เต็มจอ)</span>
+          </button>
+          <button onclick="openQrCodeModal('pa')" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer font-prompt" title="สร้าง QR Code ให้คณะกรรมการสแกนเปิดดูหน้าระบบ วPA">
+            <i data-lucide="qr-code" class="w-4 h-4"></i>
+            <span>📱 QR Code สำหรับกรรมการ</span>
+          </button>
           ${isAdmin ? `
-            <button onclick="openAddPaModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-semibold shadow-md transition-all cursor-pointer">
-              <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มรอบ วPA / ปีงบประมาณใหม่
+            <button onclick="openAddPaModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-md transition-all cursor-pointer">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มรอบใหม่
             </button>
           ` : ""}
         </div>
@@ -2075,19 +2090,23 @@ function renderPaView(data, isAdmin) {
                   <div class="p-5 bg-amber-50/50 rounded-2xl border border-amber-200/70 space-y-3 font-sarabun text-sm">
                     <div>
                       <span class="font-bold text-slate-800 block text-xs font-prompt text-amber-800">ประเด็นท้าทาย:</span>
-                      <p class="text-slate-700 mt-1 font-semibold leading-relaxed">${currentPa.challengeTitle || "-"}</p>
+                      <p class="text-slate-700 mt-1 font-semibold leading-relaxed whitespace-pre-line">${currentPa.challengeTitle || "-"}</p>
                     </div>
                     <div>
-                      <span class="font-bold text-slate-800 block text-xs font-prompt text-slate-500">วัตถุประสงค์:</span>
+                      <span class="font-bold text-slate-800 block text-xs font-prompt text-slate-500">สภาพปัญหาการจัดการเรียนรู้และคุณภาพการเรียนรู้ของผู้เรียน:</span>
+                      <p class="text-slate-600 mt-0.5 whitespace-pre-line leading-relaxed">${currentPa.challengeProblem || "-"}</p>
+                    </div>
+                    <div>
+                      <span class="font-bold text-slate-800 block text-xs font-prompt text-slate-500">วัตถุประสงค์ / เป้าหมาย:</span>
                       <p class="text-slate-600 mt-0.5 whitespace-pre-line leading-relaxed">${currentPa.challengeObjective || "-"}</p>
                     </div>
                     <div>
-                      <span class="font-bold text-slate-800 block text-xs font-prompt text-slate-500">วิธีดำเนินการ:</span>
-                      <p class="text-slate-600 mt-0.5 leading-relaxed">${currentPa.challengeMethod || "-"}</p>
+                      <span class="font-bold text-slate-800 block text-xs font-prompt text-slate-500">วิธีดำเนินการให้บรรลุผล:</span>
+                      <p class="text-slate-600 mt-0.5 whitespace-pre-line leading-relaxed">${currentPa.challengeMethod || "-"}</p>
                     </div>
                     <div>
-                      <span class="font-bold text-slate-800 block text-xs font-prompt text-emerald-700">ผลลัพธ์ที่เกิดขึ้นจริง:</span>
-                      <p class="text-emerald-800 font-medium mt-0.5 leading-relaxed">${currentPa.challengeResult || "-"}</p>
+                      <span class="font-bold text-slate-800 block text-xs font-prompt text-emerald-700">ผลลัพธ์การพัฒนาที่คาดหวัง / ผลลัพธ์ที่เกิดขึ้นจริง:</span>
+                      <p class="text-emerald-800 font-medium mt-0.5 whitespace-pre-line leading-relaxed">${currentPa.challengeResult || "-"}</p>
                     </div>
                   </div>
                 </div>
@@ -2118,21 +2137,25 @@ function renderPaView(data, isAdmin) {
               <div class="p-6 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 rounded-2xl border border-amber-200/70 space-y-4 font-sarabun text-sm shadow-xs">
                 <div>
                   <span class="font-bold text-slate-800 block text-xs font-prompt text-amber-800">ประเด็นท้าทาย:</span>
-                  <p class="text-slate-800 mt-1 font-semibold text-base leading-relaxed">${currentPa.challengeTitle || "-"}</p>
+                  <p class="text-slate-800 mt-1 font-semibold text-base leading-relaxed whitespace-pre-line">${currentPa.challengeTitle || "-"}</p>
+                </div>
+                <div class="p-4 bg-white rounded-xl border border-amber-100 shadow-2xs">
+                  <span class="font-bold text-slate-700 block text-xs font-prompt text-slate-500">สภาพปัญหาการจัดการเรียนรู้และคุณภาพการเรียนรู้ของผู้เรียน:</span>
+                  <p class="text-slate-600 mt-1 whitespace-pre-line leading-relaxed text-xs md:text-sm">${currentPa.challengeProblem || "-"}</p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   <div class="p-4 bg-white rounded-xl border border-amber-100 shadow-2xs">
-                    <span class="font-bold text-slate-700 block text-xs font-prompt text-slate-500">วัตถุประสงค์:</span>
+                    <span class="font-bold text-slate-700 block text-xs font-prompt text-slate-500">วัตถุประสงค์ / เป้าหมาย:</span>
                     <p class="text-slate-600 mt-1 whitespace-pre-line leading-relaxed text-xs md:text-sm">${currentPa.challengeObjective || "-"}</p>
                   </div>
                   <div class="p-4 bg-white rounded-xl border border-amber-100 shadow-2xs">
-                    <span class="font-bold text-slate-700 block text-xs font-prompt text-slate-500">วิธีดำเนินการ:</span>
-                    <p class="text-slate-600 mt-1 leading-relaxed text-xs md:text-sm">${currentPa.challengeMethod || "-"}</p>
+                    <span class="font-bold text-slate-700 block text-xs font-prompt text-slate-500">วิธีดำเนินการให้บรรลุผล:</span>
+                    <p class="text-slate-600 mt-1 whitespace-pre-line leading-relaxed text-xs md:text-sm">${currentPa.challengeMethod || "-"}</p>
                   </div>
                 </div>
                 <div class="p-4 bg-emerald-50/80 rounded-xl border border-emerald-200 shadow-2xs">
-                  <span class="font-bold text-emerald-800 block text-xs font-prompt">ผลลัพธ์ที่เกิดขึ้นจริง:</span>
-                  <p class="text-emerald-900 font-medium mt-1 leading-relaxed text-xs md:text-sm">${currentPa.challengeResult || "-"}</p>
+                  <span class="font-bold text-emerald-800 block text-xs font-prompt">ผลลัพธ์การพัฒนาที่คาดหวัง / ผลลัพธ์ที่เกิดขึ้นจริง:</span>
+                  <p class="text-emerald-900 font-medium mt-1 whitespace-pre-line leading-relaxed text-xs md:text-sm">${currentPa.challengeResult || "-"}</p>
                 </div>
               </div>
             `}
@@ -2146,7 +2169,7 @@ function renderPaView(data, isAdmin) {
                   </span>
                   <span class="text-[11px] text-slate-400 font-sarabun">คลิกที่รูปภาพเพื่อขยายดูขนาดเต็ม</span>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                <div class="${currentPa.challengeImages.length === 1 ? 'max-w-xl mx-auto' : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5'}">
                   ${currentPa.challengeImages.map((imgObj, i) => {
                     const imgUrl = typeof imgObj === 'string' ? imgObj : imgObj.url;
                     const imgCap = typeof imgObj === 'string' ? '' : (imgObj.caption || '');
@@ -2455,19 +2478,91 @@ function setAchTab(tab) {
 // ==========================================
 // 8. Activity Gallery View (ภาพกิจกรรมต่าง ๆ)
 // ==========================================
+// 7. Teaching Media & Student Showcase Gallery (คลังสื่อนวัตกรรมและผลงานนักเรียนเชิงประจักษ์)
+// ==========================================
+function getShowcaseGalleryData() {
+  const data = window.portfolioStorage.getData();
+  if (!data.gallery || data.gallery.length === 0) {
+    const defaultGallery = [
+      {
+        id: "gal_1",
+        title: "บอร์ดเกมการเรียนรู้และชุดกิจกรรม Unplugged Coding เสริมทักษะการคิดเชิงคำนวณ",
+        category: "💡 สื่อนวัตกรรมการสอน",
+        gradeLevel: "ชั้น ป.๔ - ป.๖",
+        date: "2568",
+        coverImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+        ],
+        description: "นวัตกรรมบอร์ดเกมฝึกการคิดเชิงตรรกะและการเขียนโค้ดเบื้องต้นโดยไม่ต้องใช้คอมพิวเตอร์ (Unplugged Coding) พัฒนาเพื่อแก้ปัญหาการคิดวิเคราะห์อย่างเป็นระบบของนักเรียน",
+        interactiveUrl: "https://wordwall.net",
+        interactiveLabel: "เล่นบอร์ดเกมออนไลน์ (Wordwall)",
+        isVisible: true
+      },
+      {
+        id: "gal_2",
+        title: "ผลงานแอนิเมชันและเกมสร้างสรรค์ด้วยโปรแกรม Scratch ของนักเรียนชั้นประถมศึกษาปีที่ ๖",
+        category: "🏆 ผลงานนักเรียนเชิงประจักษ์",
+        gradeLevel: "ชั้น ป.๖",
+        date: "2568",
+        coverImage: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+        ],
+        description: "ชิ้นงานโครงงานเกมสร้างสรรค์และนิทานแอนิเมชันที่ผู้เรียนออกแบบและเขียนโปรแกรมขึ้นเอง สะท้อนผลลัพธ์การเรียนรู้เชิงประจักษ์ตามตัวชี้วัด วPA",
+        studentName: "กลุ่มนักเรียนชั้น ป.๖ โรงเรียนวัดบางปูน",
+        interactiveUrl: "https://scratch.mit.edu",
+        interactiveLabel: "เปิดดูผลงานบน Scratch",
+        isVisible: true
+      },
+      {
+        id: "gal_3",
+        title: "กิจกรรมการจัดการเรียนรู้เชิงรุก (Active Learning) บูรณาการกระบวนการกลุ่ม 5E",
+        category: "📚 กิจกรรมการเรียนรู้ Active Learning",
+        gradeLevel: "ชั้น ป.๕",
+        date: "2568",
+        coverImage: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80"
+        ],
+        description: "บรรยากาศการจัดกิจกรรมการเรียนรู้ในชั้นเรียน ผู้เรียนได้ลงมือปฏิบัติจริง มีปฏิสัมพันธ์ร่วมกัน และนำเสนอผลงานอย่างมั่นใจ",
+        isVisible: true
+      }
+    ];
+    data.gallery = defaultGallery;
+    window.portfolioStorage.saveData(data);
+    return defaultGallery;
+  }
+  return data.gallery;
+}
+
 function renderGalleryView(data, isAdmin) {
-  const allItems = data.gallery || [];
+  const allItems = getShowcaseGalleryData();
   let items = allItems;
 
   if (!isAdmin) {
     items = items.filter(item => item.isVisible);
   }
 
+  const categories = [
+    "💡 สื่อนวัตกรรมการสอน",
+    "🏆 ผลงานนักเรียนเชิงประจักษ์",
+    "📚 กิจกรรมการเรียนรู้ Active Learning",
+    "🤝 กิจกรรมโรงเรียน & บริการสังคม"
+  ];
+
+  if (AppState.activeFilterCategory && AppState.activeFilterCategory !== "all") {
+    items = items.filter(item => item.category === AppState.activeFilterCategory || (item.category && item.category.includes(AppState.activeFilterCategory)));
+  }
+
   if (AppState.searchQuery) {
     items = items.filter(item => 
       item.title.toLowerCase().includes(AppState.searchQuery) ||
       item.description?.toLowerCase().includes(AppState.searchQuery) ||
-      item.category?.toLowerCase().includes(AppState.searchQuery)
+      item.category?.toLowerCase().includes(AppState.searchQuery) ||
+      item.gradeLevel?.toLowerCase().includes(AppState.searchQuery) ||
+      item.studentName?.toLowerCase().includes(AppState.searchQuery)
     );
   }
 
@@ -2475,70 +2570,107 @@ function renderGalleryView(data, isAdmin) {
     <div class="page-view space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="images" class="w-7 h-7 text-rose-600"></i> ภาพกิจกรรมต่าง ๆ (Activity Gallery)
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2 font-prompt">
+            <i data-lucide="sparkles" class="w-7 h-7 text-rose-600"></i> คลังสื่อนวัตกรรมและผลงานนักเรียนเชิงประจักษ์
           </h2>
-          <p class="text-xs md:text-sm text-slate-500 mt-0.5">ประมวลภาพกิจกรรมการเรียนการสอน งานโครงการ และบริการสังคม</p>
+          <p class="text-xs md:text-sm text-slate-500 mt-0.5">สื่อเทคโนโลยีการสอน นวัตกรรม Active Learning ผลงานนักเรียนเด่น และภาพกิจกรรมการจัดการเรียนรู้</p>
         </div>
         ${isAdmin ? `
-          <button onclick="openAddItemModal('gallery')" class="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-md transition-colors">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มอัลบั้มภาพกิจกรรม
+          <button onclick="openAddShowcaseItemModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-xl text-xs font-bold font-prompt shadow-md transition-all cursor-pointer">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มสื่อนวัตกรรม / ผลงานนักเรียน
           </button>
         ` : ""}
       </div>
 
-      <!-- Albums Grid -->
+      <!-- Filter Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="setCategoryFilter('all')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold font-prompt whitespace-nowrap transition-all cursor-pointer ${(!AppState.activeFilterCategory || AppState.activeFilterCategory === 'all') ? 'bg-rose-600 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'}">
+            ทั้งหมด
+          </button>
+          ${categories.map(cat => `
+            <button onclick="setCategoryFilter('${cat}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold font-prompt whitespace-nowrap transition-all cursor-pointer ${AppState.activeFilterCategory === cat ? 'bg-rose-600 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'}">
+              ${cat}
+            </button>
+          `).join("")}
+        </div>
+        <div class="text-xs text-slate-500 font-prompt">
+          แสดง ${items.length} รายการ
+        </div>
+      </div>
+
+      <!-- Showcase Grid -->
       ${items.length === 0 ? `
         <div class="text-center py-12 glass-card rounded-2xl border border-dashed border-slate-300">
-          <i data-lucide="image-off" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
-          <p class="text-slate-500 text-sm font-sarabun">ไม่พบภาพกิจกรรม</p>
+          <i data-lucide="sparkles" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+          <p class="text-slate-500 text-sm font-sarabun">ไม่พบผลงานหรือสื่อนวัตกรรมในหมวดนี้</p>
         </div>
       ` : `
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           ${items.map(album => `
-            <div class="glass-card rounded-2xl overflow-hidden border border-slate-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+            <div class="glass-card rounded-3xl overflow-hidden border border-slate-200 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div class="relative overflow-hidden aspect-video bg-slate-100 cursor-pointer" onclick="openGalleryLightbox('${album.id}')">
+                <div class="relative overflow-hidden aspect-video bg-slate-900 cursor-pointer" onclick="openGalleryLightbox('${album.id}')">
                   <img src="${album.coverImage}" alt="${album.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                  <div class="absolute top-3 left-3 px-2.5 py-1 bg-black/60 backdrop-blur-sm text-white text-xs rounded-lg font-medium">
-                    ${album.category}
+                  
+                  <div class="absolute top-3 left-3 px-2.5 py-1 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold rounded-lg font-prompt border border-white/20">
+                    ${album.category || 'สื่อนวัตกรรม'}
                   </div>
+
+                  ${album.gradeLevel ? `
+                    <div class="absolute top-3 right-3 px-2 py-0.5 bg-amber-500 text-navy-950 text-[10px] font-extrabold rounded-md font-prompt shadow-sm">
+                      ${album.gradeLevel}
+                    </div>
+                  ` : ''}
+
                   <div class="absolute bottom-3 right-3 px-2.5 py-1 bg-blue-600/90 text-white text-xs rounded-lg font-semibold flex items-center gap-1">
                     <i data-lucide="camera" class="w-3.5 h-3.5"></i> ${(album.images?.length || 1)} รูป
                   </div>
+
                   ${!album.isVisible ? `
-                    <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white text-xs font-bold">
+                    <div class="absolute inset-0 bg-slate-900/70 flex items-center justify-center text-white text-xs font-bold">
                       <i data-lucide="eye-off" class="w-4 h-4 mr-1"></i> ซ่อนจากคณะกรรมการ
                     </div>
                   ` : ""}
                 </div>
+
                 <div class="p-5 space-y-2">
                   <div class="text-xs text-slate-400 font-sarabun flex items-center gap-2">
-                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${album.date}
-                    ${album.location ? `• <span>${album.location}</span>` : ""}
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-500"></i> ${album.date || '2568'}
+                    ${album.studentName ? `• <span class="text-emerald-700 font-medium">${album.studentName}</span>` : ""}
                   </div>
                   <h3 class="font-bold text-slate-800 text-base leading-snug group-hover:text-rose-600 transition-colors line-clamp-2">${album.title}</h3>
-                  <p class="text-xs text-slate-500 font-sarabun line-clamp-2">${album.description || ""}</p>
+                  <p class="text-xs text-slate-500 font-sarabun line-clamp-2 leading-relaxed">${album.description || ""}</p>
                 </div>
               </div>
 
-              <div class="p-5 pt-0 flex items-center justify-between border-t border-slate-100 mt-2">
-                <button onclick="openGalleryLightbox('${album.id}')" class="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1">
-                  ดูรูปทั้งหมด <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                </button>
-                ${isAdmin ? `
-                  <div class="flex items-center gap-1.5">
-                    <button onclick="toggleVisibility('gallery', '${album.id}')" class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg text-xs" title="เปิด/ปิดการมองเห็น">
-                      <i data-lucide="${album.isVisible ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
+              <div class="p-5 pt-0 border-t border-slate-100 mt-2 space-y-2.5">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <div class="flex items-center gap-2">
+                    <button onclick="openGalleryLightbox('${album.id}')" class="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer font-prompt">
+                      <i data-lucide="image" class="w-3.5 h-3.5"></i> ดูรูปภาพ (${album.images?.length || 1})
                     </button>
-                    <button onclick="openEditItemModal('gallery', '${album.id}')" class="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-slate-100 rounded-lg text-xs" title="แก้ไข">
-                      <i data-lucide="edit" class="w-4 h-4"></i>
-                    </button>
-                    <button onclick="confirmDeleteItem('gallery', '${album.id}')" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-slate-100 rounded-lg text-xs" title="ลบ">
-                      <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
+                    ${album.interactiveUrl ? `
+                      <a href="${album.interactiveUrl}" target="_blank" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold font-prompt flex items-center gap-1 border border-rose-200 transition-colors">
+                        <i data-lucide="external-link" class="w-3 h-3"></i> ${album.interactiveLabel || 'เปิดสื่อนวัตกรรม'}
+                      </a>
+                    ` : ''}
                   </div>
-                ` : ""}
+
+                  ${isAdmin ? `
+                    <div class="flex items-center gap-1">
+                      <button onclick="toggleVisibility('gallery', '${album.id}')" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer" title="เปิด/ปิดการมองเห็น">
+                        <i data-lucide="${album.isVisible ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
+                      </button>
+                      <button onclick="openEditShowcaseItemModal('${album.id}')" class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer" title="แก้ไข">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                      </button>
+                      <button onclick="confirmDeleteItem('gallery', '${album.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer" title="ลบ">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  ` : ""}
+                </div>
               </div>
             </div>
           `).join("")}
@@ -4410,71 +4542,87 @@ function openAddPaModal() {
           </div>
         </div>
 
-        <!-- YouTube Video Link (Optional) -->
-        <div class="p-3 bg-rose-50/70 rounded-xl border border-rose-200/80 space-y-1.5">
-          <label class="block font-bold text-rose-900 flex items-center gap-1.5">
-            <i data-lucide="video" class="w-4 h-4 text-rose-600"></i> ลิงก์คลิปวิดีโอบันทึกการสอน / นวัตกรรม (YouTube):
-          </label>
-          <input id="pa-youtube-url" class="w-full p-2.5 rounded-lg border border-rose-200 bg-white" placeholder="https://www.youtube.com/watch?v=... หรือ https://youtu.be/... (เว้นว่างได้ถ้าไม่มีวิดีโอ)">
-          <p class="text-[11px] text-rose-700/80 font-sarabun">* หากไม่ระบุลิงก์ ระบบจะไม่แสดงกรอบวิดีโอ และจะขยายข้อความประเด็นท้าทายเต็มหน้าจออัตโนมัติ</p>
+        <!-- Section 1: 3 Aspects 15 Indicators -->
+        <div class="p-3.5 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="block font-bold text-emerald-950 text-xs font-prompt flex items-center gap-1.5">
+              <i data-lucide="award" class="w-4 h-4 text-emerald-600"></i> ส่วนที่ 1: ข้อตกลงในการพัฒนางานตามมาตรฐานตำแหน่ง (3 ด้าน 15 ตัวชี้วัด)
+            </span>
+            <span class="text-[10px] bg-emerald-200/70 text-emerald-900 font-bold px-2 py-0.5 rounded-md font-prompt">สร้าง 15 ตัวชี้วัดให้อัตโนมัติ</span>
+          </div>
+          <p class="text-[11px] text-emerald-800 leading-relaxed font-sarabun">
+            ✨ ระบบจะสร้างโครงสร้างครบทั้ง <strong>15 ตัวชี้วัด</strong> (ด้านที่ 1: 8 ตัวชี้วัด, ด้านที่ 2: 4 ตัวชี้วัด, ด้านที่ 3: 3 ตัวชี้วัด) ให้โดยอัตโนมัติ คุณครูสามารถเข้าไปบันทึกข้อมูลและแนบรูปภาพเกียรติบัตร/PLC ในหน้าหลักได้ทันทีครับ
+          </p>
+          <div class="space-y-1.5 pt-1 border-t border-emerald-200/60">
+            <label class="block text-[11px] font-bold text-emerald-900 font-prompt">
+              ลิงก์เอกสาร/โฟลเดอร์ร่องรอยหลักฐาน 3 ด้าน (Google Drive / PDF):
+            </label>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">หลักฐานด้านที่ 1: ด้านการจัดการเรียนรู้ (8 ตัวชี้วัด):</label>
+              <input id="pa-aspect-1-doc" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">หลักฐานด้านที่ 2: ด้านการส่งเสริมสนับสนุน (4 ตัวชี้วัด):</label>
+              <input id="pa-aspect-2-doc" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">หลักฐานด้านที่ 3: ด้านการพัฒนาตนเองและวิชาชีพ (3 ตัวชี้วัด):</label>
+              <input id="pa-aspect-3-doc" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+            </div>
+          </div>
         </div>
 
-        <!-- Challenge Issue -->
-        <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 space-y-2">
-          <span class="block font-bold text-amber-900">ส่วนที่ 2: ข้อตกลงในการพัฒนางานที่เป็นประเด็นท้าทาย</span>
+        <!-- Section 2: Challenge Issue -->
+        <div class="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-2.5">
+          <span class="block font-bold text-amber-950 text-xs font-prompt flex items-center gap-1.5">
+            <i data-lucide="target" class="w-4 h-4 text-amber-600"></i> ส่วนที่ 2: ข้อตกลงในการพัฒนางานที่เป็นประเด็นท้าทาย (Challenge Issue)
+          </span>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">ชื่อประเด็นท้าทาย: *</label>
-            <input id="pa-challenge-title" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white" placeholder="ระบุหัวข้อประเด็นท้าทาย">
+            <input id="pa-challenge-title" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white text-xs" placeholder="ระบุหัวข้อประเด็นท้าทาย">
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">วัตถุประสงค์:</label>
-            <textarea id="pa-challenge-obj" rows="2" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="ระบุวัตถุประสงค์ข้อ 1, 2..."></textarea>
+            <label class="block font-semibold text-slate-700 mb-1">สภาพปัญหาการจัดการเรียนรู้และคุณภาพการเรียนรู้ของผู้เรียน:</label>
+            <textarea id="pa-challenge-problem" rows="2" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="ระบุสภาพปัญหา บริบท หรือความเป็นมาที่นำไปสู่การกำหนดประเด็นท้าทาย"></textarea>
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">วิธีดำเนินการ:</label>
-            <textarea id="pa-challenge-method" rows="2" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="ระบุขั้นตอนการจัดกิจกรรม/นวัตกรรม"></textarea>
+            <label class="block font-semibold text-slate-700 mb-1">วัตถุประสงค์ / เป้าหมาย:</label>
+            <textarea id="pa-challenge-obj" rows="2" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="ระบุวัตถุประสงค์ข้อ 1, 2..."></textarea>
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">ผลลัพธ์ที่เกิดขึ้นจริง:</label>
-            <textarea id="pa-challenge-res" rows="2" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="ระบุผลสัมฤทธิ์หรือผลลัพธ์เชิงประจักษ์"></textarea>
+            <label class="block font-semibold text-slate-700 mb-1">วิธีดำเนินการให้บรรลุผล:</label>
+            <textarea id="pa-challenge-method" rows="2" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="ระบุขั้นตอนการจัดกิจกรรม/นวัตกรรม"></textarea>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">ผลลัพธ์การพัฒนาที่คาดหวัง / ผลลัพธ์ที่เกิดขึ้นจริง:</label>
+            <textarea id="pa-challenge-res" rows="2" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="ระบุผลสัมฤทธิ์หรือผลลัพธ์เชิงประจักษ์"></textarea>
+          </div>
+
+          <!-- YouTube Video Link -->
+          <div class="pt-2 border-t border-amber-200/60 space-y-1">
+            <label class="block font-bold text-rose-900 text-xs flex items-center gap-1.5 font-prompt">
+              <i data-lucide="video" class="w-3.5 h-3.5 text-rose-600"></i> ลิงก์คลิปวิดีโอบันทึกการสอน / นวัตกรรม (YouTube) (เว้นว่างได้):
+            </label>
+            <input id="pa-youtube-url" class="w-full p-2 rounded-lg border border-rose-200 bg-white text-xs" placeholder="https://www.youtube.com/watch?v=... หรือ https://youtu.be/...">
           </div>
         </div>
 
         <!-- Documents Section: Official PA Docs -->
-        <div class="p-3 bg-blue-50/70 rounded-xl border border-blue-200/80 space-y-2">
-          <label class="block font-bold text-blue-900 flex items-center gap-1.5">
+        <div class="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200 space-y-2">
+          <label class="block font-bold text-blue-900 flex items-center gap-1.5 text-xs font-prompt">
             <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i> ลิงก์ไฟล์เอกสาร วPA ฉบับเต็ม (PDF / Google Drive):
           </label>
           <div>
             <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">แบบ PA 1/ส (ข้อตกลงในการพัฒนางาน):</label>
-            <input id="pa-doc-1" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+            <input id="pa-doc-1" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
           </div>
           <div>
             <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">แบบ PA 2/ส (รายงานผลการพัฒนางาน):</label>
-            <input id="pa-doc-2" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+            <input id="pa-doc-2" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
           </div>
           <div>
             <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">แบบ PA 3/ส (แบบประเมินผลการพัฒนางาน):</label>
-            <input id="pa-doc-3" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
-          </div>
-        </div>
-
-        <!-- Documents Section: 3 Aspects Evidence -->
-        <div class="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/80 space-y-2">
-          <label class="block font-bold text-emerald-900 flex items-center gap-1.5">
-            <i data-lucide="folder-check" class="w-4 h-4 text-emerald-600"></i> ลิงก์เอกสาร/โฟลเดอร์ร่องรอยหลักฐาน 3 ด้าน (PDF / Google Drive):
-          </label>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">หลักฐานด้านที่ 1: ด้านการจัดการเรียนรู้ (8 ตัวชี้วัด):</label>
-            <input id="pa-aspect-1-doc" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">หลักฐานด้านที่ 2: ด้านการส่งเสริมสนับสนุน (4 ตัวชี้วัด):</label>
-            <input id="pa-aspect-2-doc" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">หลักฐานด้านที่ 3: ด้านการพัฒนาตนเองและวิชาชีพ (3 ตัวชี้วัด):</label>
-            <input id="pa-aspect-3-doc" class="w-full p-2 rounded-lg border border-slate-300 bg-white" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+            <input id="pa-doc-3" class="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="https://drive.google.com/... หรือ ลิงก์ PDF" value="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
           </div>
         </div>
       </div>
@@ -4495,6 +4643,7 @@ function openAddPaModal() {
       const youtubeUrl = document.getElementById("pa-youtube-url").value.trim();
       const youtubeVideoId = extractYoutubeId(youtubeUrl);
       const challengeTitle = document.getElementById("pa-challenge-title").value.trim();
+      const challengeProblem = document.getElementById("pa-challenge-problem").value.trim();
       const challengeObjective = document.getElementById("pa-challenge-obj").value.trim();
       const challengeMethod = document.getElementById("pa-challenge-method").value.trim();
       const challengeResult = document.getElementById("pa-challenge-res").value.trim();
@@ -4520,6 +4669,7 @@ function openAddPaModal() {
         youtubeUrl,
         youtubeVideoId,
         challengeTitle: challengeTitle || "ข้อตกลงในการพัฒนางานที่เป็นประเด็นท้าทาย",
+        challengeProblem,
         challengeObjective,
         challengeMethod,
         challengeResult,
@@ -4710,17 +4860,22 @@ function openEditPaChallengeModal(paId) {
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1 font-prompt">วัตถุประสงค์:</label>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">สภาพปัญหาการจัดการเรียนรู้และคุณภาพการเรียนรู้ของผู้เรียน:</label>
+          <textarea id="edit-pa-challenge-problem" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white font-sarabun text-xs leading-relaxed" placeholder="ระบุสภาพปัญหา บริบท หรือความเป็นมาที่นำไปสู่การกำหนดประเด็นท้าทาย">${item.challengeProblem || ''}</textarea>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">วัตถุประสงค์ / เป้าหมาย:</label>
           <textarea id="edit-pa-challenge-obj" rows="2" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white font-sarabun text-xs leading-relaxed" placeholder="ระบุเป้าหมายหรือวัตถุประสงค์">${item.challengeObjective || ''}</textarea>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1 font-prompt">วิธีดำเนินการ:</label>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">วิธีดำเนินการให้บรรลุผล:</label>
           <textarea id="edit-pa-challenge-method" rows="3" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white font-sarabun text-xs leading-relaxed" placeholder="ระบุกระบวนการ ออกแบบ หรือนวัตกรรมที่นำมาใช้">${item.challengeMethod || ''}</textarea>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1 font-prompt">ผลลัพธ์ที่เกิดขึ้นจริง:</label>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ผลลัพธ์การพัฒนาที่คาดหวัง / ผลลัพธ์ที่เกิดขึ้นจริง:</label>
           <textarea id="edit-pa-challenge-res" rows="2" class="w-full p-2.5 rounded-lg border border-slate-300 bg-white font-sarabun text-xs leading-relaxed" placeholder="ระบุผลสัมฤทธิ์เชิงปริมาณและเชิงคุณภาพ">${item.challengeResult || ''}</textarea>
         </div>
 
@@ -4733,17 +4888,26 @@ function openEditPaChallengeModal(paId) {
             <span class="text-[11px] text-amber-800 font-semibold bg-amber-200/60 px-2 py-0.5 rounded-md font-prompt">บีบอัดภาพอัตโนมัติ</span>
           </div>
 
-          <div class="space-y-1">
-            <label class="block text-[11px] font-semibold text-slate-700 font-prompt">1. อัปโหลดรูปภาพจากคอมพิวเตอร์ / มือถือ (เลือกหลายรูปพร้อมกันได้):</label>
-            <input type="file" id="challenge-file-input" multiple accept="image/*" class="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer">
+          <!-- Fast Multi-Image Upload Box for Challenge -->
+          <div class="p-3.5 bg-white rounded-xl border-2 border-dashed border-amber-300 space-y-2">
+            <div class="flex flex-col sm:flex-row items-center gap-2.5">
+              <label for="challenge-file-input" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold font-prompt text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                <span>📸 เลือกรูปภาพจากเครื่อง (เลือกหลายรูปได้)</span>
+              </label>
+              <input type="file" id="challenge-file-input" multiple accept="image/*" class="hidden">
+              <span id="challenge-upload-status" class="text-[11px] text-slate-500 font-sarabun text-center sm:text-left">
+                กดปุ่มเพื่อเลือกรูป หรือกด Ctrl / Shift เพื่อเลือกหลายไฟล์พร้อมกัน
+              </span>
+            </div>
           </div>
 
           <div class="space-y-1 pt-1">
-            <label class="block text-[11px] font-semibold text-slate-700 font-prompt">2. หรือวาง URL ลิงก์รูปภาพ:</label>
+            <label class="block text-[11px] font-semibold text-slate-700 font-prompt">หรือวาง URL ลิงก์รูปภาพเดี่ยว:</label>
             <div class="flex gap-2">
               <input id="challenge-url-input" class="flex-1 p-2 rounded-lg border border-slate-300 text-xs bg-white font-mono" placeholder="https://... ลิงก์รูปภาพ">
-              <button type="button" id="btn-add-challenge-url" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0 font-prompt">
-                เพิ่มรูป
+              <button type="button" id="btn-add-challenge-url" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0 font-prompt">
+                + เพิ่มลิงก์
               </button>
             </div>
           </div>
@@ -4776,6 +4940,7 @@ function openEditPaChallengeModal(paId) {
       const urlInput = document.getElementById("challenge-url-input");
       const addUrlBtn = document.getElementById("btn-add-challenge-url");
       const container = document.getElementById("challenge-images-container");
+      const statusEl = document.getElementById("challenge-upload-status");
 
       function syncCaptions() {
         currentChallengeImages.forEach((img, idx) => {
@@ -4788,13 +4953,26 @@ function openEditPaChallengeModal(paId) {
         fileInput.addEventListener("change", async (e) => {
           syncCaptions();
           const files = Array.from(e.target.files);
-          for (const file of files) {
+          if (!files || files.length === 0) return;
+
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-amber-700 font-bold animate-pulse">⏳ กำลังประมวลผลและบีบอัดรูปภาพ ${files.length} รูป...</span>`;
+          }
+
+          const compressedResults = await Promise.all(files.map(async file => {
             const compressed = await window.compressImage(file, 1600, 0.85);
-            currentChallengeImages.push({
+            return {
               url: compressed,
               caption: file.name ? `ภาพกิจกรรม: ${file.name.replace(/\.[^/.]+$/, "")}` : "ภาพกิจกรรมและการใช้นวัตกรรมตามประเด็นท้าทาย"
-            });
+            };
+          }));
+
+          currentChallengeImages.push(...compressedResults);
+
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-emerald-700 font-bold">✓ เพิ่มรูปภาพสำเร็จ ${files.length} รูป!</span>`;
           }
+
           if (container) {
             container.innerHTML = renderChallengeImageListHtml();
             initIcons();
@@ -4822,6 +5000,7 @@ function openEditPaChallengeModal(paId) {
     },
     preConfirm: () => {
       const challengeTitle = document.getElementById("edit-pa-challenge-title").value.trim();
+      const challengeProblem = document.getElementById("edit-pa-challenge-problem").value.trim();
       const challengeObjective = document.getElementById("edit-pa-challenge-obj").value.trim();
       const challengeMethod = document.getElementById("edit-pa-challenge-method").value.trim();
       const challengeResult = document.getElementById("edit-pa-challenge-res").value.trim();
@@ -4844,6 +5023,7 @@ function openEditPaChallengeModal(paId) {
 
       return {
         challengeTitle,
+        challengeProblem,
         challengeObjective,
         challengeMethod,
         challengeResult,
@@ -5003,6 +5183,12 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
       details: aspect.evidenceDetails || aspect.detail || "",
       images: []
     };
+    const currentIndex = items.findIndex(it => it.code === indCode);
+    const safeIndex = currentIndex >= 0 ? currentIndex : 0;
+    const prevItem = safeIndex > 0 ? items[safeIndex - 1] : null;
+    const nextItem = safeIndex < items.length - 1 ? items[safeIndex + 1] : null;
+    const totalCount = items.length;
+
     const images = activeItem.images || [];
     const isPLC = activeItem.code === "3.2";
     const isTrainingIndicator = activeItem.code === "3.1" || activeItem.code === "3.2" || (activeItem.trainings && activeItem.trainings.length > 0);
@@ -5054,6 +5240,17 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
             <h4 class="text-base sm:text-lg font-bold text-slate-800 leading-snug font-prompt">${activeItem.title}</h4>
           </div>
           <div class="flex items-center gap-2 shrink-0 flex-wrap">
+            <!-- Presenter Quick Nav (Top) -->
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs" title="คลิกหรือใช้รีโมทพ้อยเตอร์กด ◀ ▶ เพื่อเปลี่ยนตัวชี้วัด">
+              <button type="button" ${prevItem ? `onclick="switchIndicatorTab('${paId}', ${aspectIndex}, '${prevItem.code}')"` : 'disabled'} class="p-1 rounded-lg ${prevItem ? 'hover:bg-white text-slate-700 hover:text-amber-600 shadow-2xs cursor-pointer' : 'text-slate-300 cursor-not-allowed'} transition-all" title="ตัวชี้วัดก่อนหน้า (◀)">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <span class="text-[11px] font-bold text-slate-700 px-1.5 font-mono">${safeIndex + 1}/${totalCount}</span>
+              <button type="button" ${nextItem ? `onclick="switchIndicatorTab('${paId}', ${aspectIndex}, '${nextItem.code}')"` : 'disabled'} class="p-1 rounded-lg ${nextItem ? 'hover:bg-white text-slate-700 hover:text-amber-600 shadow-2xs cursor-pointer' : 'text-slate-300 cursor-not-allowed'} transition-all" title="ตัวชี้วัดถัดไป (▶)">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+
             ${isTrainingIndicator && isAdmin ? `
               <button type="button" onclick="openAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
@@ -5194,7 +5391,7 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
           </div>
 
           ${images.length > 0 ? `
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="${images.length === 1 ? 'max-w-xl mx-auto' : 'grid grid-cols-1 sm:grid-cols-2 gap-4'}">
               ${images.map((imgObj, i) => {
                 const imgUrl = typeof imgObj === 'string' ? imgObj : imgObj.url;
                 const imgCaption = typeof imgObj === 'string' ? '' : (imgObj.caption || '');
@@ -5228,6 +5425,51 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
             </div>
           `}
         </div>
+
+        <!-- 4. Footer Navigation Toolbar for Presenter / Pointer (ปุ่มเลื่อนตัวชี้วัด & รองรับรีโมทพ้อยเตอร์) -->
+        <div class="p-3 sm:p-4 bg-gradient-to-r from-slate-50 via-amber-50/50 to-slate-50 rounded-2xl border border-amber-200/70 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs mt-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-700 font-prompt flex items-center gap-1.5">
+              <i data-lucide="presentation" class="w-4 h-4 text-amber-600"></i>
+              <span>ตัวชี้วัดที่ ${safeIndex + 1} / ${totalCount} (ด้านที่ ${idxNum})</span>
+            </span>
+            <span class="text-[10px] bg-amber-100/80 text-amber-900 font-bold px-2 py-0.5 rounded-md font-mono flex items-center gap-1">
+              <span>🎮 ใช้พ้อยเตอร์กด ◀ ▶ ได้</span>
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            ${prevItem ? `
+              <button type="button" onclick="switchIndicatorTab('${paId}', ${aspectIndex}, '${prevItem.code}')" class="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer" title="ไปยังตัวชี้วัดก่อนหน้า (หรือกด ◀ บนพ้อยเตอร์)">
+                <i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i>
+                <span>ก่อนหน้า (${prevItem.code})</span>
+              </button>
+            ` : `
+              <button type="button" disabled class="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-bold font-prompt text-xs flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                <span>ก่อนหน้า</span>
+              </button>
+            `}
+
+            ${nextItem ? `
+              <button type="button" onclick="switchIndicatorTab('${paId}', ${aspectIndex}, '${nextItem.code}')" class="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer" title="ไปยังตัวชี้วัดถัดไป (หรือกด ▶ บนพ้อยเตอร์)">
+                <span>ตัวชี้วัดถัดไป (${nextItem.code})</span>
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            ` : `
+              ${aspectIndex < (paRecord.indicators?.length || 3) - 1 ? `
+                <button type="button" onclick="openAspectDetailModal('${paId}', ${aspectIndex + 1})" class="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer">
+                  <span>ไปด้านที่ ${aspectIndex + 2} ถัดไป</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              ` : `
+                <button type="button" onclick="Swal.close()" class="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer">
+                  <span>ตรวจครบ 15 ตัวชี้วัดแล้ว ✓</span>
+                </button>
+              `}
+            `}
+          </div>
+        </div>
       </div>
     `;
   }
@@ -5246,6 +5488,9 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
           if (badge) badge.className = "ind-badge px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white";
           const count = btn.querySelector(".ind-count");
           if (count) count.className = "ind-count text-[10px] text-amber-100";
+          try {
+            btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+          } catch(e) {}
         } else {
           btn.className = "p-2.5 rounded-xl border text-left font-prompt transition-all flex flex-col justify-between gap-1 cursor-pointer bg-white hover:bg-amber-50 text-slate-700 border-slate-200 hover:border-amber-300 shadow-2xs";
           const badge = btn.querySelector(".ind-badge");
@@ -5264,9 +5509,42 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
         container.innerHTML = getIndicatorContentHtml(targetCode);
         container.style.opacity = "1";
         initIcons();
-      }, 100);
+      }, 70);
     }
   };
+
+  // Keyboard & Wireless Presenter Remote Pointer Handler
+  const pointerKeyHandler = (e) => {
+    const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (!Swal.isVisible()) return;
+
+    const currentIndex = items.findIndex(it => it.code === currentActiveCode);
+    const safeIdx = currentIndex >= 0 ? currentIndex : 0;
+
+    // Pointer Next: ArrowRight, PageDown, ArrowDown, Space
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      if (safeIdx < items.length - 1) {
+        window.switchIndicatorTab(paId, aspectIndex, items[safeIdx + 1].code);
+      } else if (aspectIndex < (paRecord.indicators?.length || 3) - 1) {
+        window.removeEventListener('keydown', pointerKeyHandler);
+        openAspectDetailModal(paId, aspectIndex + 1);
+      }
+    }
+    // Pointer Prev: ArrowLeft, PageUp, ArrowUp
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (safeIdx > 0) {
+        window.switchIndicatorTab(paId, aspectIndex, items[safeIdx - 1].code);
+      } else if (aspectIndex > 0) {
+        window.removeEventListener('keydown', pointerKeyHandler);
+        openAspectDetailModal(paId, aspectIndex - 1);
+      }
+    }
+  };
+
+  window.addEventListener('keydown', pointerKeyHandler);
 
   Swal.fire({
     title: null,
@@ -5305,7 +5583,7 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
             <span class="font-bold text-xs text-slate-700 flex items-center gap-1.5">
               <i data-lucide="layout-grid" class="w-4 h-4 text-amber-600"></i> เลือกตัวชี้วัดที่ต้องการตรวจประเมิน (${items.length} ตัวชี้วัด):
             </span>
-            <span class="text-[11px] text-slate-400 font-sarabun">คลิกที่ตัวชี้วัดเพื่อดูข้อมูลและภาพประกอบ</span>
+            <span class="text-[11px] text-slate-400 font-sarabun">คลิกที่ตัวชี้วัด หรือกดลูกศร ◀ ▶ บนรีโมทพ้อยเตอร์</span>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -5340,7 +5618,10 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
     width: "840px",
     showCloseButton: true,
     showConfirmButton: false,
-    didOpen: () => initIcons()
+    didOpen: () => initIcons(),
+    didClose: () => {
+      window.removeEventListener('keydown', pointerKeyHandler);
+    }
   });
 }
 
@@ -5528,28 +5809,45 @@ function openEditSingleIndicatorModal(paId, aspectIndex, indCode) {
         </div>
 
         <!-- Image Management Section with Captions -->
-        <div class="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200/80 space-y-3">
-          <label class="block font-bold text-amber-900 flex items-center gap-1.5 text-xs">
-            <i data-lucide="camera" class="w-4 h-4 text-amber-600"></i> จัดการรูปภาพและคำบรรยายใต้ภาพสำหรับตัวชี้วัด ${item.code}:
-          </label>
+        <div class="p-4 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-amber-950 flex items-center gap-1.5 text-xs font-prompt">
+              <i data-lucide="camera" class="w-4 h-4 text-amber-600"></i> จัดการรูปภาพและคำบรรยายใต้ภาพสำหรับตัวชี้วัด ${item.code}:
+            </label>
+            <span class="text-[10px] bg-amber-200/80 text-amber-950 font-bold px-2 py-0.5 rounded-md font-mono">
+              ⚡ เลือกหลายรูปพร้อมกันได้
+            </span>
+          </div>
           
-          <div class="space-y-1">
-            <label class="block text-[11px] font-semibold text-slate-700">1. อัปโหลดรูปภาพจากคอมพิวเตอร์ / มือถือ (เลือกหลายรูปพร้อมกันได้):</label>
-            <input type="file" id="ind-file-input" multiple accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-900 hover:file:bg-amber-200">
+          <!-- Fast Multi-Image Upload Box -->
+          <div class="p-3.5 bg-white rounded-xl border-2 border-dashed border-amber-300 space-y-2">
+            <div class="flex flex-col sm:flex-row items-center gap-2.5">
+              <label for="ind-file-input" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold font-prompt text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                <span>📸 เลือกรูปภาพจากเครื่อง (เลือกหลายรูปได้)</span>
+              </label>
+              <input type="file" id="ind-file-input" multiple accept="image/*" class="hidden">
+              <span id="ind-upload-status" class="text-[11px] text-slate-500 font-sarabun text-center sm:text-left">
+                กดปุ่มเพื่อเลือกรูป หรือกด Ctrl / Shift เพื่อเลือกหลายไฟล์พร้อมกัน
+              </span>
+            </div>
           </div>
 
           <div class="space-y-1 pt-1">
-            <label class="block text-[11px] font-semibold text-slate-700">2. หรือวาง URL ลิงก์รูปภาพ:</label>
+            <label class="block text-[11px] font-semibold text-slate-700">หรือวาง URL ลิงก์รูปภาพเดี่ยว:</label>
             <div class="flex gap-2">
               <input id="ind-url-input" class="flex-1 p-2 rounded-lg border border-slate-300 bg-white text-xs" placeholder="https://images.unsplash.com/...">
               <button type="button" id="btn-add-ind-url" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-navy-950 font-bold rounded-lg text-xs cursor-pointer shadow-2xs">
-                + เพิ่มรูป
+                + เพิ่มลิงก์
               </button>
             </div>
           </div>
 
           <div class="pt-2">
-            <label class="block font-bold text-slate-700 mb-1">รายการรูปภาพและคำบรรยาย:</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block font-bold text-slate-700 text-xs font-prompt">รายการรูปภาพและคำบรรยาย (${currentImages.length} รูป):</label>
+              <span class="text-[10px] text-slate-400">แก้ไขคำบรรยายหรือกดลบรูปที่ไม่ต้องการได้</span>
+            </div>
             <div id="indicator-images-container">
               ${renderImageListHtml()}
             </div>
@@ -5569,6 +5867,7 @@ function openEditSingleIndicatorModal(paId, aspectIndex, indCode) {
       const urlInput = document.getElementById("ind-url-input");
       const addUrlBtn = document.getElementById("btn-add-ind-url");
       const container = document.getElementById("indicator-images-container");
+      const statusEl = document.getElementById("ind-upload-status");
 
       function syncCaptions() {
         currentImages.forEach((img, idx) => {
@@ -5581,13 +5880,26 @@ function openEditSingleIndicatorModal(paId, aspectIndex, indCode) {
         fileInput.addEventListener("change", async (e) => {
           syncCaptions();
           const files = Array.from(e.target.files);
-          for (const file of files) {
+          if (!files || files.length === 0) return;
+
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-amber-700 font-bold animate-pulse">⏳ กำลังประมวลผลและบีบอัดรูปภาพ ${files.length} รูป...</span>`;
+          }
+
+          const compressedResults = await Promise.all(files.map(async file => {
             const compressed = await window.compressImage(file, 1280, 0.82);
-            currentImages.push({
+            return {
               url: compressed,
               caption: file.name ? `ภาพกิจกรรม: ${file.name.replace(/\.[^/.]+$/, "")}` : "ภาพกิจกรรมประกอบการประเมิน"
-            });
+            };
+          }));
+
+          currentImages.push(...compressedResults);
+
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-emerald-700 font-bold">✓ เพิ่มรูปภาพสำเร็จ ${files.length} รูป!</span>`;
           }
+
           if (container) {
             container.innerHTML = renderImageListHtml();
             initIcons();
@@ -8840,7 +9152,13 @@ function openCloudConfigModal() {
                 <i data-lucide="upload-cloud" class="w-4 h-4"></i>
                 <span>ซิงค์ข้อมูลปัจจุบันขึ้น Cloud</span>
               </button>
-              <button type="button" onclick="handleDisconnectCloud()" class="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+              <button type="button" onclick="handleRestoreSnapshot()" class="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-navy-950 font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span>กู้คืนข้อมูลเดิมจากเครื่อง</span>
+              </button>
+            </div>
+            <div>
+              <button type="button" onclick="handleDisconnectCloud()" class="w-full p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">
                 <i data-lucide="unlink" class="w-4 h-4"></i>
                 <span>ยกเลิกการเชื่อมต่อ Cloud</span>
               </button>
@@ -8936,6 +9254,27 @@ function handleForcePushCloud() {
   });
 }
 
+function handleRestoreSnapshot() {
+  const success = window.portfolioStorage.restoreFromSafetySnapshot();
+  if (success) {
+    Swal.fire({
+      icon: "success",
+      title: "กู้คืนข้อมูลเดิมสำเร็จ!",
+      text: "ดึงข้อมูลจากประวัติความจำเครื่องกลับมาแสดงผลเรียบร้อยแล้วครับ",
+      timer: 1800,
+      showConfirmButton: false
+    });
+    renderCurrentView();
+  } else {
+    Swal.fire({
+      icon: "info",
+      title: "ไม่พบประวัติข้อมูลสำรองก่อนหน้า",
+      text: "คุณครูสามารถกรอกข้อมูลหรือนำเข้าไฟล์สำรอง JSON ได้ทันทีครับ",
+      confirmButtonColor: "#2563eb"
+    });
+  }
+}
+
 function handleDisconnectCloud() {
   Swal.fire({
     title: "ต้องการยกเลิกการเชื่อมต่อ Cloud หรือไม่?",
@@ -8964,4 +9303,1967 @@ window.openCloudConfigModal = openCloudConfigModal;
 window.handleConnectFirebase = handleConnectFirebase;
 window.handleForcePushCloud = handleForcePushCloud;
 window.handleDisconnectCloud = handleDisconnectCloud;
+
+// ==========================================
+// Function 1: Live QR Code Generator & Committee Evaluation Tent Card Engine
+// ==========================================
+function openQrCodeModal(targetView = 'home') {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+  const liveOnlineUrl = "https://krusos-portfolio.vercel.app";
+  
+  let initialUrl = "";
+  if (!isLocal) {
+    initialUrl = window.location.href;
+  } else {
+    // If local, default to live cloud URL with appropriate view
+    initialUrl = targetView === 'pa' ? `${liveOnlineUrl}#pa` : liveOnlineUrl;
+  }
+
+  const profile = window.portfolioStorage.getData().profile || {};
+  const teacherName = profile.name || "ครูซอส";
+  const schoolName = profile.school || "โรงเรียนวัดบางปูน";
+  const position = profile.position || "ครูผู้ช่วย";
+
+  function getQrImageUrl(url) {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}&margin=12&format=png`;
+  }
+
+  Swal.fire({
+    title: null,
+    html: `
+      <div class="text-left font-prompt space-y-4 max-h-[85vh] overflow-y-auto p-1">
+        <!-- Header Banner -->
+        <div class="p-4 bg-gradient-to-r from-blue-900 via-indigo-900 to-navy-950 text-white rounded-2xl shadow-md border border-blue-800/80 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-300 flex items-center justify-center text-navy-950 font-bold shadow-md shrink-0">
+              <i data-lucide="qr-code" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] bg-amber-400/20 text-amber-300 font-bold px-2 py-0.5 rounded-md border border-amber-400/30">
+                  📱 รองรับ iPad & มือถือ
+                </span>
+                <span class="text-[10px] text-blue-200">สแกนเปิดได้ทันที</span>
+              </div>
+              <h3 class="text-base sm:text-lg font-bold text-white leading-snug">QR Code สำหรับคณะกรรมการประเมิน</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Code Display Box -->
+        <div class="p-5 bg-gradient-to-b from-slate-50 to-white rounded-2xl border-2 border-slate-200/90 flex flex-col items-center justify-center gap-4 text-center shadow-xs">
+          <div class="relative group p-3 bg-white rounded-2xl shadow-md border border-slate-200/80">
+            <img id="qr-code-image-preview" src="${getQrImageUrl(initialUrl)}" alt="QR Code" class="w-56 h-56 sm:w-64 sm:h-64 object-contain rounded-xl transition-transform group-hover:scale-102 duration-200">
+            <div class="absolute inset-0 bg-navy-950/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center pointer-events-none">
+              <span class="px-3 py-1 bg-navy-950/80 text-amber-300 rounded-lg text-xs font-bold shadow-sm">สแกนเพื่อเปิดดู</span>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <h4 class="font-bold text-slate-800 text-sm font-prompt">${teacherName} - ${schoolName}</h4>
+            <p class="text-xs text-slate-500 font-sarabun">
+              คณะกรรมการสามารถเปิดแอปกล้อง (Camera) บน iPhone / iPad หรือแอป LINE สแกนเปิดดูได้ทันที
+            </p>
+          </div>
+
+          <!-- URL Input & Copy Bar -->
+          <div class="w-full space-y-1.5 pt-2 border-t border-slate-200">
+            <label class="block text-left text-[11px] font-bold text-slate-600">ลิงก์ปลายทาง (URL) ที่สร้าง QR Code:</label>
+            <div class="flex items-center gap-1.5">
+              <input id="qr-target-url" type="text" class="flex-1 p-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-mono text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" value="${initialUrl}">
+              <button type="button" id="btn-copy-qr-url" class="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all shrink-0">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">คัดลอก</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Preset Chips -->
+          <div class="flex items-center gap-2 flex-wrap justify-center text-[11px] font-prompt">
+            <span class="text-slate-400">เลือกมุมมอง:</span>
+            <button type="button" onclick="updateQrModalUrl('${liveOnlineUrl}')" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition-all cursor-pointer">
+              🌐 หน้าแรกแฟ้มผลงาน
+            </button>
+            <button type="button" onclick="updateQrModalUrl('${liveOnlineUrl}#pa')" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold border border-amber-200 transition-all cursor-pointer">
+              📋 หน้าระบบ วPA
+            </button>
+            ${!isLocal ? `
+              <button type="button" onclick="updateQrModalUrl('${window.location.href}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 transition-all cursor-pointer">
+                📌 หน้าปัจจุบัน
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          <button type="button" id="btn-download-qr" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 border border-slate-300 transition-all cursor-pointer shadow-2xs">
+            <i data-lucide="download" class="w-4 h-4 text-slate-600"></i>
+            <span>💾 บันทึกรูปภาพ QR Code (PNG)</span>
+          </button>
+          <button type="button" id="btn-print-tent-card" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>🖨️ พิมพ์ป้ายตั้งโต๊ะกรรมการ (Tent Card)</span>
+          </button>
+        </div>
+      </div>
+    `,
+    width: "600px",
+    showCloseButton: true,
+    showConfirmButton: false,
+    didOpen: () => {
+      initIcons();
+      const urlInput = document.getElementById("qr-target-url");
+      const imgPreview = document.getElementById("qr-code-image-preview");
+      const copyBtn = document.getElementById("btn-copy-qr-url");
+      const downloadBtn = document.getElementById("btn-download-qr");
+      const printBtn = document.getElementById("btn-print-tent-card");
+
+      window.updateQrModalUrl = (newUrl) => {
+        if (urlInput) urlInput.value = newUrl;
+        if (imgPreview) imgPreview.src = getQrImageUrl(newUrl);
+      };
+
+      if (urlInput) {
+        urlInput.addEventListener("input", () => {
+          const u = urlInput.value.trim() || initialUrl;
+          if (imgPreview) imgPreview.src = getQrImageUrl(u);
+        });
+      }
+
+      if (copyBtn && urlInput) {
+        copyBtn.addEventListener("click", () => {
+          const u = urlInput.value.trim();
+          navigator.clipboard.writeText(u).then(() => {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "success",
+              title: "คัดลอกลิงก์เรียบร้อยแล้ว!",
+              timer: 1500,
+              showConfirmButton: false
+            });
+          });
+        });
+      }
+
+      if (downloadBtn && urlInput) {
+        downloadBtn.addEventListener("click", async () => {
+          const u = urlInput.value.trim() || initialUrl;
+          const qrSrc = getQrImageUrl(u);
+          try {
+            const res = await fetch(qrSrc);
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = `QRCode-KruSos-Portfolio.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "success",
+              title: "ดาวน์โหลด QR Code เรียบร้อยแล้ว",
+              timer: 1500,
+              showConfirmButton: false
+            });
+          } catch(err) {
+            window.open(qrSrc, "_blank");
+          }
+        });
+      }
+
+      if (printBtn && urlInput) {
+        printBtn.addEventListener("click", () => {
+          const u = urlInput.value.trim() || initialUrl;
+          printQrEvaluationCard(getQrImageUrl(u), teacherName, schoolName, position, u);
+        });
+      }
+    }
+  });
+}
+
+// Function to print a professional Committee Desk Tent Card
+function printQrEvaluationCard(qrImageUrl, teacherName, schoolName, position, targetUrl) {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    Swal.fire({
+      icon: "warning",
+      title: "โปรดอนุญาตให้เปิดหน้าต่างป๊อปอัป",
+      text: "เบราว์เซอร์บล็อกหน้าต่างการพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้ครับ"
+    });
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="th">
+    <head>
+      <meta charset="UTF-8">
+      <title>ป้ายตั้งโต๊ะ QR Code สำหรับคณะกรรมการประเมิน - \${teacherName}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        @page {
+          size: A4 portrait;
+          margin: 15mm;
+        }
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          font-family: 'Prompt', sans-serif;
+        }
+        body {
+          background: #f1f5f9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          padding: 20px;
+        }
+        .tent-card {
+          width: 100%;
+          max-width: 650px;
+          background: #ffffff;
+          border: 4px solid #0f2c59;
+          border-radius: 24px;
+          padding: 40px 30px;
+          text-align: center;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+          position: relative;
+          overflow: hidden;
+        }
+        .tent-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 12px;
+          background: linear-gradient(90deg, #d97706, #f59e0b, #2563eb, #0f2c59);
+        }
+        .header-tag {
+          display: inline-block;
+          background: #eff6ff;
+          color: #1e40af;
+          font-size: 13px;
+          font-weight: 700;
+          padding: 6px 18px;
+          border-radius: 9999px;
+          border: 1px solid #bfdbfe;
+          margin-bottom: 12px;
+          letter-spacing: 0.5px;
+        }
+        .title {
+          font-size: 24px;
+          font-weight: 800;
+          color: #0f2c59;
+          margin-bottom: 6px;
+          line-height: 1.3;
+        }
+        .subtitle {
+          font-size: 16px;
+          font-weight: 600;
+          color: #d97706;
+          margin-bottom: 24px;
+        }
+        .qr-wrapper {
+          display: inline-block;
+          padding: 16px;
+          background: #ffffff;
+          border: 3px solid #e2e8f0;
+          border-radius: 20px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+          margin-bottom: 20px;
+        }
+        .qr-wrapper img {
+          width: 240px;
+          height: 240px;
+          display: block;
+        }
+        .instruction {
+          font-size: 15px;
+          font-weight: 700;
+          color: #1e293b;
+          margin-bottom: 6px;
+        }
+        .instruction-sub {
+          font-size: 13px;
+          color: #64748b;
+          font-family: 'Sarabun', sans-serif;
+          margin-bottom: 24px;
+          max-width: 480px;
+          margin-left: auto;
+          margin-right: auto;
+          line-height: 1.5;
+        }
+        .footer-box {
+          background: #f8fafc;
+          border-radius: 16px;
+          padding: 14px;
+          border: 1px solid #e2e8f0;
+        }
+        .teacher-info {
+          font-size: 15px;
+          font-weight: 700;
+          color: #0f2c59;
+        }
+        .school-info {
+          font-size: 13px;
+          color: #64748b;
+          font-family: 'Sarabun', sans-serif;
+        }
+        @media print {
+          body {
+            background: #ffffff;
+            padding: 0;
+          }
+          .tent-card {
+            border: 3px solid #0f2c59;
+            box-shadow: none;
+            max-width: 100%;
+            border-radius: 16px;
+            page-break-inside: avoid;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="tent-card">
+        <div class="header-tag">📋 สำหรับคณะกรรมการประเมินผลการพัฒนางาน (วPA)</div>
+        <h1 class="title">แฟ้มสะสมผลงานและระบบประเมิน วPA</h1>
+        <div class="subtitle">E-Portfolio & Performance Agreement System (Real-Time)</div>
+
+        <div class="qr-wrapper">
+          <img src="\${qrImageUrl}" alt="Evaluation QR Code">
+        </div>
+
+        <div class="instruction">📱 สแกน QR Code เพื่อเปิดดูบน iPad / แท็บเล็ต / สมาร์ตโฟน</div>
+        <div class="instruction-sub">
+          เปิดกล้องบน iPhone / iPad หรือแอป LINE สแกนเปิดดูเอกสาร ร่องรอยหลักฐาน 15 ตัวชี้วัด และคลิปวิดีโอนวัตกรรมได้ทันที
+        </div>
+
+        <div class="footer-box">
+          <div class="teacher-info">\${teacherName} (\${position})</div>
+          <div class="school-info">\${schoolName}</div>
+        </div>
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+          }, 400);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+window.openQrCodeModal = openQrCodeModal;
+window.printQrEvaluationCard = printQrEvaluationCard;
+
+// ==========================================
+// Function 2: Full-Screen Committee Presentation Mode Engine
+// ==========================================
+function openPaPresentationMode(paId) {
+  const data = window.portfolioStorage.getData();
+  const paRecords = data.paRecords || [];
+  let paRecord = paRecords.find(p => String(p.id) === String(paId));
+  if (!paRecord && paRecords.length > 0) {
+    const activeYear = AppState.activePaYear;
+    paRecord = paRecords.find(p => String(p.fiscalYear) === String(activeYear)) || paRecords[0];
+  }
+  if (!paRecord) {
+    Swal.fire({
+      icon: "warning",
+      title: "ไม่พบข้อมูล วPA",
+      text: "กรุณาสร้างรอบการประเมิน วPA ก่อนเปิดโหมดนำเสนอครับ"
+    });
+    return;
+  }
+
+  const profile = data.profile || {};
+  const teacherName = profile.name || "ครูซอส";
+  const schoolName = profile.school || "โรงเรียนวัดบางปูน";
+  const position = profile.position || "ครูผู้ช่วย";
+  const avatar = profile.avatar || "assets/images/profile.jpg";
+  const fiscalYear = paRecord.fiscalYear || "2567";
+
+  // Build the slides list
+  const slides = [];
+
+  // Slide 0: Title Cover
+  slides.push({
+    type: "cover",
+    title: `การประเมินผลการพัฒนางานตามข้อตกลง (วPA)`,
+    subtitle: `ปีงบประมาณ พ.ศ. ${fiscalYear}`,
+    aspectBadge: "หน้าปกการนำเสนอ",
+    render: () => `
+      <div class="flex flex-col items-center justify-center text-center max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs sm:text-sm font-bold shadow-lg">
+          <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+          <span>การประเมินผลการพัฒนางานตามข้อตกลงในการพัฒนางาน (PA)</span>
+        </div>
+
+        <div class="space-y-2">
+          <h1 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight font-prompt tracking-tight drop-shadow-md">
+            รายงานผลการพัฒนางานตามข้อตกลง (วPA)
+          </h1>
+          <p class="text-xl sm:text-2xl font-bold text-amber-400 font-prompt">
+            ประจำปีงบประมาณ พ.ศ. ${fiscalYear}
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-5 p-6 bg-slate-900/80 rounded-3xl border border-slate-700/80 shadow-2xl backdrop-blur-md">
+          <img src="${avatar}" class="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl object-cover border-4 border-amber-400/80 shadow-xl">
+          <div class="text-center sm:text-left space-y-1">
+            <h3 class="text-2xl font-bold text-white font-prompt">${teacherName}</h3>
+            <p class="text-base text-amber-300 font-semibold font-prompt">ตำแหน่ง ${position}</p>
+            <p class="text-sm text-slate-300 font-sarabun">${schoolName}</p>
+            <p class="text-xs text-slate-400 font-sarabun">สำนักงานเขตพื้นที่การศึกษาประถมศึกษาสิงห์บุรี</p>
+          </div>
+        </div>
+
+        <!-- PA Official Docs Quick Access -->
+        <div class="flex items-center gap-3 flex-wrap justify-center pt-2">
+          ${paRecord.docPa1 ? `
+            <a href="${paRecord.docPa1}" target="_blank" class="px-4 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-400/40 text-xs font-bold flex items-center gap-1.5 transition-all">
+              <i data-lucide="file-text" class="w-4 h-4"></i> แบบ PA 1/ส
+            </a>
+          ` : ''}
+          ${paRecord.docPa2 ? `
+            <a href="${paRecord.docPa2}" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-400/40 text-xs font-bold flex items-center gap-1.5 transition-all">
+              <i data-lucide="file-check" class="w-4 h-4"></i> แบบ PA 2/ส
+            </a>
+          ` : ''}
+          ${paRecord.docPa3 ? `
+            <a href="${paRecord.docPa3}" target="_blank" class="px-4 py-2 rounded-xl bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 transition-all">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> แบบ PA 3/ส
+            </a>
+          ` : ''}
+        </div>
+      </div>
+    `
+  });
+
+  // Slide 1: Executive Structure Overview
+  slides.push({
+    type: "overview",
+    title: "โครงสร้างการประเมินผลการพัฒนางาน (วPA)",
+    subtitle: "ครอบคลุม 2 ส่วนหลักตามเกณฑ์ ก.ค.ศ.",
+    aspectBadge: "ภาพรวมโครงสร้าง",
+    render: () => `
+      <div class="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-200">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Section 1 Card -->
+          <div class="p-6 bg-gradient-to-br from-emerald-950/70 via-slate-900/90 to-slate-900/90 rounded-3xl border-2 border-emerald-500/50 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-navy-950 flex items-center justify-center font-bold text-xl shadow-lg">
+                ๑
+              </div>
+              <div>
+                <span class="text-xs font-bold text-emerald-400 font-prompt">ส่วนที่ ๑ (๖๐ คะแนน)</span>
+                <h3 class="text-lg font-bold text-white font-prompt">ข้อตกลงในการพัฒนางานตามมาตรฐานตำแหน่ง</h3>
+              </div>
+            </div>
+            <div class="space-y-3 text-xs sm:text-sm font-sarabun text-slate-200">
+              <div class="p-3 bg-emerald-900/30 rounded-xl border border-emerald-500/30 flex items-center justify-between">
+                <span>ด้านที่ ๑: ด้านการจัดการเรียนรู้</span>
+                <span class="font-bold text-emerald-300 font-mono">๘ ตัวชี้วัด</span>
+              </div>
+              <div class="p-3 bg-teal-900/30 rounded-xl border border-teal-500/30 flex items-center justify-between">
+                <span>ด้านที่ ๒: ด้านการส่งเสริมและสนับสนุนการจัดการเรียนรู้</span>
+                <span class="font-bold text-teal-300 font-mono">๔ ตัวชี้วัด</span>
+              </div>
+              <div class="p-3 bg-cyan-900/30 rounded-xl border border-cyan-500/30 flex items-center justify-between">
+                <span>ด้านที่ ๓: ด้านการพัฒนาตนเองและวิชาชีพ (PLC/อบรม)</span>
+                <span class="font-bold text-cyan-300 font-mono">๓ ตัวชี้วัด</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2 Card -->
+          <div class="p-6 bg-gradient-to-br from-amber-950/70 via-slate-900/90 to-slate-900/90 rounded-3xl border-2 border-amber-500/50 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-amber-500 text-navy-950 flex items-center justify-center font-bold text-xl shadow-lg">
+                ๒
+              </div>
+              <div>
+                <span class="text-xs font-bold text-amber-400 font-prompt">ส่วนที่ ๒ (๔๐ คะแนน)</span>
+                <h3 class="text-lg font-bold text-white font-prompt">ข้อตกลงในการพัฒนางานที่เป็นประเด็นท้าทาย</h3>
+              </div>
+            </div>
+            <div class="p-4 bg-amber-900/30 rounded-2xl border border-amber-500/30 space-y-2">
+              <span class="text-xs font-bold text-amber-300 font-prompt">หัวข้อประเด็นท้าทาย:</span>
+              <p class="text-sm font-bold text-white font-prompt leading-relaxed">
+                ${paRecord.challengeTitle || "การพัฒนาผลสัมฤทธิ์ทางการเรียนและการคิดเชิงคำนวณ"}
+              </p>
+              <div class="pt-2 flex items-center gap-2 text-xs text-amber-200">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                <span>มีคลิปวิดีโอบันทึกการสอน & ร่องรอยหลักฐานเชิงประจักษ์</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  });
+
+  // Slides for Section 1 (15 Indicators)
+  (paRecord.indicators || []).forEach((aspect, aspIdx) => {
+    const aspectNum = aspIdx + 1;
+    (aspect.items || []).forEach((item, itemIdx) => {
+      const isTraining = item.code === "3.1" || item.code === "3.2" || (item.trainings && item.trainings.length > 0);
+      const isPLC = item.code === "3.2";
+      const images = item.images || [];
+
+      slides.push({
+        type: "indicator",
+        title: `ตัวชี้วัดที่ ${item.code}: ${item.title}`,
+        subtitle: `ด้านที่ ${aspectNum}: ${aspect.standard}`,
+        aspectBadge: `ด้านที่ ${aspectNum}`,
+        render: () => `
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto h-full items-stretch animate-in fade-in duration-200">
+            <!-- Left Info Column -->
+            <div class="lg:col-span-6 flex flex-col justify-between p-6 bg-slate-900/90 rounded-3xl border border-slate-700/80 shadow-xl space-y-4">
+              <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                  <span class="px-3 py-1 rounded-lg bg-amber-500 text-navy-950 font-bold text-xs font-prompt shadow-sm">
+                    ตัวชี้วัดที่ ${item.code}
+                  </span>
+                  <span class="text-xs text-slate-400 font-sarabun">ด้านที่ ${aspectNum} ${aspect.standard}</span>
+                </div>
+                <h3 class="text-lg sm:text-xl font-bold text-white font-prompt leading-snug">
+                  ${item.title}
+                </h3>
+                <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 font-sarabun text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line max-h-72 overflow-y-auto">
+                  ${item.details || "ได้ดำเนินการจัดการเรียนรู้และปฏิบัติหน้าที่ตามมาตรฐานตำแหน่งอย่างมีประสิทธิภาพ"}
+                </div>
+              </div>
+
+              <!-- Extra for 3.1 & 3.2 (Trainings / PLC Summary) -->
+              ${isTraining ? `
+                <div class="p-3 bg-amber-950/40 rounded-xl border border-amber-500/40 flex items-center justify-between text-xs text-amber-200">
+                  <span class="font-bold font-prompt">${isPLC ? 'บันทึกชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC)' : 'บันทึกประวัติการอบรม/สัมมนา'}:</span>
+                  <span class="font-bold text-amber-400 font-mono">${(item.trainings || []).length || 1} รายการ</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Right Evidence Column -->
+            <div class="lg:col-span-6 flex flex-col justify-center p-6 bg-slate-900/90 rounded-3xl border border-slate-700/80 shadow-xl">
+              ${images.length > 0 ? `
+                <div class="space-y-3">
+                  <div class="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 aspect-4/3 shadow-2xl group cursor-pointer" onclick="openImageViewer('${typeof images[0] === 'string' ? images[0] : images[0].url}', 'ตัวชี้วัด ${item.code}')">
+                    <img src="${typeof images[0] === 'string' ? images[0] : images[0].url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                      <i data-lucide="zoom-in" class="w-5 h-5"></i> ขยายภาพ
+                    </div>
+                  </div>
+                  <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs text-slate-300 font-sarabun flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                    <span>${(typeof images[0] !== 'string' && images[0].caption) ? images[0].caption : 'ภาพถ่ายกิจกรรมและหลักฐานเชิงประจักษ์'}</span>
+                  </div>
+                </div>
+              ` : `
+                <div class="text-center py-12 space-y-3">
+                  <i data-lucide="file-check-2" class="w-16 h-16 text-slate-600 mx-auto"></i>
+                  <p class="text-sm text-slate-400 font-sarabun">มีเอกสารหลักฐานและร่องรอยการปฏิบัติงานครบถ้วนสมบูรณ์</p>
+                </div>
+              `}
+            </div>
+          </div>
+        `
+      });
+    });
+  });
+
+  // Slide 17: Section 2 Challenge Issue Detail
+  slides.push({
+    type: "challenge",
+    title: "ส่วนที่ ๒: ข้อตกลงในการพัฒนางานที่เป็นประเด็นท้าทาย",
+    subtitle: paRecord.challengeTitle || "ประเด็นท้าทายในการพัฒนาผลสัมฤทธิ์ของผู้เรียน",
+    aspectBadge: "ประเด็นท้าทาย (ส่วนที่ ๒)",
+    render: () => `
+      <div class="max-w-5xl mx-auto space-y-4 animate-in fade-in duration-200">
+        <div class="p-6 bg-slate-900/95 rounded-3xl border-2 border-amber-500/60 shadow-2xl space-y-4 max-h-[70vh] overflow-y-auto">
+          <div>
+            <span class="text-xs font-bold text-amber-400 font-prompt">ชื่อประเด็นท้าทาย:</span>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-white font-prompt leading-snug mt-1">
+              ${paRecord.challengeTitle || "การจัดการเรียนรู้เพื่อส่งเสริมทักษะการคิดเชิงคำนวณ"}
+            </h3>
+          </div>
+
+          ${paRecord.challengeProblem ? `
+            <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
+              <span class="text-xs font-bold text-rose-300 font-prompt flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i> สภาพปัญหาการจัดการเรียนรู้และคุณภาพการเรียนรู้ของผู้เรียน:
+              </span>
+              <p class="text-xs sm:text-sm font-sarabun text-slate-200 leading-relaxed whitespace-pre-line">
+                ${paRecord.challengeProblem}
+              </p>
+            </div>
+          ` : ''}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
+              <span class="text-xs font-bold text-blue-300 font-prompt flex items-center gap-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-blue-400"></i> วัตถุประสงค์ / เป้าหมาย:
+              </span>
+              <p class="text-xs sm:text-sm font-sarabun text-slate-200 leading-relaxed whitespace-pre-line">
+                ${paRecord.challengeObjective || "เพื่อยกระดับผลสัมฤทธิ์และพัฒนาสมรรถนะสำคัญของผู้เรียน"}
+              </p>
+            </div>
+            <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
+              <span class="text-xs font-bold text-emerald-300 font-prompt flex items-center gap-1.5">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> ผลลัพธ์การพัฒนาที่เกิดขึ้นจริง:
+              </span>
+              <p class="text-xs sm:text-sm font-sarabun text-slate-200 leading-relaxed whitespace-pre-line">
+                ${paRecord.challengeResult || "ผู้เรียนมีผลสัมฤทธิ์และทักษะผ่านเกณฑ์การประเมินร้อยละ ๘๐ ขึ้นไป"}
+              </p>
+            </div>
+          </div>
+
+          <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
+            <span class="text-xs font-bold text-amber-300 font-prompt flex items-center gap-1.5">
+              <i data-lucide="cpu" class="w-4 h-4 text-amber-400"></i> วิธีดำเนินการให้บรรลุผล:
+            </span>
+            <p class="text-xs sm:text-sm font-sarabun text-slate-200 leading-relaxed whitespace-pre-line">
+              ${paRecord.challengeMethod || "ดำเนินการตามกระบวนการจัดการเรียนรู้เชิงรุก (Active Learning) และกระบวนการ PLC"}
+            </p>
+          </div>
+        </div>
+      </div>
+    `
+  });
+
+  // Slide 18: Challenge Video & Gallery
+  const ytVideoId = extractYoutubeId(paRecord.youtubeUrl || paRecord.youtubeVideoId || "");
+  slides.push({
+    type: "challenge_media",
+    title: "วิดีโอบันทึกการสอน & ร่องรอยหลักฐานประเด็นท้าทาย",
+    subtitle: "คลิปนวัตกรรมการจัดการเรียนรู้และภาพผลลัพธ์เชิงประจักษ์",
+    aspectBadge: "สื่อและหลักฐานเชิงประจักษ์",
+    render: () => `
+      <div class="grid grid-cols-1 ${ytVideoId ? 'lg:grid-cols-12' : ''} gap-6 max-w-6xl mx-auto h-full items-center animate-in fade-in duration-200">
+        ${ytVideoId ? `
+          <div class="lg:col-span-7">
+            <div class="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-rose-500/60 aspect-video bg-black">
+              <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=0&rel=0" frameborder="0" allowfullscreen></iframe>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="${ytVideoId ? 'lg:col-span-5' : 'max-w-4xl mx-auto'} space-y-4">
+          <div class="p-6 bg-slate-900/90 rounded-3xl border border-slate-700 shadow-xl space-y-3">
+            <h4 class="text-lg font-bold text-white font-prompt flex items-center gap-2">
+              <i data-lucide="camera" class="w-5 h-5 text-amber-400"></i> ภาพกิจกรรมและผลลัพธ์ประเด็นท้าทาย
+            </h4>
+            ${(paRecord.challengeImages && paRecord.challengeImages.length > 0) ? `
+              <div class="grid grid-cols-2 gap-3">
+                ${paRecord.challengeImages.slice(0, 4).map((img, i) => `
+                  <div class="rounded-xl overflow-hidden aspect-4/3 bg-slate-950 border border-slate-700 cursor-pointer group" onclick="openImageViewer('${typeof img === 'string' ? img : img.url}', 'ภาพประเด็นท้าทาย')">
+                    <img src="${typeof img === 'string' ? img : img.url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <p class="text-xs text-slate-400 font-sarabun">มีผลงานเชิงประจักษ์และคลิปวิดีโอนวัตกรรมครบถ้วน</p>
+            `}
+          </div>
+        </div>
+      </div>
+    `
+  });
+
+  // Slide 19: Closing & Thank you
+  slides.push({
+    type: "closing",
+    title: "สรุปผลการประเมินและข้อเสนอแนะ",
+    subtitle: "ขอขอบพระคุณคณะกรรมการประเมินทุกท่าน",
+    aspectBadge: "บทสรุป",
+    render: () => `
+      <div class="flex flex-col items-center justify-center text-center max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-navy-950 flex items-center justify-center shadow-2xl">
+          <i data-lucide="check-check" class="w-10 h-10"></i>
+        </div>
+
+        <div class="space-y-2">
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-white font-prompt">
+            ขอขอบพระคุณคณะกรรมการทุกท่าน
+          </h2>
+          <p class="text-base sm:text-lg text-amber-300 font-prompt">
+            สำหรับการตรวจประเมินผลการพัฒนางานตามข้อตกลง (วPA) ประจำปีงบประมาณ พ.ศ. ${fiscalYear}
+          </p>
+        </div>
+
+        <div class="p-6 bg-slate-900/90 rounded-3xl border border-slate-700 shadow-2xl flex flex-col sm:flex-row items-center gap-6">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.href)}&margin=6" class="w-32 h-32 rounded-2xl border-2 border-amber-400 shadow-lg">
+          <div class="text-left space-y-1">
+            <h4 class="font-bold text-white text-base font-prompt">${teacherName}</h4>
+            <p class="text-xs text-amber-300 font-prompt">ตำแหน่ง ${position} ${schoolName}</p>
+            <p class="text-xs text-slate-400 font-sarabun">สแกน QR Code เพื่อเปิดดูแฟ้มสะสมผลงานฉบับดิจิทัลย้อนหลังได้ตลอดเวลา</p>
+          </div>
+        </div>
+      </div>
+    `
+  });
+
+  let currentSlideIndex = 0;
+
+  // Mount overlay to DOM
+  const existingOverlay = document.getElementById("pa-presentation-overlay");
+  if (existingOverlay) existingOverlay.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "pa-presentation-overlay";
+  overlay.className = "fixed inset-0 z-[99999] bg-gradient-to-b from-navy-950 via-slate-950 to-navy-950 text-white flex flex-col justify-between overflow-hidden select-none";
+
+  function renderSlide() {
+    const slide = slides[currentSlideIndex];
+    const totalSlides = slides.length;
+    const progressPercent = ((currentSlideIndex + 1) / totalSlides) * 100;
+
+    overlay.innerHTML = `
+      <!-- Top Control Bar -->
+      <header class="shrink-0 p-4 sm:px-8 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between gap-4 z-10">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-amber-500 text-navy-950 font-bold flex items-center justify-center shrink-0 shadow-md">
+            <i data-lucide="presentation" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-blue-900/60 text-blue-300 border border-blue-700/50 text-[11px] font-bold font-prompt">
+                ${slide.aspectBadge}
+              </span>
+              <span class="text-xs text-slate-400 font-sarabun hidden sm:inline">วPA ปีงบประมาณ ${fiscalYear}</span>
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-white truncate font-prompt">${slide.title}</h3>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Slide Counter -->
+          <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-amber-300 flex items-center gap-1">
+            <span>${currentSlideIndex + 1}</span>
+            <span class="text-slate-500">/</span>
+            <span>${totalSlides}</span>
+          </div>
+
+          <!-- Slide Jump Drawer Button -->
+          <button id="btn-presentation-jump" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="เลือกสไลด์">
+            <i data-lucide="list" class="w-4 h-4"></i>
+            <span class="hidden md:inline">สารบัญ</span>
+          </button>
+
+          <!-- Fullscreen Toggle Button -->
+          <button id="btn-presentation-fullscreen" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-bold cursor-pointer transition-all" title="เต็มจอ (F)">
+            <i data-lucide="maximize" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Exit Presentation Button -->
+          <button id="btn-presentation-close" class="px-3 py-1.5 rounded-xl bg-rose-600/30 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="ออกจากการนำเสนอ (Esc)">
+            <i data-lucide="x" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">ปิด</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Slide Canvas -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-8 flex items-center justify-center">
+        ${slide.render()}
+      </main>
+
+      <!-- Bottom Navigation Control Bar -->
+      <footer class="shrink-0 p-3 sm:px-8 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 flex flex-col gap-2 z-10">
+        <!-- Progress Bar Line -->
+        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+          <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 h-full transition-all duration-300" style="width: ${progressPercent}%;"></div>
+        </div>
+
+        <div class="flex items-center justify-between gap-4">
+          <button id="btn-pres-prev" ${currentSlideIndex === 0 ? 'disabled' : ''} class="px-4 py-2 rounded-xl ${currentSlideIndex === 0 ? 'bg-slate-900 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700 text-white shadow-md cursor-pointer'} border border-slate-700 text-xs font-bold font-prompt flex items-center gap-2 transition-all">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span>สไลด์ก่อนหน้า (◀)</span>
+          </button>
+
+          <div class="hidden sm:flex items-center gap-2 text-xs text-amber-300/80 font-prompt">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+            <span>รองรับรีโมทพ้อยเตอร์ & แป้นพิมพ์ ◀ ▶ หรือ PageUp / PageDown</span>
+          </div>
+
+          <button id="btn-pres-next" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-navy-950 font-extrabold text-xs font-prompt flex items-center gap-2 shadow-lg cursor-pointer transition-all">
+            <span>${currentSlideIndex === totalSlides - 1 ? 'จบการนำเสนอ ✓' : 'สไลด์ถัดไป (▶)'}</span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </footer>
+    `;
+
+    initIcons();
+
+    // Event Bindings
+    const prevBtn = document.getElementById("btn-pres-prev");
+    const nextBtn = document.getElementById("btn-pres-next");
+    const closeBtn = document.getElementById("btn-presentation-close");
+    const fsBtn = document.getElementById("btn-presentation-fullscreen");
+    const jumpBtn = document.getElementById("btn-presentation-jump");
+
+    if (prevBtn) prevBtn.onclick = () => changeSlide(-1);
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        if (currentSlideIndex === totalSlides - 1) {
+          closePresentation();
+        } else {
+          changeSlide(1);
+        }
+      };
+    }
+    if (closeBtn) closeBtn.onclick = closePresentation;
+    if (fsBtn) fsBtn.onclick = toggleFullscreen;
+    if (jumpBtn) jumpBtn.onclick = openSlideJumpMenu;
+  }
+
+  function changeSlide(direction) {
+    const newIdx = currentSlideIndex + direction;
+    if (newIdx >= 0 && newIdx < slides.length) {
+      currentSlideIndex = newIdx;
+      renderSlide();
+    }
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      overlay.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  function openSlideJumpMenu() {
+    Swal.fire({
+      title: "สารบัญสไลด์การประเมิน วPA",
+      html: `
+        <div class="space-y-1.5 text-left max-h-[65vh] overflow-y-auto font-prompt p-1">
+          ${slides.map((s, idx) => `
+            <button onclick="Swal.close(); window.jumpToSlide(${idx})" class="w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-2 text-xs cursor-pointer transition-all ${idx === currentSlideIndex ? 'bg-amber-500 text-navy-950 font-bold border-amber-600 shadow-md' : 'bg-slate-50 hover:bg-amber-50 text-slate-700 border-slate-200'}">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-6 h-6 rounded-lg ${idx === currentSlideIndex ? 'bg-navy-950 text-white' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-mono font-bold text-[10px] shrink-0">
+                  ${idx + 1}
+                </span>
+                <span class="truncate">${s.title}</span>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded ${idx === currentSlideIndex ? 'bg-navy-950/20 text-navy-950' : 'bg-slate-100 text-slate-500'} shrink-0">
+                ${s.aspectBadge}
+              </span>
+            </button>
+          `).join('')}
+        </div>
+      `,
+      showConfirmButton: false,
+      showCloseButton: true,
+      width: "550px"
+    });
+  }
+
+  window.jumpToSlide = (idx) => {
+    currentSlideIndex = idx;
+    renderSlide();
+  };
+
+  // Keyboard navigation listener
+  const keyHandler = (e) => {
+    const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea') return;
+
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      changeSlide(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      changeSlide(-1);
+    } else if (e.key === 'Escape') {
+      closePresentation();
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleFullscreen();
+    } else if (e.key === 'Home') {
+      currentSlideIndex = 0;
+      renderSlide();
+    } else if (e.key === 'End') {
+      currentSlideIndex = slides.length - 1;
+      renderSlide();
+    }
+  };
+
+  function closePresentation() {
+    window.removeEventListener("keydown", keyHandler);
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    overlay.remove();
+  }
+
+  window.addEventListener("keydown", keyHandler);
+  document.body.appendChild(overlay);
+  renderSlide();
+
+  // Try auto entering fullscreen
+  try {
+    overlay.requestFullscreen().catch(() => {});
+  } catch(e) {}
+}
+
+window.openPaPresentationMode = openPaPresentationMode;
+
+// ==========================================
+// Function 3: 1-Click Printable PA Summary PDF Engine
+// ==========================================
+function printPaSummarySheet(paId) {
+  const data = window.portfolioStorage.getData();
+  const paRecords = data.paRecords || [];
+  let paRecord = paRecords.find(p => String(p.id) === String(paId));
+  if (!paRecord && paRecords.length > 0) {
+    const activeYear = AppState.activePaYear;
+    paRecord = paRecords.find(p => String(p.fiscalYear) === String(activeYear)) || paRecords[0];
+  }
+  if (!paRecord) {
+    Swal.fire({
+      icon: "warning",
+      title: "ไม่พบข้อมูลรอบการประเมิน วPA",
+      text: "กรุณาสร้างรอบการประเมินก่อนพิมพ์เอกสารสรุปครับ"
+    });
+    return;
+  }
+
+  const profile = data.profile || {};
+  const teacherName = profile.name || "ครูซอส";
+  const schoolName = profile.school || "โรงเรียนวัดบางปูน";
+  const position = profile.position || "ครูผู้ช่วย";
+  const fiscalYear = paRecord.fiscalYear || "2567";
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.href)}&margin=6&format=png`;
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    Swal.fire({
+      icon: "warning",
+      title: "โปรดอนุญาตให้เปิดหน้าต่างป๊อปอัป",
+      text: "เบราว์เซอร์บล็อกหน้าต่างการพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้ครับ"
+    });
+    return;
+  }
+
+  // Format Aspect 1 (8 indicators)
+  const asp1 = (paRecord.indicators && paRecord.indicators[0]) ? paRecord.indicators[0].items || [] : [];
+  // Format Aspect 2 (4 indicators)
+  const asp2 = (paRecord.indicators && paRecord.indicators[1]) ? paRecord.indicators[1].items || [] : [];
+  // Format Aspect 3 (3 indicators)
+  const asp3 = (paRecord.indicators && paRecord.indicators[2]) ? paRecord.indicators[2].items || [] : [];
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="th">
+    <head>
+      <meta charset="UTF-8">
+      <title>แบบสรุปรายงานผลการประเมินการพัฒนางานตามข้อตกลง (วPA) - \${teacherName}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@600;700&display=swap" rel="stylesheet">
+      <style>
+        @page {
+          size: A4 portrait;
+          margin: 12mm 15mm;
+        }
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          font-family: 'Sarabun', sans-serif;
+          color: #0f172a;
+        }
+        body {
+          background: #ffffff;
+          font-size: 13px;
+          line-height: 1.45;
+          padding: 10px;
+        }
+        .header-title {
+          text-align: center;
+          margin-bottom: 12px;
+        }
+        .header-title h1 {
+          font-size: 17px;
+          font-weight: 800;
+          font-family: 'Prompt', sans-serif;
+          color: #0f2c59;
+          margin-bottom: 2px;
+        }
+        .header-title h2 {
+          font-size: 14px;
+          font-weight: 700;
+          color: #1e3a8a;
+        }
+        .info-box {
+          border: 1.5px solid #0f2c59;
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-bottom: 12px;
+          background: #f8fafc;
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 4px 16px;
+          font-size: 12.5px;
+        }
+        .info-box div span.label {
+          font-weight: 700;
+          color: #0f2c59;
+        }
+        .section-header {
+          background: #0f2c59;
+          color: #ffffff;
+          padding: 4px 8px;
+          font-weight: 700;
+          font-size: 13px;
+          border-radius: 4px;
+          margin-top: 10px;
+          margin-bottom: 6px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 10px;
+          font-size: 11.5px;
+        }
+        th, td {
+          border: 1px solid #cbd5e1;
+          padding: 5px 6px;
+          vertical-align: top;
+        }
+        th {
+          background: #f1f5f9;
+          font-weight: 700;
+          text-align: center;
+          color: #0f2c59;
+        }
+        .td-center {
+          text-align: center;
+        }
+        .aspect-row {
+          background: #f8fafc;
+          font-weight: 700;
+          color: #1e40af;
+        }
+        .challenge-box {
+          border: 1.5px solid #d97706;
+          border-radius: 8px;
+          padding: 10px 12px;
+          background: #fffbeb;
+          margin-bottom: 12px;
+          font-size: 12px;
+        }
+        .challenge-title {
+          font-size: 13px;
+          font-weight: 800;
+          color: #92400e;
+          margin-bottom: 6px;
+        }
+        .challenge-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+          margin-top: 4px;
+        }
+        .challenge-item {
+          background: #ffffff;
+          padding: 6px 8px;
+          border-radius: 6px;
+          border: 1px solid #fde68a;
+        }
+        .challenge-item span.label {
+          font-weight: 700;
+          color: #b45309;
+          display: block;
+          margin-bottom: 2px;
+          font-size: 11.5px;
+        }
+        .signatures-area {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+          margin-top: 15px;
+          page-break-inside: avoid;
+        }
+        .sig-block {
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          padding: 10px;
+          text-align: center;
+          font-size: 12px;
+        }
+        .sig-line {
+          margin-top: 28px;
+          margin-bottom: 4px;
+        }
+        .footer-qr {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 12px;
+          padding-top: 8px;
+          border-top: 1px dashed #cbd5e1;
+          font-size: 11px;
+          color: #64748b;
+        }
+        @media print {
+          body {
+            padding: 0;
+          }
+          .page-break {
+            page-break-after: always;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header-title">
+        <h1>แบบสรุปผลการประเมินการพัฒนางานตามข้อตกลง (วPA)</h1>
+        <h2>สำหรับข้าราชการครูและบุคลากรทางการศึกษา ตำแหน่ง\${position} (ยังไม่มีวิทยฐานะ)</h2>
+      </div>
+
+      <div class="info-box">
+        <div><span class="label">ชื่อ-สกุล ผู้รับการประเมิน:</span> \${teacherName}</div>
+        <div><span class="label">รอบการประเมิน:</span> ปีงบประมาณ พ.ศ. \${fiscalYear}</div>
+        <div><span class="label">ตำแหน่ง:</span> \${position}</div>
+        <div><span class="label">สถานศึกษา:</span> \${schoolName}</div>
+        <div><span class="label">สังกัด:</span> สำนักงานเขตพื้นที่การศึกษาประถมศึกษาสิงห์บุรี</div>
+        <div><span class="label">กลุ่มสาระการเรียนรู้:</span> วิทยาศาสตร์และเทคโนโลยี / คอมพิวเตอร์</div>
+      </div>
+
+      <!-- Section 1 -->
+      <div class="section-header">
+        <span>ส่วนที่ ๑: ข้อตกลงในการพัฒนางานตามมาตรฐานตำแหน่ง (๓ ด้าน ๑๕ ตัวชี้วัด)</span>
+        <span style="font-size: 11px; font-weight: normal;">เกณฑ์ผ่าน: ได้คะแนนแต่ละด้านไม่ต่ำกว่าร้อยละ ๗๐</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 12%;">ตัวชี้วัด</th>
+            <th style="width: 32%;">มาตรฐานและตัวชี้วัด</th>
+            <th style="width: 44%;">ผลการปฏิบัติงานและร่องรอยหลักฐานเชิงประจักษ์</th>
+            <th style="width: 12%;">ผลการประเมิน</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Aspect 1 -->
+          <tr class="aspect-row">
+            <td colspan="4">ด้านที่ ๑: ด้านการจัดการเรียนรู้ (๘ ตัวชี้วัด)</td>
+          </tr>
+          \${asp1.map(it => \`
+            <tr>
+              <td class="td-center font-bold">ตัวชี้วัด \${it.code}</td>
+              <td>\${it.title}</td>
+              <td style="white-space: pre-line;">\${it.details || 'ดำเนินการจัดการเรียนรู้ตามหลักสูตรอย่างมีประสิทธิภาพ'}</td>
+              <td class="td-center" style="color: #15803d; font-weight: bold;">ผ่านเกณฑ์ ✓</td>
+            </tr>
+          \`).join('')}
+
+          <!-- Aspect 2 -->
+          <tr class="aspect-row">
+            <td colspan="4">ด้านที่ ๒: ด้านการส่งเสริมและสนับสนุนการจัดการเรียนรู้ (๔ ตัวชี้วัด)</td>
+          </tr>
+          \${asp2.map(it => \`
+            <tr>
+              <td class="td-center font-bold">ตัวชี้วัด \${it.code}</td>
+              <td>\${it.title}</td>
+              <td style="white-space: pre-line;">\${it.details || 'ส่งเสริมและสนับสนุนการจัดการเรียนรู้และการดูแลผู้เรียน'}</td>
+              <td class="td-center" style="color: #15803d; font-weight: bold;">ผ่านเกณฑ์ ✓</td>
+            </tr>
+          \`).join('')}
+
+          <!-- Aspect 3 -->
+          <tr class="aspect-row">
+            <td colspan="4">ด้านที่ ๓: ด้านการพัฒนาตนเองและวิชาชีพ (๓ ตัวชี้วัด)</td>
+          </tr>
+          \${asp3.map(it => {
+            const trCount = (it.trainings || []).length;
+            const extra = trCount > 0 ? \` (รวม \${trCount} รายการ)\` : '';
+            return \`
+              <tr>
+                <td class="td-center font-bold">ตัวชี้วัด \${it.code}</td>
+                <td>\${it.title}</td>
+                <td style="white-space: pre-line;">\${(it.details || 'พัฒนาตนเองและวิชาชีพอย่างต่อเนื่อง') + extra}</td>
+                <td class="td-center" style="color: #15803d; font-weight: bold;">ผ่านเกณฑ์ ✓</td>
+              </tr>
+            \`;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <!-- Section 2 -->
+      <div class="section-header">
+        <span>ส่วนที่ ๒: ข้อตกลงในการพัฒนางานที่เป็นประเด็นท้าทายในการพัฒนาผลลัพธ์การเรียนรู้ของผู้เรียน</span>
+      </div>
+
+      <div class="challenge-box">
+        <div class="challenge-title">🎯 ประเด็นท้าทาย: \${paRecord.challengeTitle || 'การพัฒนาผลสัมฤทธิ์ทางการเรียนและการคิดเชิงคำนวณ'}</div>
+        
+        \${paRecord.challengeProblem ? \`
+          <div style="margin-bottom: 6px; font-size: 11.5px;">
+            <strong style="color: #991b1b;">สภาพปัญหาและบริบท:</strong>
+            <p style="white-space: pre-line; margin-top: 2px;">\${paRecord.challengeProblem}</p>
+          </div>
+        \` : ''}
+
+        <div class="challenge-grid">
+          <div class="challenge-item">
+            <span class="label">📌 วิธีดำเนินการให้บรรลุผล:</span>
+            <p style="white-space: pre-line;">\${paRecord.challengeMethod || 'จัดการเรียนรู้เชิงรุก (Active Learning) และใช้กระบวนการ PLC'}</p>
+          </div>
+          <div class="challenge-item">
+            <span class="label">🏆 ผลลัพธ์การพัฒนา (เชิงประจักษ์):</span>
+            <p style="white-space: pre-line;">\${paRecord.challengeResult || 'ผู้เรียนมีผลสัมฤทธิ์และสมรรถนะผ่านเกณฑ์ร้อยละ ๘๐ ขึ้นไป'}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <div class="signatures-area">
+        <div class="sig-block">
+          <div>ขอรับรองว่าเป็นรายงานผลการปฏิบัติงานจริง</div>
+          <div class="sig-line">ลงชื่อ........................................................ผู้รับการประเมิน</div>
+          <div>( \${teacherName} )</div>
+          <div>ตำแหน่ง \${position} \${schoolName}</div>
+          <div>วันที่ ......./......./.......</div>
+        </div>
+
+        <div class="sig-block">
+          <div>ผลการประเมินของคณะกรรมการประเมิน</div>
+          <div style="display: flex; justify-content: center; gap: 15px; margin-top: 6px; font-weight: bold; color: #15803d;">
+            <span>[ / ] ผ่านเกณฑ์การประเมิน</span>
+            <span style="color: #64748b;">[ &nbsp; ] ไม่ผ่านเกณฑ์</span>
+          </div>
+          <div class="sig-line">ลงชื่อ........................................................ประธานกรรมการ</div>
+          <div>(........................................................)</div>
+          <div>ผู้อำนวยการ \${schoolName}</div>
+          <div>วันที่ ......./......./.......</div>
+        </div>
+      </div>
+
+      <!-- Footer QR Stamp -->
+      <div class="footer-qr">
+        <div>
+          <strong>ระบบแฟ้มสะสมผลงานครูดิจิทัล (E-Portfolio & PA System)</strong> | \${schoolName}<br>
+          สแกน QR Code เพื่อเปิดดูคลิปวิดีโอบันทึกการสอนและร่องรอยหลักฐานฉบับเต็มออนไลน์
+        </div>
+        <img src="\${qrCodeUrl}" style="width: 50px; height: 50px; border: 1px solid #cbd5e1; border-radius: 4px;" alt="QR Code">
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+          }, 400);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+window.printPaSummarySheet = printPaSummarySheet;
+
+// ==========================================
+// Function 4: Digital Committee Guestbook & Feedback Engine
+// ==========================================
+function getGuestbookData() {
+  const data = window.portfolioStorage.getData();
+  if (!data.guestbook || data.guestbook.length === 0) {
+    const defaultGuestbook = [
+      {
+        id: "gb_1",
+        author: "นายประเสริฐ จันทร์งาม",
+        position: "ผู้อำนวยการโรงเรียนวัดบางปูน",
+        institution: "โรงเรียนวัดบางปูน สพป.สิงห์บุรี",
+        role: "ผู้บริหารสถานศึกษา",
+        roleBadgeColor: "blue",
+        rating: 5,
+        date: "2568-08-20",
+        dateFormatted: "20 ส.ค. 2568",
+        commendation: "ขอชื่นชมคุณครูซอส ที่ได้ทุ่มเทพัฒนาสื่อนวัตกรรมการจัดการเรียนรู้เชิงรุก (Active Learning) และระบบแฟ้มสะสมผลงานออนไลน์ที่มีความทันสมัย ครบถ้วนตามเกณฑ์ วPA และมาตรฐานตำแหน่งอย่างแท้จริง เป็นแบบอย่างที่ดีให้กับครูในโรงเรียน",
+        suggestion: "ขอให้รักษามาตรฐานการทำงานและนำนวัตกรรมสื่อเทคโนโลยีนี้ไปขยายผลสู่ระดับเครือข่ายโรงเรียนต่อไป"
+      },
+      {
+        id: "gb_2",
+        author: "นางสาวสมใจ วิริยะสกุล",
+        position: "ศึกษานิเทศก์ชำนาญการพิเศษ",
+        institution: "สพป.สิงห์บุรี",
+        role: "ศึกษานิเทศก์ / คณะกรรมการประเมิน",
+        roleBadgeColor: "emerald",
+        rating: 5,
+        date: "2568-08-22",
+        dateFormatted: "22 ส.ค. 2568",
+        commendation: "การจัดเก็บเอกสาร ร่องรอยหลักฐาน 15 ตัวชี้วัด 3 ด้าน มีความชัดเจน เป็นระบบ เชิงประจักษ์ และคลิปวิดีโอประเด็นท้าทายสะท้อนการจัดกิจกรรมการเรียนรู้ของผู้เรียนได้อย่างยอดเยี่ยม",
+        suggestion: "สามารถนำผลงานประเด็นท้าทายนี้ไปต่อยอดเขียนเป็นรายงานผลงานวิจัยในชั้นเรียนเพื่อขอรับรางวัลนวัตกรรมระดับเขตพื้นที่ได้"
+      }
+    ];
+    data.guestbook = defaultGuestbook;
+    window.portfolioStorage.saveData(data);
+    return defaultGuestbook;
+  }
+  return data.guestbook;
+}
+
+function renderGuestbookView(data, isAdmin) {
+  const entries = getGuestbookData();
+  const totalCount = entries.length;
+  const avgRating = totalCount > 0 ? (entries.reduce((acc, cur) => acc + (Number(cur.rating) || 5), 0) / totalCount).toFixed(1) : "5.0";
+
+  return `
+    <div class="page-view space-y-6">
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="message-square-heart" class="w-7 h-7 text-pink-600"></i> สมุดลงนามเยี่ยมชมและข้อเสนอแนะ
+          </h2>
+          <p class="text-xs md:text-sm text-slate-500 mt-0.5">สำหรับคณะกรรมการประเมิน ผู้บริหาร ศึกษานิเทศก์ และผู้เข้าชม ร่วมลงนามและให้ข้อเสนอแนะเชิงพัฒนา</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="openAddGuestbookModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:from-pink-700 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer font-prompt">
+            <i data-lucide="pen-tool" class="w-4 h-4"></i>
+            <span>✍️ ร่วมลงนาม & ให้ข้อเสนอแนะ</span>
+          </button>
+          <button onclick="printGuestbookReport()" class="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer font-prompt">
+            <i data-lucide="printer" class="w-4 h-4 text-blue-600"></i>
+            <span>🖨️ พิมพ์สมุดลงนาม</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat Highlight Banners -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 bg-gradient-to-br from-pink-50 to-white rounded-2xl border border-pink-200/80 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-pink-500 text-white flex items-center justify-center font-bold text-xl shadow-md">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-500 font-sarabun font-medium">จำนวนผู้ร่วมลงนาม</span>
+            <h4 class="text-xl font-extrabold text-slate-800 font-prompt">${totalCount} ท่าน</h4>
+          </div>
+        </div>
+
+        <div class="p-4 bg-gradient-to-br from-amber-50 to-white rounded-2xl border border-amber-200/80 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500 text-navy-950 flex items-center justify-center font-bold text-xl shadow-md">
+            <i data-lucide="star" class="w-6 h-6 fill-navy-950"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-500 font-sarabun font-medium">ระดับความพึงพอใจเฉลี่ย</span>
+            <h4 class="text-xl font-extrabold text-amber-900 font-prompt">${avgRating} / 5.0 ⭐</h4>
+          </div>
+        </div>
+
+        <div class="p-4 bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-200/80 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-md">
+            <i data-lucide="award" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-500 font-sarabun font-medium">การประเมินผล วPA</span>
+            <h4 class="text-xl font-extrabold text-blue-900 font-prompt">พร้อมรับการประเมิน ✓</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guestbook Entries List -->
+      <div class="space-y-4">
+        ${entries.map((entry, index) => {
+          const stars = Number(entry.rating) || 5;
+          const starsHtml = '⭐'.repeat(stars);
+          return `
+            <div class="p-5 sm:p-6 bg-white hover:shadow-md rounded-2xl border border-slate-200/80 transition-all duration-200 space-y-4 group">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-400 text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0 font-prompt">
+                    ${entry.author.charAt(0)}
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h4 class="font-bold text-slate-900 text-sm sm:text-base font-prompt">${entry.author}</h4>
+                      <span class="px-2.5 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200 text-[11px] font-bold font-prompt">
+                        ${entry.role || 'คณะกรรมการ'}
+                      </span>
+                    </div>
+                    <p class="text-xs text-slate-500 font-sarabun mt-0.5">
+                      ${entry.position || ''} • ${entry.institution || 'โรงเรียนวัดบางปูน'}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                  <div class="text-right">
+                    <div class="text-xs text-amber-500 font-mono tracking-widest">${starsHtml}</div>
+                    <span class="text-[11px] text-slate-400 font-sarabun">${entry.dateFormatted || entry.date}</span>
+                  </div>
+                  ${isAdmin ? `
+                    <button onclick="confirmDeleteGuestbookEntry('${entry.id || index}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" title="ลบข้อความนี้">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- Commendation & Feedback -->
+              <div class="space-y-3 font-sarabun text-xs sm:text-sm text-slate-700">
+                ${entry.commendation ? `
+                  <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/70 space-y-1">
+                    <span class="font-bold text-slate-900 font-prompt flex items-center gap-1.5 text-xs text-emerald-800">
+                      <i data-lucide="thumbs-up" class="w-3.5 h-3.5 text-emerald-600"></i> จุดเด่น / ความประทับใจ:
+                    </span>
+                    <p class="text-slate-700 leading-relaxed whitespace-pre-line">${entry.commendation}</p>
+                  </div>
+                ` : ''}
+
+                ${entry.suggestion ? `
+                  <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/70 space-y-1">
+                    <span class="font-bold text-amber-900 font-prompt flex items-center gap-1.5 text-xs">
+                      <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-600"></i> ข้อเสนอแนะเชิงพัฒนา:
+                    </span>
+                    <p class="text-amber-950 leading-relaxed whitespace-pre-line">${entry.suggestion}</p>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function openAddGuestbookModal() {
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="message-square-heart" class="w-5 h-5 text-pink-600"></i> ร่วมลงนามเยี่ยมชม & ให้ข้อเสนอแนะ
+    </span>`,
+    html: `
+      <div class="space-y-3.5 text-left font-sarabun text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อ-นามสกุล: *</label>
+            <input id="gb-author" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-pink-500" placeholder="เช่น นายประเสริฐ จันทร์งาม">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ตำแหน่ง: *</label>
+            <input id="gb-position" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-pink-500" placeholder="เช่น ผู้อำนวยการโรงเรียน / ศึกษานิเทศก์">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">หน่วยงาน / โรงเรียน:</label>
+            <input id="gb-institution" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-pink-500" placeholder="เช่น โรงเรียนวัดบางปูน / สพป.สิงห์บุรี">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">บทบาท / สถานะ:</label>
+            <select id="gb-role" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-pink-500 bg-white">
+              <option value="คณะกรรมการประเมิน วPA">คณะกรรมการประเมิน วPA</option>
+              <option value="ประธานกรรมการประเมิน">ประธานกรรมการประเมิน</option>
+              <option value="ผู้บริหารสถานศึกษา">ผู้บริหารสถานศึกษา</option>
+              <option value="ศึกษานิเทศก์">ศึกษานิเทศก์</option>
+              <option value="ครูผู้ร่วมวิชาชีพ / เพื่อนครู">ครูผู้ร่วมวิชาชีพ / เพื่อนครู</option>
+              <option value="นักเรียน / ผู้ปกครอง">นักเรียน / ผู้ปกครอง</option>
+              <option value="ผู้เข้าชมทั่วไป">ผู้เข้าชมทั่วไป</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ระดับความประทับใจ / คะแนนประเมิน:</label>
+          <select id="gb-rating" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-pink-500 bg-white font-mono">
+            <option value="5">⭐⭐⭐⭐⭐ ยอดเยี่ยมมาก (5/5)</option>
+            <option value="4">⭐⭐⭐⭐ ดีมาก (4/5)</option>
+            <option value="3">⭐⭐⭐ ดี (3/5)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">จุดเด่น / ข้อความลงนามและชื่นชม: *</label>
+          <textarea id="gb-commendation" rows="3" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-pink-500" placeholder="ระบุข้อความลงนาม ความประทับใจ หรือจุดเด่นของผลงาน"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ข้อเสนอแนะเพื่อการพัฒนา (ถ้ามี):</label>
+          <textarea id="gb-suggestion" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-pink-500" placeholder="ระบุข้อเสนอแนะเชิงพัฒนาสำหรับการปฏิบัติงานต่อไป"></textarea>
+        </div>
+      </div>
+    `,
+    width: "560px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกการลงนาม",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#db2777",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+    },
+    preConfirm: () => {
+      const author = document.getElementById("gb-author").value.trim();
+      const position = document.getElementById("gb-position").value.trim();
+      const institution = document.getElementById("gb-institution").value.trim();
+      const role = document.getElementById("gb-role").value;
+      const rating = Number(document.getElementById("gb-rating").value) || 5;
+      const commendation = document.getElementById("gb-commendation").value.trim();
+      const suggestion = document.getElementById("gb-suggestion").value.trim();
+
+      if (!author || !commendation) {
+        Swal.showValidationMessage("กรุณากรอกชื่อ-นามสกุล และข้อความลงนามชื่นชมให้ครบถ้วนครับ");
+        return false;
+      }
+
+      const today = new Date();
+      const monthsThai = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      const thaiYear = today.getFullYear() + 543;
+      const formattedDate = `${today.getDate()} ${monthsThai[today.getMonth()]} ${thaiYear}`;
+
+      const newEntry = {
+        id: "gb_" + Date.now(),
+        author,
+        position: position || "ผู้เยี่ยมชม",
+        institution: institution || "โรงเรียนวัดบางปูน",
+        role,
+        rating,
+        date: today.toISOString().split("T")[0],
+        dateFormatted: formattedDate,
+        commendation,
+        suggestion
+      };
+
+      const data = window.portfolioStorage.getData();
+      if (!data.guestbook) data.guestbook = [];
+      data.guestbook.unshift(newEntry);
+      window.portfolioStorage.saveData(data);
+
+      return true;
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      Swal.fire({
+        icon: "success",
+        title: "บันทึกการลงนามเรียบร้อย",
+        text: "ขอขอบพระคุณสำหรับข้อคิดเห็นและข้อเสนอแนะอันทรงคุณค่าครับ",
+        timer: 2000,
+        showConfirmButton: false
+      });
+      switchView("guestbook");
+    }
+  });
+}
+
+function confirmDeleteGuestbookEntry(idOrIdx) {
+  Swal.fire({
+    title: "ยืนยันการลบรายการลงนาม?",
+    text: "เมื่อลบแล้วจะไม่สามารถกู้คืนข้อความนี้ได้",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบข้อความ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b"
+  }).then((res) => {
+    if (res.isConfirmed) {
+      const data = window.portfolioStorage.getData();
+      data.guestbook = (data.guestbook || []).filter((item, idx) => item.id !== idOrIdx && String(idx) !== String(idOrIdx));
+      window.portfolioStorage.saveData(data);
+      Swal.fire({
+        icon: "success",
+        title: "ลบสำเร็จ",
+        timer: 1500,
+        showConfirmButton: false
+      });
+      switchView("guestbook");
+    }
+  });
+}
+
+function printGuestbookReport() {
+  const data = window.portfolioStorage.getData();
+  const entries = getGuestbookData();
+  const profile = data.profile || {};
+  const teacherName = profile.name || "ครูซอส";
+  const schoolName = profile.school || "โรงเรียนวัดบางปูน";
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return;
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="th">
+    <head>
+      <meta charset="UTF-8">
+      <title>สมุดลงนามเยี่ยมชมและข้อเสนอแนะ - \${teacherName}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@600;700&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 12mm 15mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sarabun', sans-serif; }
+        body { padding: 10px; font-size: 13px; line-height: 1.45; }
+        h1 { font-family: 'Prompt', sans-serif; font-size: 18px; text-align: center; color: #0f2c59; margin-bottom: 4px; }
+        .sub { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 14px; }
+        .card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; page-break-inside: avoid; }
+        .card-head { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 6px; font-size: 12px; }
+        .author { font-weight: 700; color: #0f2c59; }
+        .role { color: #db2777; font-weight: 600; }
+        .date { color: #64748b; }
+        .text-box { margin-top: 4px; font-size: 12px; }
+        .label { font-weight: 700; color: #1e3a8a; }
+      </style>
+    </head>
+    <body>
+      <h1>สมุดลงนามเยี่ยมชมและข้อเสนอแนะการประเมิน วPA</h1>
+      <div class="sub">แฟ้มสะสมผลงานและระบบประเมิน \${teacherName} (\${schoolName})</div>
+      \${entries.map((e, idx) => \`
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <span class="author">\${idx + 1}. \${e.author}</span> (\${e.position} • \${e.institution})
+              <span class="role">[\${e.role}]</span>
+            </div>
+            <div class="date">\${e.dateFormatted || e.date} (\${'⭐'.repeat(e.rating || 5)})</div>
+          </div>
+          <div class="text-box">
+            <span class="label">จุดเด่น/ความประทับใจ:</span> \${e.commendation}
+          </div>
+          \${e.suggestion ? \`
+            <div class="text-box" style="margin-top: 4px;">
+              <span class="label" style="color: #b45309;">ข้อเสนอแนะ:</span> \${e.suggestion}
+            </div>
+          \` : ''}
+        </div>
+      \`).join('')}
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 400);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+window.renderGuestbookView = renderGuestbookView;
+window.openAddGuestbookModal = openAddGuestbookModal;
+window.confirmDeleteGuestbookEntry = confirmDeleteGuestbookEntry;
+window.printGuestbookReport = printGuestbookReport;
+
+// ==========================================
+// Function 5: Add & Edit Showcase Item Modals
+// ==========================================
+function openAddShowcaseItemModal() {
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="sparkles" class="w-5 h-5 text-rose-600"></i> เพิ่มสื่อนวัตกรรม / ผลงานนักเรียนใหม่
+    </span>`,
+    html: `
+      <div class="space-y-3.5 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อสื่อนวัตกรรม / ชิ้นงานผลงานนักเรียน: *</label>
+          <input id="sc-title" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น บอร์ดเกมการเรียนรู้ หรือ โครงงานแอนิเมชัน Scratch">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">หมวดหมู่ผลงาน: *</label>
+            <select id="sc-category" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs bg-white">
+              <option value="💡 สื่อนวัตกรรมการสอน">💡 สื่อนวัตกรรมการสอน</option>
+              <option value="🏆 ผลงานนักเรียนเชิงประจักษ์">🏆 ผลงานนักเรียนเชิงประจักษ์</option>
+              <option value="📚 กิจกรรมการเรียนรู้ Active Learning">📚 กิจกรรมการเรียนรู้ Active Learning</option>
+              <option value="🤝 กิจกรรมโรงเรียน & บริการสังคม">🤝 กิจกรรมโรงเรียน & บริการสังคม</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ระดับชั้น / กลุ่มเป้าหมาย:</label>
+            <input id="sc-grade" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น ชั้น ป.๔ - ป.๖ หรือ มัธยมศึกษา">
+          </div>
+        </div>
+
+        <!-- Cover Photo with Compression -->
+        <div class="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-200 space-y-2">
+          <label class="block font-bold text-rose-950 font-prompt text-xs flex items-center gap-1.5">
+            <i data-lucide="image" class="w-4 h-4 text-rose-600"></i> ภาพหน้าปก / ภาพผลงานหลัก (เลือกไฟล์หรือใส่ URL):
+          </label>
+          <input type="file" id="sc-cover-file" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-700 cursor-pointer">
+          <input id="sc-cover-url" class="w-full p-2 text-[11px] rounded-lg border border-slate-300 font-mono bg-white" placeholder="https://..." value="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80">
+          <div class="flex items-center gap-3 pt-1">
+            <span class="text-[11px] text-slate-500 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="sc-preview-img" src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
+          </div>
+        </div>
+
+        <!-- Multi-Images Upload -->
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <label class="block font-bold text-slate-800 font-prompt text-xs flex items-center gap-1.5">
+            <i data-lucide="images" class="w-4 h-4 text-blue-600"></i> เพิ่มรูปภาพประกอบเพิ่มเติม (เลือกพร้อมกันหลายรูปได้):
+          </label>
+          <input type="file" id="sc-multi-files" accept="image/*" multiple class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+          <div id="sc-multi-status" class="text-[11px] text-slate-500 font-prompt">ยังไม่ได้เลือกรูปเพิ่มเติม</div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">คำบรรยายรายละเอียดผลงาน / วิธีการใช้งาน / ผลลัพธ์ที่ได้:</label>
+          <textarea id="sc-desc" rows="3" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs leading-relaxed" placeholder="ระบุรายละเอียดนวัตกรรม หรือสิ่งที่นักเรียนได้เรียนรู้..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อนักเรียน / ผู้จัดทำ (กรณีผลงานนักเรียน):</label>
+            <input id="sc-student" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" placeholder="เช่น ด.ช.สมชาย และกลุ่มนักเรียน ป.๖">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ปีการศึกษา / วันที่:</label>
+            <input id="sc-date" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="2568">
+          </div>
+        </div>
+
+        <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-200 space-y-2">
+          <label class="block font-bold text-amber-950 font-prompt text-xs flex items-center gap-1.5">
+            <i data-lucide="link-2" class="w-4 h-4 text-amber-600"></i> ลิงก์สื่อนวัตกรรมออนไลน์ (Canva / Scratch / Wordwall / Google Drive / YouTube):
+          </label>
+          <input id="sc-link-url" type="text" class="w-full p-2 rounded-lg border border-slate-300 font-mono text-xs bg-white" placeholder="https://wordwall.net/play/... หรือ https://scratch.mit.edu/projects/...">
+          <input id="sc-link-label" type="text" class="w-full p-2 rounded-lg border border-slate-300 font-prompt text-xs bg-white" placeholder="ข้อความปุ่ม เช่น 'เปิดสื่อ Wordwall' หรือ 'เล่นเกม Scratch'">
+        </div>
+      </div>
+    `,
+    width: "600px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกสื่อนวัตกรรม",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const coverFileInput = document.getElementById("sc-cover-file");
+      const coverUrlInput = document.getElementById("sc-cover-url");
+      const previewImg = document.getElementById("sc-preview-img");
+      const multiFileInput = document.getElementById("sc-multi-files");
+      const multiStatus = document.getElementById("sc-multi-status");
+
+      window._tempShowcaseImages = [];
+
+      if (coverFileInput) {
+        coverFileInput.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const compressed = await window.compressImage(file, 1600, 0.85);
+          if (coverUrlInput) coverUrlInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
+        });
+      }
+
+      if (multiFileInput) {
+        multiFileInput.addEventListener("change", async (e) => {
+          const files = Array.from(e.target.files || []);
+          if (files.length === 0) return;
+          multiStatus.innerHTML = `<span class="text-amber-600 font-bold">กำลังประมวลผล ${files.length} รูป...</span>`;
+          const compressedList = await Promise.all(files.map(f => window.compressImage(f, 1600, 0.85)));
+          window._tempShowcaseImages = compressedList;
+          multiStatus.innerHTML = `<span class="text-emerald-700 font-bold">✓ บีบอัดและพร้อมบันทึก ${compressedList.length} รูปเรียบร้อย</span>`;
+        });
+      }
+    },
+    preConfirm: () => {
+      const title = document.getElementById("sc-title").value.trim();
+      const category = document.getElementById("sc-category").value;
+      const gradeLevel = document.getElementById("sc-grade").value.trim();
+      const coverImage = document.getElementById("sc-cover-url").value.trim();
+      const description = document.getElementById("sc-desc").value.trim();
+      const studentName = document.getElementById("sc-student").value.trim();
+      const date = document.getElementById("sc-date").value.trim() || "2568";
+      const interactiveUrl = document.getElementById("sc-link-url").value.trim();
+      const interactiveLabel = document.getElementById("sc-link-label").value.trim();
+
+      if (!title) {
+        Swal.showValidationMessage("กรุณากรอกชื่อสื่อนวัตกรรมหรือผลงาน");
+        return false;
+      }
+
+      const extraImages = window._tempShowcaseImages || [];
+      const allImages = [coverImage, ...extraImages].filter(Boolean);
+
+      const newItem = {
+        id: "gal_" + Date.now(),
+        title,
+        category,
+        gradeLevel,
+        coverImage: coverImage || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+        images: allImages.length > 0 ? allImages : [coverImage],
+        description,
+        studentName,
+        date,
+        interactiveUrl,
+        interactiveLabel: interactiveLabel || (interactiveUrl ? "เปิดสื่อนวัตกรรม" : ""),
+        isVisible: true
+      };
+
+      const data = window.portfolioStorage.getData();
+      if (!data.gallery) data.gallery = [];
+      data.gallery.unshift(newItem);
+      window.portfolioStorage.saveData(data);
+
+      return true;
+    }
+  }).then((res) => {
+    if (res.isConfirmed) {
+      Swal.fire({
+        icon: "success",
+        title: "เพิ่มสื่อนวัตกรรมเรียบร้อย",
+        timer: 1500,
+        showConfirmButton: false
+      });
+      switchView("gallery");
+    }
+  });
+}
+
+function openEditShowcaseItemModal(id) {
+  const data = window.portfolioStorage.getData();
+  const item = (data.gallery || []).find(g => String(g.id) === String(id));
+  if (!item) return;
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="edit" class="w-5 h-5 text-amber-600"></i> แก้ไขสื่อนวัตกรรม / ผลงานนักเรียน
+    </span>`,
+    html: `
+      <div class="space-y-3.5 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อสื่อนวัตกรรม / ชิ้นงานผลงานนักเรียน: *</label>
+          <input id="sc-edit-title" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="${item.title || ''}">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">หมวดหมู่ผลงาน: *</label>
+            <select id="sc-edit-category" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs bg-white">
+              <option value="💡 สื่อนวัตกรรมการสอน" ${item.category?.includes('นวัตกรรม') ? 'selected' : ''}>💡 สื่อนวัตกรรมการสอน</option>
+              <option value="🏆 ผลงานนักเรียนเชิงประจักษ์" ${item.category?.includes('นักเรียน') ? 'selected' : ''}>🏆 ผลงานนักเรียนเชิงประจักษ์</option>
+              <option value="📚 กิจกรรมการเรียนรู้ Active Learning" ${item.category?.includes('Active') ? 'selected' : ''}>📚 กิจกรรมการเรียนรู้ Active Learning</option>
+              <option value="🤝 กิจกรรมโรงเรียน & บริการสังคม" ${item.category?.includes('สังคม') ? 'selected' : ''}>🤝 กิจกรรมโรงเรียน & บริการสังคม</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ระดับชั้น / กลุ่มเป้าหมาย:</label>
+            <input id="sc-edit-grade" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="${item.gradeLevel || ''}">
+          </div>
+        </div>
+
+        <!-- Cover Photo -->
+        <div class="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200 space-y-2">
+          <label class="block font-bold text-amber-950 font-prompt text-xs flex items-center gap-1.5">
+            <i data-lucide="image" class="w-4 h-4 text-amber-600"></i> เปลี่ยนภาพหน้าปก (เลือกไฟล์จากเครื่อง):
+          </label>
+          <input type="file" id="sc-edit-file" accept="image/*" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer">
+          <input id="sc-edit-cover-url" class="w-full p-2 text-[11px] rounded-lg border border-slate-300 font-mono bg-white" value="${item.coverImage || ''}">
+          <div class="flex items-center gap-3 pt-1">
+            <span class="text-[11px] text-slate-500 font-prompt">พรีวิวรูปภาพ:</span>
+            <img id="sc-edit-preview-img" src="${item.coverImage || ''}" class="w-20 h-14 rounded-lg object-cover border border-slate-300 shadow-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 font-prompt">คำบรรยายรายละเอียดผลงาน / วิธีการใช้งาน:</label>
+          <textarea id="sc-edit-desc" rows="3" class="w-full p-2.5 rounded-xl border border-slate-300 font-sarabun text-xs leading-relaxed">${item.description || ''}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ชื่อนักเรียน / ผู้จัดทำ (ถ้ามี):</label>
+            <input id="sc-edit-student" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="${item.studentName || ''}">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 font-prompt">ปีการศึกษา / วันที่:</label>
+            <input id="sc-edit-date" type="text" class="w-full p-2.5 rounded-xl border border-slate-300 font-prompt text-xs" value="${item.date || '2568'}">
+          </div>
+        </div>
+
+        <div class="p-3 bg-blue-50/70 rounded-xl border border-blue-200 space-y-2">
+          <label class="block font-bold text-blue-950 font-prompt text-xs flex items-center gap-1.5">
+            <i data-lucide="link-2" class="w-4 h-4 text-blue-600"></i> ลิงก์สื่อนวัตกรรมออนไลน์:
+          </label>
+          <input id="sc-edit-link-url" type="text" class="w-full p-2 rounded-lg border border-slate-300 font-mono text-xs bg-white" value="${item.interactiveUrl || ''}">
+          <input id="sc-edit-link-label" type="text" class="w-full p-2 rounded-lg border border-slate-300 font-prompt text-xs bg-white" value="${item.interactiveLabel || ''}">
+        </div>
+      </div>
+    `,
+    width: "600px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#d97706",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const fileInput = document.getElementById("sc-edit-file");
+      const coverUrlInput = document.getElementById("sc-edit-cover-url");
+      const previewImg = document.getElementById("sc-edit-preview-img");
+
+      if (fileInput) {
+        fileInput.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const compressed = await window.compressImage(file, 1600, 0.85);
+          if (coverUrlInput) coverUrlInput.value = compressed;
+          if (previewImg) previewImg.src = compressed;
+        });
+      }
+    },
+    preConfirm: () => {
+      item.title = document.getElementById("sc-edit-title").value.trim();
+      item.category = document.getElementById("sc-edit-category").value;
+      item.gradeLevel = document.getElementById("sc-edit-grade").value.trim();
+      item.coverImage = document.getElementById("sc-edit-cover-url").value.trim();
+      item.description = document.getElementById("sc-edit-desc").value.trim();
+      item.studentName = document.getElementById("sc-edit-student").value.trim();
+      item.date = document.getElementById("sc-edit-date").value.trim();
+      item.interactiveUrl = document.getElementById("sc-edit-link-url").value.trim();
+      item.interactiveLabel = document.getElementById("sc-edit-link-label").value.trim();
+
+      if (!item.title) {
+        Swal.showValidationMessage("กรุณาระบุชื่อสื่อนวัตกรรม");
+        return false;
+      }
+
+      window.portfolioStorage.saveData(data);
+      return true;
+    }
+  }).then((res) => {
+    if (res.isConfirmed) {
+      Swal.fire({
+        icon: "success",
+        title: "แก้ไขเรียบร้อย",
+        timer: 1500,
+        showConfirmButton: false
+      });
+      switchView("gallery");
+    }
+  });
+}
+
+window.openAddShowcaseItemModal = openAddShowcaseItemModal;
+window.openEditShowcaseItemModal = openEditShowcaseItemModal;
+
+
+
+
+
 

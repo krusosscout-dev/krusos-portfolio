@@ -154,6 +154,37 @@ function compressBase64String(base64, maxWidth = 1280, quality = 0.82) {
   });
 }
 
+// Helper to measure richness of portfolio data
+function calculateDataScore(data) {
+  if (!data || typeof data !== "object") return 0;
+  let score = 0;
+  if (data.paRecords && Array.isArray(data.paRecords)) {
+    data.paRecords.forEach(rec => {
+      if (rec.indicators && Array.isArray(rec.indicators)) {
+        rec.indicators.forEach(ind => {
+          if (ind.items && Array.isArray(ind.items)) {
+            ind.items.forEach(it => {
+              if (it.trainings && Array.isArray(it.trainings)) {
+                score += it.trainings.length * 10;
+              }
+            });
+          }
+        });
+      }
+      if (rec.challengeImages && Array.isArray(rec.challengeImages)) {
+        score += rec.challengeImages.length * 5;
+      }
+    });
+  }
+  if (data.heroSlides && Array.isArray(data.heroSlides)) {
+    score += data.heroSlides.length * 3;
+  }
+  if (data.gallery && Array.isArray(data.gallery)) {
+    score += data.gallery.length * 2;
+  }
+  return score;
+}
+
 // ==========================================
 // PortfolioStorage Class Implementation
 // ==========================================
@@ -284,6 +315,23 @@ class PortfolioStorage {
             // Avoid looping if we just saved
             if (this.isSavingToCloud) return;
 
+            const localScore = calculateDataScore(this.memoryData);
+            const cloudScore = calculateDataScore(cloudData);
+
+            // If local data has custom content and cloud is empty or default, push local data to cloud!
+            if (localScore > cloudScore && localScore > 0) {
+              console.log("Local data is richer than cloud data. Pushing local to cloud...", localScore, cloudScore);
+              this.saveToCloud(this.memoryData);
+              return;
+            }
+
+            // Save safety snapshot of previous local state before updating
+            if (this.memoryData) {
+              try {
+                localStorage.setItem("kru_portfolio_safety_snapshot", JSON.stringify(this.memoryData));
+              } catch(e) {}
+            }
+
             this.isUpdatingFromCloud = true;
             this.memoryData = this.normalizeData(cloudData);
             
@@ -309,6 +357,20 @@ class PortfolioStorage {
     } catch (err) {
       console.warn("Error setting up Firestore listener:", err);
     }
+  }
+
+  restoreFromSafetySnapshot() {
+    try {
+      const snap = localStorage.getItem("kru_portfolio_safety_snapshot");
+      if (snap) {
+        const parsed = JSON.parse(snap);
+        if (parsed && parsed.profile) {
+          this.saveData(parsed);
+          return true;
+        }
+      }
+    } catch(e) {}
+    return false;
   }
 
   saveToCloud(data) {
