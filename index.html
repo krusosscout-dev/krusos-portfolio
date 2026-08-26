@@ -52,6 +52,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 
+  <!-- Firebase SDK (For Real-Time Cloud Database Synchronization across all devices) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
   <style>
@@ -492,6 +496,9 @@ body {
             <i data-lucide="printer" class="w-3.5 h-3.5 text-blue-300"></i>
             <span class="hidden md:inline">พิมพ์</span>
           </button>
+
+          <!-- Real-Time Cloud Sync Badge -->
+          <div id="cloud-sync-badge-container"></div>
 
           <!-- Admin Mode Indicator Badge (Only appears when Admin is active) -->
           <div id="user-role-badge"></div>

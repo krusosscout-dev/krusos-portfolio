@@ -9,9 +9,22 @@
 
 const STORAGE_KEY = "kru_teacher_portfolio_data_v1";
 const ADMIN_SESSION_KEY = "kru_portfolio_admin_auth";
+const FIREBASE_CONFIG_KEY = "kru_portfolio_firebase_config_v1";
 const IDB_NAME = "kru_teacher_portfolio_db";
 const IDB_VERSION = 1;
 const IDB_STORE = "portfolio_store";
+
+// ==========================================
+// Embedded Firebase Cloud Configuration
+// ==========================================
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA5sTG8krgIvQn7a3C4mFh9GoOGNJp_t3g",
+  authDomain: "krusos-portfolio.firebaseapp.com",
+  projectId: "krusos-portfolio",
+  storageBucket: "krusos-portfolio.firebasestorage.app",
+  messagingSenderId: "88024907591",
+  appId: "1:88024907591:web:aa9c8cca7b06b6bd671662"
+};
 
 // ==========================================
 // IndexedDB Engine (Unlimited Storage Quota)
@@ -147,6 +160,11 @@ function compressBase64String(base64, maxWidth = 1280, quality = 0.82) {
 class PortfolioStorage {
   constructor() {
     this.memoryData = null;
+    this.db = null;
+    this.isCloudConnected = false;
+    this.unsubscribeCloudListener = null;
+    this.isUpdatingFromCloud = false;
+    this.isSavingToCloud = false;
     this.init();
   }
 
@@ -171,6 +189,143 @@ class PortfolioStorage {
         window.dispatchEvent(new CustomEvent("portfolioDataChanged", { detail: this.memoryData }));
       }
     }).catch(err => console.warn("IDB sync warning:", err));
+
+    // 3. Background Real-time Cloud Engine Initialization
+    setTimeout(() => {
+      this.initFirebaseEngine();
+    }, 100);
+  }
+
+  // ==========================================
+  // Firebase Real-Time Cloud Sync Methods
+  // ==========================================
+  initFirebaseEngine() {
+    let config = null;
+    try {
+      const stored = localStorage.getItem(FIREBASE_CONFIG_KEY);
+      if (stored) config = JSON.parse(stored);
+    } catch(e) {}
+
+    if (!config && window.FIREBASE_CONFIG) {
+      config = window.FIREBASE_CONFIG;
+    }
+    if (!config && this.memoryData?.settings?.firebaseConfig) {
+      config = this.memoryData.settings.firebaseConfig;
+    }
+
+    if (config && config.apiKey && config.projectId) {
+      this.connectFirebase(config);
+    }
+  }
+
+  connectFirebase(config) {
+    if (typeof firebase === "undefined" || !firebase.initializeApp) {
+      console.warn("Firebase SDK not loaded");
+      return false;
+    }
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config);
+      }
+      this.db = firebase.firestore();
+      this.isCloudConnected = true;
+      this.saveFirebaseConfig(config);
+
+      // Start Realtime Listener
+      this.listenToCloud();
+
+      // Broadcast Cloud Connected Event
+      window.dispatchEvent(new CustomEvent("cloudStatusChanged", { detail: { isConnected: true } }));
+      return true;
+    } catch (err) {
+      console.error("Firebase connection error:", err);
+      this.isCloudConnected = false;
+      window.dispatchEvent(new CustomEvent("cloudStatusChanged", { detail: { isConnected: false, error: err.message } }));
+      return false;
+    }
+  }
+
+  saveFirebaseConfig(config) {
+    try {
+      localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
+    } catch (e) {}
+  }
+
+  getFirebaseConfig() {
+    try {
+      const stored = localStorage.getItem(FIREBASE_CONFIG_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return window.FIREBASE_CONFIG || this.memoryData?.settings?.firebaseConfig || null;
+  }
+
+  disconnectFirebase() {
+    if (this.unsubscribeCloudListener) {
+      this.unsubscribeCloudListener();
+      this.unsubscribeCloudListener = null;
+    }
+    this.isCloudConnected = false;
+    this.db = null;
+    localStorage.removeItem(FIREBASE_CONFIG_KEY);
+    window.dispatchEvent(new CustomEvent("cloudStatusChanged", { detail: { isConnected: false } }));
+  }
+
+  listenToCloud() {
+    if (!this.db || !this.isCloudConnected) return;
+    if (this.unsubscribeCloudListener) {
+      this.unsubscribeCloudListener();
+    }
+
+    try {
+      this.unsubscribeCloudListener = this.db.collection("krusos_portfolios").doc("main_portfolio").onSnapshot((docSnapshot) => {
+        if (docSnapshot.exists) {
+          const cloudData = docSnapshot.data();
+          if (cloudData && cloudData.profile) {
+            // Avoid looping if we just saved
+            if (this.isSavingToCloud) return;
+
+            this.isUpdatingFromCloud = true;
+            this.memoryData = this.normalizeData(cloudData);
+            
+            // Update LocalStorage & IndexedDB as fast cache
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(this.memoryData));
+            } catch(e) {}
+            saveToIDB(STORAGE_KEY, this.memoryData).catch(() => {});
+
+            // Broadcast UI Update
+            window.dispatchEvent(new CustomEvent("portfolioDataChanged", { detail: this.memoryData, source: "cloud" }));
+            setTimeout(() => { this.isUpdatingFromCloud = false; }, 300);
+          }
+        } else {
+          // Document doesn't exist yet on cloud, upload current data as base
+          if (this.memoryData) {
+            this.saveToCloud(this.memoryData);
+          }
+        }
+      }, (error) => {
+        console.warn("Firestore Realtime listener error:", error);
+      });
+    } catch (err) {
+      console.warn("Error setting up Firestore listener:", err);
+    }
+  }
+
+  saveToCloud(data) {
+    if (!this.db || !this.isCloudConnected || this.isUpdatingFromCloud) return;
+    this.isSavingToCloud = true;
+    
+    // Firestore set with merge
+    this.db.collection("krusos_portfolios").doc("main_portfolio").set(data, { merge: true })
+      .then(() => {
+        setTimeout(() => { this.isSavingToCloud = false; }, 500);
+        window.dispatchEvent(new CustomEvent("cloudSyncSuccess", { detail: { time: new Date() } }));
+      })
+      .catch((err) => {
+        this.isSavingToCloud = false;
+        console.warn("Firestore save error:", err);
+        window.dispatchEvent(new CustomEvent("cloudSyncError", { detail: { error: err.message } }));
+      });
   }
 
   normalizeData(raw) {
@@ -281,7 +436,12 @@ class PortfolioStorage {
     // 2. Always persist to IndexedDB (Gigabytes quota)
     saveToIDB(STORAGE_KEY, this.memoryData).catch(err => console.warn("IDB save error:", err));
 
-    // 3. Dispatch reactive change event
+    // 3. Real-Time Cloud Push (if Firebase Cloud is configured)
+    if (this.isCloudConnected && this.db && !this.isUpdatingFromCloud) {
+      this.saveToCloud(this.memoryData);
+    }
+
+    // 4. Dispatch reactive change event
     window.dispatchEvent(new CustomEvent("portfolioDataChanged", { detail: this.memoryData }));
     return true;
   }
@@ -409,6 +569,18 @@ class PortfolioStorage {
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `kru_portfolio_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  }
+
+  exportDataJS() {
+    const data = this.getData();
+    const jsContent = `/**\n * KRUSOS E-Portfolio Database (Auto-Generated Data File)\n * Updated at: ${new Date().toLocaleString('th-TH')}\n */\nconst DEFAULT_PORTFOLIO_DATA = ${JSON.stringify(data, null, 2)};\n`;
+    const blob = new Blob([jsContent], { type: "text/javascript;charset=utf-8" });
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", URL.createObjectURL(blob));
+    downloadAnchor.setAttribute("download", "data.js");
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

@@ -118,6 +118,19 @@ function setupEventListeners() {
     setupAdminStatus();
     renderCurrentView();
   });
+
+  // Listen to Cloud Real-time Events
+  window.addEventListener("cloudStatusChanged", () => {
+    updateCloudStatusBadge();
+  });
+
+  window.addEventListener("cloudSyncSuccess", () => {
+    const badge = document.getElementById("cloud-sync-badge-container");
+    if (badge) {
+      badge.classList.add("scale-105");
+      setTimeout(() => badge.classList.remove("scale-105"), 800);
+    }
+  });
 }
 
 // ==========================================
@@ -459,8 +472,38 @@ function setupAdminStatus() {
       adminBtn.className = "w-full flex items-center justify-center px-4 py-2.5 text-xs font-bold rounded-xl text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-sm transition-all";
     }
   }
+
+  updateCloudStatusBadge();
   initIcons();
 }
+
+function updateCloudStatusBadge() {
+  const container = document.getElementById("cloud-sync-badge-container");
+  if (!container) return;
+  const isConnected = window.portfolioStorage.isCloudConnected;
+  const isAdmin = window.portfolioStorage.isAdmin();
+
+  if (isConnected) {
+    container.innerHTML = `
+      <button onclick="openCloudConfigModal()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-sm cursor-pointer hover:bg-emerald-500/30 transition-all" title="ระบบเชื่อมต่อฐานข้อมูลคลาวด์เรียลไทม์ (Live Auto-Sync)">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span class="hidden md:inline font-prompt">Cloud Real-Time</span>
+      </button>
+    `;
+  } else if (isAdmin) {
+    container.innerHTML = `
+      <button onclick="openCloudConfigModal()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-amber-300 hover:bg-amber-500/20 border border-amber-400/30 shadow-sm cursor-pointer transition-all" title="คลิกเพื่อเชื่อมต่อ Firebase Cloud Real-Time">
+        <i data-lucide="cloud-off" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span class="hidden md:inline font-prompt">เชื่อมต่อ Cloud</span>
+      </button>
+    `;
+  } else {
+    container.innerHTML = "";
+  }
+  initIcons();
+}
+window.updateCloudStatusBadge = updateCloudStatusBadge;
 
 // Copy Shareable Link Helper
 function copyShareLink() {
@@ -2905,6 +2948,11 @@ function openMobileMoreMenu() {
             <span>${isAdmin ? 'ออกจากโหมดผู้ดูแลระบบ (Admin)' : 'เข้าสู่ระบบผู้ดูแลระบบ (Admin)'}</span>
           </button>
           
+          <button onclick="Swal.close(); openCloudConfigModal()" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 text-emerald-950 border border-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs">
+            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>☁️ ตั้งค่าเชื่อมต่อ Cloud Database (Real-Time)</span>
+          </button>
+
           <button onclick="Swal.close(); openBackupRestoreModal()" class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer">
             <i data-lucide="database" class="w-3.5 h-3.5 text-blue-600"></i>
             <span>สำรองและกู้คืนข้อมูล (Backup/Restore)</span>
@@ -6452,47 +6500,59 @@ function openImageViewer(imageUrl, title = "ภาพกิจกรรม") {
 // ==========================================
 function openBackupRestoreModal() {
   Swal.fire({
-    title: "ศูนย์ดาวน์โหลด & สำรองข้อมูลทั้งหมด",
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="database" class="w-5 h-5 text-amber-500"></i> ศูนย์ดาวน์โหลดข้อมูล & อัปเดตขึ้นออนไลน์
+    </span>`,
     html: `
       <div class="space-y-4 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
-        <div class="p-3 bg-blue-50 rounded-2xl border border-blue-200 text-blue-900 leading-relaxed">
-          <p class="font-bold flex items-center gap-1.5 text-xs text-blue-800 mb-1">
-            <i data-lucide="info" class="w-4 h-4 text-blue-600"></i> เกี่ยวกับการสำรองและย้ายระบบ:
+        
+        <!-- Key Solution Banner for Cross-Browser / Online Sync -->
+        <div class="p-4 bg-gradient-to-r from-amber-50 via-amber-100/70 to-orange-50 rounded-2xl border-2 border-amber-300 text-amber-950 space-y-2.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs font-prompt flex items-center gap-1.5 text-amber-900">
+              <i data-lucide="globe-2" class="w-4 h-4 text-amber-700"></i> 1. วิธีทำให้ข้อมูลอัปเดตเมื่อส่งลิงก์ให้ผู้อื่น / เปิดเครื่องอื่น (สำคัญที่สุด ⭐)
+            </span>
+            <span class="text-[10px] text-amber-900 font-bold bg-amber-200 px-2 py-0.5 rounded-md">อัปเดตออนไลน์</span>
+          </div>
+          <p class="text-[11px] text-slate-700 leading-relaxed font-sarabun">
+            เมื่อคุณครูกรอกข้อมูล เพิ่มรูป หรือแก้ไขผลงานในเครื่องนี้เสร็จแล้ว ให้กดปุ่มด้านล่างเพื่อ <strong>ดาวน์โหลดไฟล์ <code>data.js</code></strong> แล้วนำไปวางในโฟลเดอร์เว็บ จากนั้นอัปโหลดขึ้น <strong>GitHub / Vercel</strong> จะทำให้ทุกคนที่เปิดลิงก์เห็นข้อมูลอัปเดตล่าสุดตรงกันทุกเครื่อง 100% ครับ!
           </p>
-          <span>ท่านสามารถดาวน์โหลดไฟล์ข้อมูลทั้งหมด (ทั้งประวัติ, แผนการสอน, รูปภาพ, ข้อมูล วPA 15 ตัวชี้วัด, ประเด็นท้าทาย, และลิงก์เอกสาร) เก็บไว้ในเครื่องคอมพิวเตอร์ และนำไปเปิดใช้งานบน <strong>Vercel (vercel.app)</strong> หรือเครื่องอื่นได้ทันที 100%</span>
+          <button onclick="handleExportDataJS()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-bold font-prompt text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>📥 ดาวน์โหลดไฟล์ data.js อัปเดตล่าสุด (สำหรับอัปขึ้น GitHub)</span>
+          </button>
         </div>
 
         <div class="space-y-3">
-          <!-- Export Button -->
-          <div class="p-4 bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-2xl border border-amber-200 space-y-2">
+          <!-- Export JSON Backup -->
+          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
             <div class="flex items-center justify-between">
               <span class="font-bold text-slate-800 text-xs font-prompt flex items-center gap-1.5">
-                <i data-lucide="download-cloud" class="w-4 h-4 text-amber-600"></i> 1. ดาวน์โหลดข้อมูลทั้งหมด (Export JSON)
+                <i data-lucide="download-cloud" class="w-4 h-4 text-blue-600"></i> 2. ดาวน์โหลดไฟล์สำรองข้อมูล (JSON Backup)
               </span>
-              <span class="text-[10px] text-amber-800 font-semibold bg-amber-200/70 px-2 py-0.5 rounded-md">แนะนำ</span>
             </div>
-            <p class="text-[11px] text-slate-600">บันทึกข้อมูลทุกอย่างในระบบเป็นไฟล์สำรอง .json เก็บไว้ในเครื่อง</p>
-            <button onclick="handleExportJSON()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer">
-              <i data-lucide="download" class="w-4 h-4"></i>
+            <p class="text-[11px] text-slate-600">บันทึกข้อมูลทุกอย่างเป็นไฟล์สำรอง .json เก็บไว้ในเครื่องเพื่อนำเข้าในภายหลัง</p>
+            <button onclick="handleExportJSON()" class="w-full py-2 px-4 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold font-prompt text-xs flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer">
+              <i data-lucide="file-json" class="w-4 h-4 text-blue-600"></i>
               <span>ดาวน์โหลดไฟล์สำรองข้อมูล (JSON Backup)</span>
             </button>
           </div>
           
-          <!-- Import Section -->
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+          <!-- Import JSON Section -->
+          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
             <span class="font-bold text-slate-800 text-xs font-prompt flex items-center gap-1.5">
-              <i data-lucide="upload-cloud" class="w-4 h-4 text-blue-600"></i> 2. นำเข้าข้อมูลที่เคยบันทึกไว้ (Import JSON)
+              <i data-lucide="upload-cloud" class="w-4 h-4 text-indigo-600"></i> 3. นำเข้าไฟล์สำรองข้อมูล (Import JSON)
             </span>
-            <p class="text-[11px] text-slate-600">เลือกไฟล์ .json ที่เคยสำรองไว้ เพื่อดึงข้อมูลกลับมาแสดงผลทันที</p>
-            <input type="file" id="import-json-file" accept=".json" class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-800 hover:file:bg-blue-200 cursor-pointer">
-            <button onclick="handleImportJSON()" class="w-full py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer">
+            <p class="text-[11px] text-slate-600">เลือกไฟล์ .json ที่เคยสำรองไว้ เพื่อดึงข้อมูลกลับมาแสดงผลในเบราว์เซอร์นี้ทันที</p>
+            <input type="file" id="import-json-file" accept=".json" class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+            <button onclick="handleImportJSON()" class="w-full py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer">
               <i data-lucide="check" class="w-4 h-4"></i>
-              <span>ยืนยันนำเข้าข้อมูลนี้เข้าสู่ระบบ</span>
+              <span>ยืนยันนำเข้าข้อมูล JSON นี้</span>
             </button>
           </div>
 
           <!-- Reset Default -->
-          <div class="pt-2 border-t border-slate-200">
+          <div class="pt-1 border-t border-slate-200">
             <button onclick="handleResetDefaultData()" class="w-full py-2 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold font-prompt text-xs flex items-center justify-center gap-2 transition-all cursor-pointer">
               <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
               <span>รีเซ็ตกลับเป็นข้อมูลตัวอย่างเริ่มต้น</span>
@@ -6501,10 +6561,30 @@ function openBackupRestoreModal() {
         </div>
       </div>
     `,
-    width: "600px",
+    width: "640px",
     showConfirmButton: false,
     showCloseButton: true,
     didOpen: () => initIcons()
+  });
+}
+
+function handleExportDataJS() {
+  window.portfolioStorage.exportDataJS();
+  Swal.fire({
+    icon: "success",
+    title: "ดาวน์โหลดไฟล์ data.js สำเร็จ",
+    html: `
+      <div class="space-y-2 text-left font-sarabun text-xs text-slate-700">
+        <p>นำไฟล์ <strong>data.js</strong> ที่ดาวน์โหลดได้ ไปวางทับในโฟลเดอร์ของเว็บไซต์:</p>
+        <div class="p-2.5 bg-slate-100 rounded-xl font-mono text-[11px] text-slate-800 space-y-1">
+          <p>📁 TS001/data.js</p>
+          <p>📁 TS001/js/data.js</p>
+        </div>
+        <p class="text-amber-800 font-bold">จากนั้นอัปโหลดไฟล์ทั้งหมดขึ้น GitHub / Vercel ตามปกติ ลิงก์ออนไลน์และทุกเครื่องจะอัปเดตข้อมูลตรงกันทันทีครับ!</p>
+      </div>
+    `,
+    confirmButtonText: "รับทราบ",
+    confirmButtonColor: "#d97706"
   });
 }
 
@@ -8690,4 +8770,198 @@ function setSlideCropRatio(ratio, btn) {
     btn.className = "crop-ratio-btn px-3 py-1 rounded-lg bg-amber-500 text-navy-950 font-bold font-prompt text-xs shadow-xs cursor-pointer";
   }
 }
+
+// ==========================================
+// Cloud Sync Configuration Modal (Firebase Firestore)
+// ==========================================
+function parseFirebaseConfigInput(text) {
+  if (!text) return null;
+  text = text.trim();
+  
+  // Try direct JSON
+  try {
+    const obj = JSON.parse(text);
+    if (obj.apiKey && obj.projectId) return obj;
+  } catch(e) {}
+
+  // Try regex extraction from javascript code snippet
+  const apiKeyMatch = text.match(/apiKey:\s*["']([^"']+)["']/i) || text.match(/"apiKey":\s*["']([^"']+)["']/i);
+  const authDomainMatch = text.match(/authDomain:\s*["']([^"']+)["']/i) || text.match(/"authDomain":\s*["']([^"']+)["']/i);
+  const projectIdMatch = text.match(/projectId:\s*["']([^"']+)["']/i) || text.match(/"projectId":\s*["']([^"']+)["']/i);
+  const storageBucketMatch = text.match(/storageBucket:\s*["']([^"']+)["']/i) || text.match(/"storageBucket":\s*["']([^"']+)["']/i);
+  const messagingSenderIdMatch = text.match(/messagingSenderId:\s*["']([^"']+)["']/i) || text.match(/"messagingSenderId":\s*["']([^"']+)["']/i);
+  const appIdMatch = text.match(/appId:\s*["']([^"']+)["']/i) || text.match(/"appId":\s*["']([^"']+)["']/i);
+
+  if (apiKeyMatch && projectIdMatch) {
+    return {
+      apiKey: apiKeyMatch[1],
+      authDomain: authDomainMatch ? authDomainMatch[1] : `${projectIdMatch[1]}.firebaseapp.com`,
+      projectId: projectIdMatch[1],
+      storageBucket: storageBucketMatch ? storageBucketMatch[1] : `${projectIdMatch[1]}.appspot.com`,
+      messagingSenderId: messagingSenderIdMatch ? messagingSenderIdMatch[1] : "",
+      appId: appIdMatch ? appIdMatch[1] : ""
+    };
+  }
+  return null;
+}
+
+function openCloudConfigModal() {
+  const isConnected = window.portfolioStorage.isCloudConnected;
+  const currentConfig = window.portfolioStorage.getFirebaseConfig();
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="cloud" class="w-5 h-5 text-blue-600"></i> ตั้งค่าฐานข้อมูลคลาวด์เรียลไทม์ (Google Firebase Cloud DB)
+    </span>`,
+    html: `
+      <div class="space-y-4 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
+        
+        <!-- Status Card -->
+        <div class="p-3.5 rounded-2xl border ${isConnected ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950' : 'bg-amber-50/90 border-amber-300 text-amber-950'} space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs font-prompt flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}"></span>
+              สถานะ: ${isConnected ? '🟢 เชื่อมต่อ Cloud สำเร็จ (Real-Time Auto-Sync พร้อมใช้งาน)' : '⚪ ยังไม่ได้เชื่อมต่อ Cloud (ใช้งานโหมด Local Storage)'}
+            </span>
+            ${isConnected ? `<span class="text-[10px] bg-emerald-200/80 text-emerald-900 font-bold px-2 py-0.5 rounded-md font-mono">${currentConfig?.projectId || ''}</span>` : ''}
+          </div>
+          <p class="text-[11px] leading-relaxed ${isConnected ? 'text-emerald-800' : 'text-amber-800'}">
+            ${isConnected 
+              ? '✨ ระบบจะซิงค์ข้อมูลและภาพทั้งหมดขึ้นคลาวด์แบบอัตโนมัติทันทีที่กดบันทึก ไม่ต้องดาวน์โหลดหรืออัปไฟล์ใด ๆ ทุกเครื่องที่เปิดลิงก์จะเห็นข้อมูลล่าสุดตรงกัน 100% ครับ!'
+              : '⚡ เมื่อเชื่อมต่อ Firebase Cloud แล้ว ข้อมูลทุกอย่างที่คุณครูกรอกจะถูกส่งขึ้นคลาวด์อัตโนมัติแบบเรียลไทม์ทันที ไม่ต้องกดปุ่มบันทึกหรืออัปไฟล์ซ้ำ'}
+          </p>
+        </div>
+
+        ${isConnected ? `
+          <!-- Actions when connected -->
+          <div class="space-y-2.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button type="button" onclick="handleForcePushCloud()" class="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                <span>ซิงค์ข้อมูลปัจจุบันขึ้น Cloud</span>
+              </button>
+              <button type="button" onclick="handleDisconnectCloud()" class="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold font-prompt text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                <i data-lucide="unlink" class="w-4 h-4"></i>
+                <span>ยกเลิกการเชื่อมต่อ Cloud</span>
+              </button>
+            </div>
+          </div>
+        ` : `
+          <!-- Tutorial & Setup Form when not connected -->
+          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+            <span class="font-bold text-slate-800 text-xs font-prompt flex items-center gap-1.5">
+              <i data-lucide="help-circle" class="w-4 h-4 text-blue-600"></i> วิธีรับค่า Firebase Config ฟรี (ทำครั้งเดียว 1-2 นาที):
+            </span>
+            <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-600 leading-relaxed font-sarabun pl-1">
+              <li>เปิดเว็บ <a href="https://console.firebase.google.com" target="_blank" class="text-blue-600 underline font-bold">console.firebase.google.com</a> (ล็อกอินด้วย Gmail)</li>
+              <li>กด <strong>Create a project</strong> (สร้างโปรเจกต์ฟรี เช่น <code>krusos-portfolio</code>)</li>
+              <li>ไปที่เมนู <strong>Firestore Database</strong> ➔ กด <strong>Create database</strong> ➔ เลือก Start in <strong>test mode</strong></li>
+              <li>กดรูปเฟือง ⚙️ Project Settings ➔ เลื่อนลงไปที่ Web App <code>&lt;/&gt;</code> ➔ คัดลอกโค้ด <code>firebaseConfig</code> มาวางในช่องด้านล่าง</li>
+            </ol>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block font-bold text-slate-700 text-xs font-prompt">
+              วางโค้ด Firebase Config ที่นี่ (รองรับทั้ง JavaScript Object หรือ JSON):
+            </label>
+            <textarea id="firebase-config-input" rows="5" class="w-full p-2.5 rounded-xl border border-slate-300 font-mono text-[11px] bg-slate-50 leading-normal" placeholder='const firebaseConfig = {&#10;  apiKey: "AIzaSy...",&#10;  authDomain: "your-app.firebaseapp.com",&#10;  projectId: "your-app-id",&#10;  ...&#10;};'></textarea>
+          </div>
+
+          <button type="button" onclick="handleConnectFirebase()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold font-prompt text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i>
+            <span>🚀 ทดสอบและเริ่มใช้งาน Cloud Real-Time ทันที</span>
+          </button>
+        `}
+      </div>
+    `,
+    width: "620px",
+    showConfirmButton: false,
+    showCloseButton: true,
+    didOpen: () => initIcons()
+  });
+}
+
+function handleConnectFirebase() {
+  const input = document.getElementById("firebase-config-input")?.value;
+  if (!input || !input.trim()) {
+    Swal.showValidationMessage("กรุณาวางโค้ด Firebase Config");
+    return;
+  }
+
+  const parsed = parseFirebaseConfigInput(input);
+  if (!parsed || !parsed.apiKey || !parsed.projectId) {
+    Swal.showValidationMessage("รูปแบบ Firebase Config ไม่ถูกต้อง กรุณาคัดลอกค่า apiKey และ projectId ให้ครบถ้วน");
+    return;
+  }
+
+  const success = window.portfolioStorage.connectFirebase(parsed);
+  if (success) {
+    // Also save into settings if desirable
+    const currentData = window.portfolioStorage.getData();
+    if (currentData && currentData.settings) {
+      currentData.settings.firebaseConfig = parsed;
+    }
+    // Force push current data as base
+    window.portfolioStorage.saveToCloud(currentData);
+
+    Swal.fire({
+      icon: "success",
+      title: "เชื่อมต่อ Cloud Database สำเร็จ!",
+      text: "ระบบคลาวด์เปิดใช้งานเรียบร้อยแล้ว ต่อไปนี้ข้อมูลจะอัปเดตแบบเรียลไทม์อัตโนมัติทันที 100% ทุกเครื่องครับ",
+      confirmButtonText: "ยอดเยี่ยม!",
+      confirmButtonColor: "#2563eb"
+    }).then(() => {
+      updateCloudStatusBadge();
+    });
+  } else {
+    Swal.fire({
+      icon: "error",
+      title: "เชื่อมต่อไม่สำเร็จ",
+      text: "กรุณาตรวจสอบการตั้งค่า Firebase หรือ Rules ใน Firestore Database (แนะนำเลือก Test mode)",
+      confirmButtonColor: "#ef4444"
+    });
+  }
+}
+
+function handleForcePushCloud() {
+  const currentData = window.portfolioStorage.getData();
+  window.portfolioStorage.saveToCloud(currentData);
+  Swal.fire({
+    toast: true,
+    position: "top-end",
+    icon: "success",
+    title: "ซิงค์ข้อมูลปัจจุบันขึ้น Cloud เรียบร้อย",
+    showConfirmButton: false,
+    timer: 1500
+  });
+}
+
+function handleDisconnectCloud() {
+  Swal.fire({
+    title: "ต้องการยกเลิกการเชื่อมต่อ Cloud หรือไม่?",
+    text: "ระบบจะกลับไปบันทึกข้อมูลใน Local Storage ของเครื่องนี้ตามปกติ",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ใช่, ยกเลิกการเชื่อมต่อ",
+    cancelButtonText: "ไม่, คงเดิมไว้",
+    confirmButtonColor: "#ef4444",
+    cancelButtonColor: "#64748b"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.portfolioStorage.disconnectFirebase();
+      updateCloudStatusBadge();
+      Swal.fire({
+        icon: "success",
+        title: "ยกเลิกการเชื่อมต่อเรียบร้อย",
+        timer: 1200,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+window.openCloudConfigModal = openCloudConfigModal;
+window.handleConnectFirebase = handleConnectFirebase;
+window.handleForcePushCloud = handleForcePushCloud;
+window.handleDisconnectCloud = handleDisconnectCloud;
 
