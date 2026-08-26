@@ -5007,9 +5007,13 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
           </div>
           <div class="flex items-center gap-2 shrink-0 flex-wrap">
             ${isTrainingIndicator && isAdmin ? `
-              <button type="button" onclick="openAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+              <button type="button" onclick="openAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                <span>${addBtnLabel}</span>
+                <span>เพิ่ม 1 รายการ</span>
+              </button>
+              <button type="button" onclick="openBatchAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                <span>เพิ่มหลายรายการ (Batch)</span>
               </button>
             ` : ''}
             ${isAdmin ? `
@@ -5116,9 +5120,16 @@ function openAspectDetailModal(paId, aspectIndex, activeIndicatorCode = null) {
                 <i data-lucide="file-text" class="w-8 h-8 text-slate-300 mx-auto"></i>
                 <p class="text-xs text-slate-500 font-sarabun">${emptyTableText}</p>
                 ${isAdmin ? `
-                  <button type="button" onclick="openAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-navy-950 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs">
-                    ${addBtnLabel}
-                  </button>
+                  <div class="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                    <button type="button" onclick="openAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-navy-950 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs flex items-center gap-1.5">
+                      <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                      <span>เพิ่ม 1 รายการ</span>
+                    </button>
+                    <button type="button" onclick="openBatchAddTrainingModal('${paId}', ${aspectIndex}, '${activeItem.code}')" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs flex items-center gap-1.5">
+                      <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                      <span>เพิ่มหลายรายการพร้อมกัน (Batch Add)</span>
+                    </button>
+                  </div>
                 ` : ''}
               </div>
             `}
@@ -5701,6 +5712,17 @@ function openAddTrainingModal(paId, aspectIndex, indCode) {
     </span>`,
     html: `
       <div class="space-y-3.5 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
+        <!-- Quick Jump to Batch Mode -->
+        <div class="p-2.5 bg-blue-50/90 rounded-xl border border-blue-200 flex items-center justify-between gap-2 shadow-2xs">
+          <span class="text-blue-900 text-[11px] font-prompt font-semibold flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-4 h-4 text-blue-600"></i> มีเกียรติบัตร / ภาพหลายใบต้องการเพิ่มพร้อมกัน?
+          </span>
+          <button type="button" onclick="Swal.close(); setTimeout(() => openBatchAddTrainingModal('${paId}', ${aspectIndex}, '${indCode}'), 120);" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold font-prompt cursor-pointer transition-all shadow-xs shrink-0 flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3 h-3 text-amber-300"></i>
+            <span>เปิดโหมดเพิ่มหลายรายการ</span>
+          </button>
+        </div>
+
         <div class="grid grid-cols-4 gap-2">
           <div class="col-span-1">
             <label class="block font-bold text-slate-700 mb-1 font-prompt">ลำดับที่ (ที่): *</label>
@@ -5831,6 +5853,374 @@ function openAddTrainingModal(paId, aspectIndex, indCode) {
   });
 }
 window.openAddTrainingModal = openAddTrainingModal;
+
+// ==========================================
+// Batch / Multi Add Training & PLC Modal
+// ==========================================
+function openBatchAddTrainingModal(paId, aspectIndex, indCode) {
+  const data = window.portfolioStorage.getData();
+  const paRecord = data.paRecords?.find(p => String(p.id) === String(paId));
+  if (!paRecord) return;
+  const aspect = paRecord.indicators?.[aspectIndex];
+  if (!aspect) return;
+  const item = aspect.items?.find(it => it.code === indCode);
+  if (!item) return;
+
+  const isPLC = indCode === "3.2";
+  const currentTrainings = item.trainings || [];
+  let startIndex = currentTrainings.length;
+
+  const modalTitle = isPLC ? `เพิ่มรายการแลกเปลี่ยนเรียนรู้ (PLC) หลายรายการ (ตัวชี้วัด ${indCode})` : `เพิ่มรายการอบรม / พัฒนาตนเอง หลายรายการ (ตัวชี้วัด ${indCode})`;
+  const dateLabel = isPLC ? "พ.ศ.: *" : "วันที่เข้าอบรม: *";
+  const datePlaceholder = isPLC ? "เช่น ๒๕๖๘" : "เช่น ๑๙ ธ.ค. ๖๘";
+  const defaultDate = isPLC ? "๒๕๖๘" : "";
+  const titleLabel = isPLC ? "ชื่อกิจกรรม / หัวข้อ PLC: *" : "ชื่อกิจกรรมที่เข้าอบรม: *";
+  const titlePlaceholder = isPLC ? "ระบุชื่อกิจกรรมการแลกเปลี่ยนเรียนรู้ PLC" : "ระบุชื่อหลักสูตร / กิจกรรมการอบรม";
+  const orgLabel = isPLC ? "หน่วยงาน / กลุ่มสาระ: *" : "หน่วยงานที่จัด: *";
+  const defaultOrg = isPLC ? "โรงเรียนวัดบางปูน" : "สพป.สิงห์บุรี";
+  const orgPlaceholder = isPLC ? "เช่น โรงเรียนวัดบางปูน" : "เช่น สพป.สิงห์บุรี หรือ สพฐ.";
+
+  let rowCounter = 0;
+
+  Swal.fire({
+    title: `<span class="text-base font-bold font-prompt text-slate-800 flex items-center justify-center gap-2">
+      <i data-lucide="layers" class="w-5 h-5 text-blue-600"></i> ${modalTitle}
+    </span>`,
+    html: `
+      <div class="space-y-4 text-left font-sarabun text-xs max-h-[75vh] overflow-y-auto p-1">
+        <!-- Multi-File Upload Box -->
+        <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50/80 rounded-2xl border-2 border-dashed border-blue-300 text-center space-y-2.5">
+          <div class="flex items-center justify-center gap-2 text-blue-900 font-prompt font-bold text-xs">
+            <i data-lucide="upload-cloud" class="w-5 h-5 text-blue-600"></i>
+            <span>เลือกรูปภาพเกียรติบัตร / ภาพกิจกรรมหลายไฟล์พร้อมกัน</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-sarabun">
+            สามารถเลือกได้พร้อมกันหลายภาพ (เช่น 5, 10, 20 ภาพ) ระบบจะสร้างแถวรายการให้อัตโนมัติพร้อมบีบอัดภาพให้อย่างรวดเร็ว
+          </p>
+          <div class="flex items-center justify-center gap-2">
+            <label class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold font-prompt cursor-pointer transition-all shadow-xs">
+              <i data-lucide="image-plus" class="w-4 h-4"></i>
+              <span>📂 เลือกไฟล์รูปภาพทั้งหมดจากเครื่อง</span>
+              <input type="file" id="batch-multi-file-input" multiple accept="image/*" class="hidden">
+            </label>
+          </div>
+          <div id="batch-upload-status" class="hidden text-[11px] font-bold text-blue-700 animate-pulse"></div>
+        </div>
+
+        <!-- Quick-Fill Defaults Toolbar -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-700 text-[11px] font-prompt flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i> กรอกข้อมูลร่วมกัน (นำไปใส่ทุกแถวได้ใน 1 คลิก):
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 font-prompt mb-0.5">${dateLabel}</label>
+              <input id="batch-global-date" class="w-full p-2 text-xs rounded-lg border border-slate-300 font-prompt bg-white" value="${defaultDate}" placeholder="${datePlaceholder}">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 font-prompt mb-0.5">${orgLabel}</label>
+              <input id="batch-global-org" class="w-full p-2 text-xs rounded-lg border border-slate-300 font-prompt bg-white" value="${defaultOrg}" placeholder="${orgPlaceholder}">
+            </div>
+            <div class="flex items-end">
+              <button type="button" id="btn-batch-apply-defaults" class="w-full p-2 bg-amber-500 hover:bg-amber-600 text-navy-950 font-bold font-prompt text-xs rounded-lg transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> นำไปใช้กับทุกแถว
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- List of Batch Rows Container -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800 text-xs font-prompt flex items-center gap-1.5">
+              <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> รายการที่จะเพิ่ม (<span id="batch-rows-count">0</span> รายการ):
+            </span>
+            <button type="button" id="btn-batch-add-blank" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มแถวเปล่า
+            </button>
+          </div>
+
+          <div id="batch-rows-list" class="space-y-3">
+            <!-- Dynamic Row Cards will be inserted here -->
+          </div>
+        </div>
+      </div>
+    `,
+    width: "780px",
+    showCancelButton: true,
+    confirmButtonText: "💾 บันทึกรายการทั้งหมด",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      initIcons();
+      const multiFileInput = document.getElementById("batch-multi-file-input");
+      const rowsList = document.getElementById("batch-rows-list");
+      const rowsCountSpan = document.getElementById("batch-rows-count");
+      const uploadStatus = document.getElementById("batch-upload-status");
+      const addBlankBtn = document.getElementById("btn-batch-add-blank");
+      const applyDefaultsBtn = document.getElementById("btn-batch-apply-defaults");
+
+      function updateCounts() {
+        const count = rowsList ? rowsList.querySelectorAll(".batch-row-item").length : 0;
+        if (rowsCountSpan) rowsCountSpan.innerText = count;
+      }
+
+      function renderRow(data = {}) {
+        rowCounter++;
+        const currentIdx = rowsList.querySelectorAll(".batch-row-item").length;
+        const thaiNo = getNextThaiNumber(startIndex + currentIdx + 1);
+        const rowId = `batch-row-${rowCounter}`;
+
+        const rowDiv = document.createElement("div");
+        rowDiv.id = rowId;
+        rowDiv.className = "batch-row-item p-3.5 bg-white rounded-2xl border border-slate-300 shadow-2xs hover:border-blue-400 transition-all space-y-2.5";
+        rowDiv.innerHTML = `
+          <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold text-slate-500 font-prompt">ที่:</span>
+              <input type="text" class="row-no w-12 p-1 text-center font-bold text-xs text-amber-900 bg-amber-50 rounded-lg border border-slate-300" value="${data.no || thaiNo}">
+              <span class="text-xs font-bold text-slate-800 font-prompt">รายการที่ ${currentIdx + 1}</span>
+            </div>
+            <button type="button" class="btn-remove-row text-slate-400 hover:text-rose-600 p-1 rounded-lg transition-colors cursor-pointer" title="ลบรายการนี้">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <!-- Thumbnail Box -->
+            <div class="relative w-full sm:w-28 h-24 sm:h-auto shrink-0 bg-slate-900 rounded-xl overflow-hidden border border-slate-300 flex items-center justify-center group/img">
+              <img src="${data.certificateUrl || (isPLC ? 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80')}" class="row-img-preview w-full h-full object-cover">
+              <input type="hidden" class="row-cert-url" value="${data.certificateUrl || ''}">
+              <label class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-[10px] font-bold cursor-pointer backdrop-blur-xs">
+                <i data-lucide="camera" class="w-4 h-4 text-amber-400"></i>
+                <span>เปลี่ยนรูป</span>
+                <input type="file" accept="image/*" class="row-single-file-input hidden">
+              </label>
+            </div>
+
+            <!-- Fields Container -->
+            <div class="grow space-y-2">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 font-prompt mb-0.5">${titleLabel}</label>
+                <input type="text" class="row-title w-full p-2 rounded-lg border border-slate-300 font-sarabun text-xs" value="${escapeHtml(data.title || '')}" placeholder="${titlePlaceholder}">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 font-prompt mb-0.5">${dateLabel}</label>
+                  <input type="text" class="row-date w-full p-1.5 rounded-lg border border-slate-300 font-prompt text-xs" value="${escapeHtml(data.date || defaultDate)}" placeholder="${datePlaceholder}">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 font-prompt mb-0.5">${orgLabel}</label>
+                  <input type="text" class="row-organizer w-full p-1.5 rounded-lg border border-slate-300 font-prompt text-xs" value="${escapeHtml(data.organizer || defaultOrg)}" placeholder="${orgPlaceholder}">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 font-prompt mb-0.5">ประเภทหลักฐาน:</label>
+                  <input type="text" class="row-evidence w-full p-1.5 rounded-lg border border-slate-300 font-prompt text-xs" value="${escapeHtml(data.evidenceType || 'เกียรติบัตร/รูปภาพ')}">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 font-prompt mb-0.5">ลิงก์ PDF (ถ้ามี):</label>
+                  <input type="text" class="row-pdf w-full p-1.5 rounded-lg border border-slate-300 font-mono text-xs" value="${escapeHtml(data.pdfUrl || '')}" placeholder="https://drive.google.com/...">
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        rowsList.appendChild(rowDiv);
+        initIcons();
+
+        // Bind single file replace per row
+        const singleFileInput = rowDiv.querySelector(".row-single-file-input");
+        const hiddenCertUrl = rowDiv.querySelector(".row-cert-url");
+        const imgPreview = rowDiv.querySelector(".row-img-preview");
+        if (singleFileInput) {
+          singleFileInput.addEventListener("change", async (e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const compressed = await window.compressImage(file, 1600, 0.85);
+              if (hiddenCertUrl) hiddenCertUrl.value = compressed;
+              if (imgPreview) imgPreview.src = compressed;
+            }
+          });
+        }
+
+        // Bind remove row
+        const removeBtn = rowDiv.querySelector(".btn-remove-row");
+        if (removeBtn) {
+          removeBtn.addEventListener("click", () => {
+            rowDiv.remove();
+            // re-index remaining rows thai numbers
+            rowsList.querySelectorAll(".batch-row-item").forEach((itemEl, idx) => {
+              const noInput = itemEl.querySelector(".row-no");
+              if (noInput) noInput.value = getNextThaiNumber(startIndex + idx + 1);
+            });
+            updateCounts();
+          });
+        }
+
+        updateCounts();
+      }
+
+      // Add initial 1 blank row if empty
+      renderRow();
+
+      // Handle Multi-file Upload
+      if (multiFileInput) {
+        multiFileInput.addEventListener("change", async (e) => {
+          const files = Array.from(e.target.files || []);
+          if (files.length === 0) return;
+
+          if (uploadStatus) {
+            uploadStatus.classList.remove("hidden");
+            uploadStatus.innerText = `⏳ กำลังบีบอัดและเพิ่มรูปภาพ ${files.length} รายการ...`;
+          }
+
+          // If there is only 1 blank row with no title and no uploaded image, remove it first
+          const existingRows = rowsList.querySelectorAll(".batch-row-item");
+          if (existingRows.length === 1) {
+            const firstTitle = existingRows[0].querySelector(".row-title")?.value.trim();
+            const firstCert = existingRows[0].querySelector(".row-cert-url")?.value.trim();
+            if (!firstTitle && !firstCert) {
+              existingRows[0].remove();
+            }
+          }
+
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const compressed = await window.compressImage(file, 1600, 0.85);
+            const rawName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            const globalDate = document.getElementById("batch-global-date")?.value.trim() || defaultDate;
+            const globalOrg = document.getElementById("batch-global-org")?.value.trim() || defaultOrg;
+
+            renderRow({
+              title: rawName,
+              date: globalDate,
+              organizer: globalOrg,
+              certificateUrl: compressed,
+              evidenceType: "เกียรติบัตร/รูปภาพ"
+            });
+          }
+
+          if (uploadStatus) {
+            uploadStatus.classList.add("hidden");
+          }
+          multiFileInput.value = "";
+        });
+      }
+
+      // Add Blank Row Button
+      if (addBlankBtn) {
+        addBlankBtn.addEventListener("click", () => {
+          const globalDate = document.getElementById("batch-global-date")?.value.trim() || defaultDate;
+          const globalOrg = document.getElementById("batch-global-org")?.value.trim() || defaultOrg;
+          renderRow({ date: globalDate, organizer: globalOrg });
+        });
+      }
+
+      // Apply Defaults to All Rows
+      if (applyDefaultsBtn) {
+        applyDefaultsBtn.addEventListener("click", () => {
+          const globalDate = document.getElementById("batch-global-date")?.value.trim() || "";
+          const globalOrg = document.getElementById("batch-global-org")?.value.trim() || "";
+          rowsList.querySelectorAll(".batch-row-item").forEach(rowEl => {
+            if (globalDate) {
+              const dateInput = rowEl.querySelector(".row-date");
+              if (dateInput) dateInput.value = globalDate;
+            }
+            if (globalOrg) {
+              const orgInput = rowEl.querySelector(".row-organizer");
+              if (orgInput) orgInput.value = globalOrg;
+            }
+          });
+          applyDefaultsBtn.innerText = "✅ อัปเดตครบทุกแถวแล้ว!";
+          setTimeout(() => {
+            applyDefaultsBtn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> นำไปใช้กับทุกแถว`;
+            initIcons();
+          }, 1500);
+        });
+      }
+    },
+    preConfirm: () => {
+      const rowsList = document.getElementById("batch-rows-list");
+      const rowEls = rowsList ? Array.from(rowsList.querySelectorAll(".batch-row-item")) : [];
+      if (rowEls.length === 0) {
+        Swal.showValidationMessage("กรุณาเพิ่มอย่างน้อย 1 รายการ");
+        return false;
+      }
+
+      const results = [];
+      for (let i = 0; i < rowEls.length; i++) {
+        const r = rowEls[i];
+        const no = r.querySelector(".row-no")?.value.trim() || getNextThaiNumber(startIndex + i + 1);
+        const title = r.querySelector(".row-title")?.value.trim();
+        const date = r.querySelector(".row-date")?.value.trim() || "-";
+        const organizer = r.querySelector(".row-organizer")?.value.trim() || "-";
+        const evidenceType = r.querySelector(".row-evidence")?.value.trim() || "เกียรติบัตร/รูปภาพ";
+        const certificateUrl = r.querySelector(".row-cert-url")?.value.trim() || "";
+        const pdfUrl = r.querySelector(".row-pdf")?.value.trim() || "";
+
+        if (!title && !certificateUrl) {
+          // Skip completely empty row if multiple rows exist
+          if (rowEls.length > 1) continue;
+          Swal.showValidationMessage(`กรุณากรอกชื่อกิจกรรมในแถวที่ ${i + 1}`);
+          return false;
+        }
+
+        const finalTitle = title || `กิจกรรม${isPLC ? 'แลกเปลี่ยนเรียนรู้ PLC' : 'การอบรม'} ลำดับที่ ${no}`;
+
+        results.push({
+          id: `tr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
+          no,
+          title: finalTitle,
+          date,
+          organizer,
+          evidenceType,
+          certificateUrl,
+          pdfUrl,
+          images: certificateUrl ? [{ url: certificateUrl, caption: `${isPLC ? 'กิจกรรม PLC' : 'เกียรติบัตร'}: ${finalTitle}` }] : []
+        });
+      }
+
+      if (results.length === 0) {
+        Swal.showValidationMessage("กรุณากรอกชื่อกิจกรรมหรือเลือกรูปภาพอย่างน้อย 1 รายการ");
+        return false;
+      }
+
+      return results;
+    }
+  }).then((result) => {
+    if (result.isConfirmed && result.value) {
+      const newItems = result.value;
+      const indicators = [...(paRecord.indicators || [])];
+      const itemsCopy = [...(indicators[aspectIndex].items || [])];
+      const targetItem = itemsCopy.find(it => it.code === indCode);
+      if (targetItem) {
+        if (!targetItem.trainings) targetItem.trainings = [];
+        targetItem.trainings.push(...newItems);
+        indicators[aspectIndex] = { ...indicators[aspectIndex], items: itemsCopy };
+        window.portfolioStorage.updateItem("paRecords", paId, { indicators });
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: `เพิ่ม ${newItems.length} รายการเรียบร้อยแล้ว`,
+          showConfirmButton: false,
+          timer: 1800
+        });
+        renderCurrentView();
+        setTimeout(() => openAspectDetailModal(paId, aspectIndex, indCode), 200);
+      }
+    }
+  });
+}
+window.openBatchAddTrainingModal = openBatchAddTrainingModal;
 
 function openEditTrainingModal(paId, aspectIndex, indCode, trainingId) {
   const data = window.portfolioStorage.getData();
