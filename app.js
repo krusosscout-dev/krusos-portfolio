@@ -479,29 +479,9 @@ function setupAdminStatus() {
 
 function updateCloudStatusBadge() {
   const container = document.getElementById("cloud-sync-badge-container");
-  if (!container) return;
-  const isConnected = window.portfolioStorage.isCloudConnected;
-  const isAdmin = window.portfolioStorage.isAdmin();
-
-  if (isConnected) {
-    container.innerHTML = `
-      <button onclick="openCloudConfigModal()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-sm cursor-pointer hover:bg-emerald-500/30 transition-all" title="ระบบเชื่อมต่อฐานข้อมูลคลาวด์เรียลไทม์ (Live Auto-Sync)">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-400"></i>
-        <span class="hidden md:inline font-prompt">Cloud Real-Time</span>
-      </button>
-    `;
-  } else if (isAdmin) {
-    container.innerHTML = `
-      <button onclick="openCloudConfigModal()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-amber-300 hover:bg-amber-500/20 border border-amber-400/30 shadow-sm cursor-pointer transition-all" title="คลิกเพื่อเชื่อมต่อ Firebase Cloud Real-Time">
-        <i data-lucide="cloud-off" class="w-3.5 h-3.5 text-amber-400"></i>
-        <span class="hidden md:inline font-prompt">เชื่อมต่อ Cloud</span>
-      </button>
-    `;
-  } else {
+  if (container) {
     container.innerHTML = "";
   }
-  initIcons();
 }
 window.updateCloudStatusBadge = updateCloudStatusBadge;
 
@@ -9396,14 +9376,20 @@ function openQrCodeModal(targetView = 'home') {
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          <button type="button" id="btn-download-qr" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 border border-slate-300 transition-all cursor-pointer shadow-2xs">
-            <i data-lucide="download" class="w-4 h-4 text-slate-600"></i>
-            <span>💾 บันทึกรูปภาพ QR Code (PNG)</span>
-          </button>
+        <div class="space-y-2 pt-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button type="button" id="btn-download-qr-pure" class="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>💾 บันทึกรูป QR Code (PNG)</span>
+            </button>
+            <button type="button" id="btn-download-qr-card" class="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md">
+              <i data-lucide="image" class="w-4 h-4"></i>
+              <span>🖼️ บันทึกการ์ดพร้อมชื่อครู (PNG)</span>
+            </button>
+          </div>
           <button type="button" id="btn-print-tent-card" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md">
             <i data-lucide="printer" class="w-4 h-4"></i>
-            <span>🖨️ พิมพ์ป้ายตั้งโต๊ะกรรมการ (Tent Card)</span>
+            <span>🖨️ พิมพ์ป้ายตั้งโต๊ะกรรมการ (Tent Card A4)</span>
           </button>
         </div>
       </div>
@@ -9416,7 +9402,8 @@ function openQrCodeModal(targetView = 'home') {
       const urlInput = document.getElementById("qr-target-url");
       const imgPreview = document.getElementById("qr-code-image-preview");
       const copyBtn = document.getElementById("btn-copy-qr-url");
-      const downloadBtn = document.getElementById("btn-download-qr");
+      const downloadPureBtn = document.getElementById("btn-download-qr-pure");
+      const downloadCardBtn = document.getElementById("btn-download-qr-card");
       const printBtn = document.getElementById("btn-print-tent-card");
 
       window.updateQrModalUrl = (newUrl) => {
@@ -9447,32 +9434,140 @@ function openQrCodeModal(targetView = 'home') {
         });
       }
 
-      if (downloadBtn && urlInput) {
-        downloadBtn.addEventListener("click", async () => {
+      // Download Pure QR Code PNG
+      if (downloadPureBtn && urlInput) {
+        downloadPureBtn.addEventListener("click", () => {
           const u = urlInput.value.trim() || initialUrl;
-          const qrSrc = getQrImageUrl(u);
-          try {
-            const res = await fetch(qrSrc);
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = blobUrl;
-            a.download = `QRCode-KruSos-Portfolio.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(blobUrl);
+          const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(u)}&margin=16&format=png`;
+          
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = 800;
+            canvas.height = 800;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, 800, 800);
+            ctx.drawImage(img, 0, 0, 800, 800);
+            
+            const link = document.createElement("a");
+            link.download = `QRCode-KruSos-Portfolio.png`;
+            link.href = canvas.toDataURL("image/png");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
             Swal.fire({
               toast: true,
               position: "top-end",
               icon: "success",
-              title: "ดาวน์โหลด QR Code เรียบร้อยแล้ว",
-              timer: 1500,
+              title: "บันทึกรูปภาพ QR Code เรียบร้อยแล้ว!",
+              timer: 2000,
               showConfirmButton: false
             });
-          } catch(err) {
+          };
+          img.onerror = () => {
             window.open(qrSrc, "_blank");
-          }
+          };
+          img.src = qrSrc;
+        });
+      }
+
+      // Download Styled Card PNG with Teacher Info
+      if (downloadCardBtn && urlInput) {
+        downloadCardBtn.addEventListener("click", () => {
+          const u = urlInput.value.trim() || initialUrl;
+          const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(u)}&margin=16&format=png`;
+          
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = 900;
+            canvas.height = 1150;
+            const ctx = canvas.getContext("2d");
+
+            // Background
+            ctx.fillStyle = "#f8fafc";
+            ctx.fillRect(0, 0, 900, 1150);
+
+            // Card container
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(40, 40, 820, 1070);
+            ctx.strokeStyle = "#0f2c59";
+            ctx.lineWidth = 6;
+            ctx.strokeRect(40, 40, 820, 1070);
+
+            // Header Banner
+            ctx.fillStyle = "#0f2c59";
+            ctx.fillRect(40, 40, 820, 200);
+
+            // Gold Stripe
+            ctx.fillStyle = "#d97706";
+            ctx.fillRect(40, 235, 820, 8);
+
+            // Header Texts
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 34px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("ระบบประเมินและแฟ้มสะสมผลงาน วPA", 450, 105);
+
+            ctx.font = "bold 26px sans-serif";
+            ctx.fillStyle = "#fde68a";
+            ctx.fillText(`${teacherName} (${position})`, 450, 155);
+
+            ctx.font = "20px sans-serif";
+            ctx.fillStyle = "#93c5fd";
+            ctx.fillText(schoolName, 450, 195);
+
+            // Draw QR Code frame & image
+            const qrSize = 520;
+            const qrX = (900 - qrSize) / 2;
+            const qrY = 290;
+
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 3;
+            ctx.fillRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30);
+            ctx.strokeRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30);
+
+            ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+            // Footer Texts
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillStyle = "#0f2c59";
+            ctx.fillText("📱 สแกนเปิดดูแฟ้มผลงานออนไลน์", 450, 890);
+
+            ctx.font = "20px sans-serif";
+            ctx.fillStyle = "#64748b";
+            ctx.fillText("รองรับ iPhone, iPad, Android หรือแอป LINE", 450, 935);
+
+            ctx.font = "16px sans-serif";
+            ctx.fillStyle = "#2563eb";
+            ctx.fillText(u, 450, 990);
+
+            // Trigger Download
+            const link = document.createElement("a");
+            link.download = `QR-Card-${teacherName}.png`;
+            link.href = canvas.toDataURL("image/png");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "success",
+              title: "บันทึกรูปภาพการ์ด QR Code เรียบร้อยแล้ว!",
+              timer: 2000,
+              showConfirmButton: false
+            });
+          };
+          img.onerror = () => {
+            window.open(qrSrc, "_blank");
+          };
+          img.src = qrSrc;
         });
       }
 
